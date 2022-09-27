@@ -60,6 +60,11 @@ str_t str_buf_str(str_buf_t* buf_ptr)
 	return str_of_buf(buf_ptr);
 }
 
+char* str_buf_cstr(str_buf_t* buf_ptr)
+{
+	return buf_ptr->data;
+}
+
 str_t str_buf_append_char(str_buf_t* buf_ptr, char c)
 {
 	append_char_to_buf(buf_ptr, c);
@@ -193,10 +198,13 @@ static void change_buf_capacity(str_buf_t* buf_ptr, size_t new_capacity)
 	if(new_capacity < buf_ptr->size)
 		new_capacity = buf_ptr->size;
 
-	buf_ptr->data = buf_ptr->allocator.allocate(&buf_ptr->allocator, new_capacity+1, __FILE__, __LINE__);
-	buf_ptr->capacity = new_capacity;
-	memcpy(buf_ptr->data, old_ptr, buf_ptr->size+1);
-	buf_ptr->allocator.deallocate(&buf_ptr->allocator, old_ptr, __FILE__, __LINE__);
+	if(new_capacity != buf_ptr->capacity)
+	{
+		buf_ptr->data = buf_ptr->allocator.allocate(&buf_ptr->allocator, new_capacity+1, __FILE__, __LINE__);
+		buf_ptr->capacity = new_capacity;
+		memcpy(buf_ptr->data, old_ptr, buf_ptr->size+1);
+		buf_ptr->allocator.deallocate(&buf_ptr->allocator, old_ptr, __FILE__, __LINE__);
+	};
 }
 
 static void assign_str_to_buf(str_buf_t* buf_ptr, str_t str)
