@@ -1,0 +1,12 @@
+*.lst
+*.d
+*.o
+*.elf
+*.lss
+*.lib
+*.a
+*.la
+*.lo
+*.out
+*.hex
+*.eep
