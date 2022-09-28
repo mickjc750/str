@@ -41,12 +41,13 @@
 
 int main(int argc, const char* argv[])
 {
-	#define INITIAL_BUF_CAPACITY 10
+	#define INITIAL_BUF_CAPACITY 16
 
 	str_allocator_t str_allocator = {.allocator = allocator};
 	str_buf_t* buf;
 	str_t str1, str2;
 	str_search_result_t search_result;
+	const char* chrptr;
 
 	printf("\n\n");
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
@@ -63,11 +64,6 @@ int main(int argc, const char* argv[])
 	assert(buf->size == 30);
 	DBG("Result = %s\n", buf->cstr);
 	assert(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC"));
-
-	DBG("Current capacity = %zu - Shrinking buffer", buf->capacity);
-	str_buf_shrink(&buf);
-	DBG("Current capacity = %zu\n", buf->capacity);
-	assert(buf->capacity == 30);
 
 	DBG("Appending -AFTER to existing buffer");
 	str_buf_cat(&buf, str_buf_str(&buf), cstr("-AFTER"));
@@ -347,13 +343,19 @@ int main(int argc, const char* argv[])
 	DBG("** Testing str_buf_append_char() **");
 	str_buf_cat(&buf, cstr(""));
 	str_buf_shrink(&buf);
-	str_buf_append_char(&buf, 'T');
-	str_buf_append_char(&buf, 'e');
-	str_buf_append_char(&buf, 's');
-	str1 = str_buf_append_char(&buf, 't');
-	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
-	assert(!memcmp("Test", str1.data, str1.size));
 
+	chrptr = "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG. CONGRATULATIONS, YOUR TYPEWRITER WORKS!";
+	while(*chrptr)
+		str_buf_append_char(&buf, *chrptr++);
+
+	str1 = str_buf_str(&buf);
+	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
+	assert(!memcmp("THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG. CONGRATULATIONS, YOUR TYPEWRITER WORKS!", str1.data, str1.size));
+
+	DBG("Current capacity = %zu - Shrinking buffer", buf->capacity);
+	str_buf_shrink(&buf);
+	DBG("Current capacity = %zu\n", buf->capacity);
+	assert(buf->capacity == strlen(buf->cstr));
 
 	DBG("** Testing str_buf_cat() with a single invalid str **");
 	DBG("str_buf_cat() should always return a valid string");

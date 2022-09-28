@@ -1,4 +1,3 @@
-// https://www.youtube.com/watch?v=QpAhX-gsHMs&t=3009s
 
 	#include <stddef.h>
 	#include <stdbool.h>
@@ -9,8 +8,11 @@
 // Public defines
 //********************************************************************************************************
 
-//	The minimum expansion that can occur when re-allocating a buffers memory.
-//	Higher values will reduce calls to the allocator, at the expense of more memory overhead.
+/*	The buffer capacity is rounded up to a multiple of this when:
+		* creating a new buffer with str_buf_create()
+		* expanding the buffer for any reason
+	The buffer size can only ever be shrunk by calling str_buf_shrink(), which shrinks it to the minimum needed.
+	Higher values will reduce calls to the allocator, at the expense of more memory overhead. */
 	#ifndef STR_CAPACITY_GROW_STEP
 	 	#define STR_CAPACITY_GROW_STEP 16
 	#endif
@@ -65,7 +67,9 @@
 	Example to append to a buffer:  str_buf_cat(&mybuffer, str_buf_str(&mybuffer), str_to_append) */
 	#define str_buf_cat(buf_ptr, ...) _str_buf_cat(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 
+
 /*	Structure for providing the buffer with an allocator.
+	The allocator must return an address that is suitably aligned for any kind of variable, as allocations also contain str_buf_t.
 	When a new allocation is required, ptr_to_free will be NULL and size will be >0
 	When a re-allocation is required,  ptr_to_free will be not be NULL and size will be >0
 	When a de-allocation is required,  ptr_to_free may or may not be NULL, and size will be 0
@@ -141,7 +145,7 @@ then:
 //	The non-variadic version of _str_buf_cat
 	str_t str_buf_vcat(str_buf_t** buf_ptr, int n_args, va_list va);
 
-//	Return a str_t of the buffer contents
+//	Return a str_t of the buffer contents. The buffer will be unchanged, the ** is just for consistency.
 	str_t str_buf_str(str_buf_t** buf_ptr);
 
 //	Append a single character to the buffer, and return a str_t of the buffer contents
