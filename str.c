@@ -14,29 +14,29 @@
 // Private prototypes
 //********************************************************************************************************
 
-	static str_buf_t create_buf(size_t initial_capacity, str_allocator_t allocator);
-	static str_t buffer_vcat(str_buf_t* buf_ptr, int n_args, va_list va);
-	static void append_str_to_buf(str_buf_t* buf_ptr, str_t str);
-	static void destroy_buf(str_buf_t* buf_ptr);
-	static void change_buf_capacity(str_buf_t* buf_ptr, size_t new_capacity);
-	static void assign_str_to_buf(str_buf_t* buf_ptr, str_t str);
-	static void append_char_to_buf(str_buf_t* str_buf, char c);
+	static str_buf_t* create_buf(size_t initial_capacity, str_allocator_t allocator);
+	static str_t buffer_vcat(str_buf_t** buf_ptr, int n_args, va_list va);
+	static void append_str_to_buf(str_buf_t** buf_ptr, str_t str);
+	static void destroy_buf(str_buf_t** buf_ptr);
+	static void change_buf_capacity(str_buf_t** buf_ptr, size_t new_capacity);
+	static void assign_str_to_buf(str_buf_t** buf_ptr, str_t str);
+	static void append_char_to_buf(str_buf_t** str_buf, char c);
 	static str_search_result_t find_first_needle(str_t haystack, str_t needle);
 	static bool str_contains_char(str_t str, char c);
 	static size_t round_up_capacity(size_t capacity);
-	static str_t str_of_buf(str_buf_t* buf);
+	static str_t str_of_buf(str_buf_t** buf);
 
 //********************************************************************************************************
 // Public functions
 //********************************************************************************************************
 
-str_buf_t str_buf_create(size_t initial_capacity, str_allocator_t allocator)
+str_buf_t* str_buf_create(size_t initial_capacity, str_allocator_t allocator)
 {
 	return create_buf(initial_capacity, allocator);
 }
 
 // concatenate a number of str's this can include the buffer itself, str_buf.str for appending
-str_t _str_buf_cat(str_buf_t* buf_ptr, int n_args, ...)
+str_t _str_buf_cat(str_buf_t** buf_ptr, int n_args, ...)
 {
 	va_list va;
 	va_start(va, n_args);
@@ -47,7 +47,7 @@ str_t _str_buf_cat(str_buf_t* buf_ptr, int n_args, ...)
 	return str;
 }
 
-str_t str_buf_vcat(str_buf_t* buf_ptr, int n_args, va_list va)
+str_t str_buf_vcat(str_buf_t** buf_ptr, int n_args, va_list va)
 {
 	str_t str = {0};
 	if(buf_ptr)
@@ -55,18 +55,18 @@ str_t str_buf_vcat(str_buf_t* buf_ptr, int n_args, va_list va)
 	return str;
 }
 
-str_t str_buf_str(str_buf_t* buf_ptr)
+str_t str_buf_str(str_buf_t** buf_ptr)
 {
 	str_t str = {0};
-	if(buf_ptr)
+	if(buf_ptr && *buf_ptr)
 		str = str_of_buf(buf_ptr);
 	return str;
 }
 
-str_t str_buf_append_char(str_buf_t* buf_ptr, char c)
+str_t str_buf_append_char(str_buf_t** buf_ptr, char c)
 {
 	str_t str = {0};
-	if(buf_ptr)
+	if(buf_ptr && *buf_ptr)
 	{
 		append_char_to_buf(buf_ptr, c);
 		str = str_of_buf(buf_ptr);
@@ -75,20 +75,20 @@ str_t str_buf_append_char(str_buf_t* buf_ptr, char c)
 }
 
 // reduce allocation size to minimum possible
-str_t str_buf_shrink(str_buf_t* buf_ptr)
+str_t str_buf_shrink(str_buf_t** buf_ptr)
 {
 	str_t str = {0};
-	if(buf_ptr)
+	if(buf_ptr && *buf_ptr)
 	{
-		change_buf_capacity(buf_ptr, buf_ptr->size);
+		change_buf_capacity(buf_ptr, (*buf_ptr)->size);
 		str = str_of_buf(buf_ptr);
 	};
 	return str;
 }
 
-void str_buf_destroy(str_buf_t* buf_ptr)
+void str_buf_destroy(str_buf_t** buf_ptr)
 {
-	if(buf_ptr)
+	if(buf_ptr && *buf_ptr)
 		destroy_buf(buf_ptr);
 }
 
@@ -242,31 +242,30 @@ str_t str_pop_last_split(str_t* str_ptr, str_t delimiters)
 // Private functions
 //********************************************************************************************************
 
-static str_buf_t create_buf(size_t initial_capacity, str_allocator_t allocator)
+static str_buf_t* create_buf(size_t initial_capacity, str_allocator_t allocator)
 {
-	str_buf_t buf;
+	str_buf_t* buf;
 
-	buf.cstr = allocator.allocator(&allocator, NULL, initial_capacity+1,  __FILE__, __LINE__);
-	buf.size = 0;
-	buf.capacity = initial_capacity;
-	buf.allocator = allocator;
-
-	buf.cstr[buf.size] = 0;
+	buf = allocator.allocator(&allocator, NULL, sizeof(str_buf_t)+initial_capacity+1,  __FILE__, __LINE__);
+	buf->size = 0;
+	buf->capacity = initial_capacity;
+	buf->allocator = allocator;
+	buf->cstr[buf->size] = 0;
 
 	return buf;
 }
 
-static str_t str_of_buf(str_buf_t* buf)
+static str_t str_of_buf(str_buf_t** buf)
 {
 	str_t str;
-	str.data = buf->cstr;
-	str.size = buf->size;
+	str.data = (*buf)->cstr;
+	str.size = (*buf)->size;
 	return str;
 }
 
-static str_t buffer_vcat(str_buf_t* buf_ptr, int n_args, va_list va)
+static str_t buffer_vcat(str_buf_t** buf_ptr, int n_args, va_list va)
 {
-	str_buf_t result_buf = create_buf(buf_ptr->capacity, buf_ptr->allocator);
+	str_buf_t* result_buf = create_buf((*buf_ptr)->capacity, (*buf_ptr)->allocator);
 
 	while(n_args--)
 		append_str_to_buf(&result_buf, va_arg(va, str_t));
@@ -277,40 +276,42 @@ static str_t buffer_vcat(str_buf_t* buf_ptr, int n_args, va_list va)
 	return str_of_buf(buf_ptr);
 }
 
-static void append_str_to_buf(str_buf_t* buf_ptr, str_t str)
+static void append_str_to_buf(str_buf_t** buf_ptr, str_t str)
 {
-	if(buf_ptr->capacity < buf_ptr->size + str.size)
-		change_buf_capacity(buf_ptr, round_up_capacity(buf_ptr->size + str.size));
+	str_buf_t* buf = *buf_ptr;
+	if(buf->capacity < buf->size + str.size)
+		change_buf_capacity(&buf, round_up_capacity(buf->size + str.size));
 
-	memcpy(&buf_ptr->cstr[buf_ptr->size], str.data, str.size);
-	buf_ptr->size += str.size;
-	buf_ptr->cstr[buf_ptr->size] = 0;
+	memcpy(&buf->cstr[buf->size], str.data, str.size);
+	buf->size += str.size;
+	buf->cstr[buf->size] = 0;
+	*buf_ptr = buf;
 }
 
-static void destroy_buf(str_buf_t* buf_ptr)
+static void destroy_buf(str_buf_t** buf_ptr)
 {
-	buf_ptr->allocator.allocator(&buf_ptr->allocator, buf_ptr->cstr, 0, __FILE__, __LINE__);
-	buf_ptr->cstr = NULL;
-	buf_ptr->size = 0;
-	buf_ptr->capacity = 0;
-	buf_ptr->allocator = (str_allocator_t){.allocator=NULL, .app_data=NULL};
+	str_buf_t* buf = *buf_ptr;
+	buf->allocator.allocator(&buf->allocator, buf, 0, __FILE__, __LINE__);
+	*buf_ptr = NULL;
 }
 
-static void change_buf_capacity(str_buf_t* buf_ptr, size_t new_capacity)
+static void change_buf_capacity(str_buf_t** buf_ptr, size_t new_capacity)
 {
-	if(new_capacity < buf_ptr->size)
-		new_capacity = buf_ptr->size;
+	str_buf_t* buf = *buf_ptr;
+	if(new_capacity < buf->size)
+		new_capacity = buf->size;
 
-	if(new_capacity != buf_ptr->capacity)
+	if(new_capacity != buf->capacity)
 	{
-		buf_ptr->cstr = buf_ptr->allocator.allocator(&buf_ptr->allocator, buf_ptr->cstr, new_capacity+1, __FILE__, __LINE__);
-		buf_ptr->capacity = new_capacity;
+		buf = buf->allocator.allocator(&buf->allocator, buf, sizeof(str_buf_t)+new_capacity+1, __FILE__, __LINE__);
+		buf->capacity = new_capacity;
 	};
+	*buf_ptr = buf;
 }
 
-static void assign_str_to_buf(str_buf_t* buf_ptr, str_t str)
+static void assign_str_to_buf(str_buf_t** buf_ptr, str_t str)
 {
-	buf_ptr->size = 0;
+	(*buf_ptr)->size = 0;
 	append_str_to_buf(buf_ptr, str);
 }
 
@@ -348,13 +349,15 @@ static bool str_contains_char(str_t str, char c)
 	return found;
 }
 
-static void append_char_to_buf(str_buf_t* str_buf, char c)
+static void append_char_to_buf(str_buf_t** buf_ptr, char c)
 {
-	if(str_buf->size+1 < str_buf->capacity)
-		change_buf_capacity(str_buf, round_up_capacity(str_buf->size + 1));
-	str_buf->cstr[str_buf->size] = c;
-	str_buf->size++;
-	str_buf->cstr[str_buf->size] = 0;
+	str_buf_t* buf = *buf_ptr;
+	if(buf->size+1 < buf->capacity)
+		change_buf_capacity(&buf, round_up_capacity(buf->size + 1));
+	buf->cstr[buf->size] = c;
+	buf->size++;
+	buf->cstr[buf->size] = 0;
+	*buf_ptr = buf;
 }
 
 static size_t round_up_capacity(size_t capacity)
