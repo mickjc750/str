@@ -40,7 +40,7 @@ str_t _str_buf_cat(str_buf_t* buf_ptr, int n_args, ...)
 {
 	va_list va;
 	va_start(va, n_args);
-	str_t str = str_buf_vcat(buf_ptr, n_args, va);
+	str_t str = buffer_vcat(buf_ptr, n_args, va);
 	va_end(va);
 	return str;
 }
