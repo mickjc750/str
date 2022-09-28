@@ -5,6 +5,7 @@
 	#include <stdio.h>
 	#include <assert.h>
 	#include <limits.h>
+	#include <stdint.h>
 
 	#include "str.h"
 
@@ -12,12 +13,20 @@
 // Configurable defines
 //********************************************************************************************************
 
-	
+	#define STATIC_BUFFER_SIZE	1000
+
 //********************************************************************************************************
 // Local defines
 //********************************************************************************************************
 
 	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
+
+	struct static_buf_struct
+	{
+		void* address;
+		size_t size;
+		bool already_allocated;
+	};
 
 //********************************************************************************************************
 // Public variables
@@ -28,12 +37,14 @@
 // Private variables
 //********************************************************************************************************
 
+	static char static_buf[STATIC_BUFFER_SIZE] __attribute__ ((aligned));
 	
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
 
 	static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	static void* static_allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
 
 //********************************************************************************************************
 // Public functions
@@ -379,8 +390,60 @@ int main(int argc, const char* argv[])
 	str2 = cstr("./;");
 	DBG("Trimming \"%"PRIstr"\" from \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	str1 = str_trim(str1, str2);
-	DBG("Result = \"%"PRIstr"\"", PRIstrarg(str1));
+	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("hello", str1.data, str1.size));
+
+	DBG("** Destroying the buffer **\n\n\n");
+	str_buf_destroy(&buf);
+	assert(buf == NULL);
+
+	DBG("** Testing with an allocator that only returns an address to a single static buffer");
+	DBG("** This can be done, but str_buf_cat() must NOT be passed a str_t referencing data within the target buffer");
+	DBG("** Because it will be unable to allocate an additional temporary buffer to build the output\n");
+
+//	Create an allocator which simply returns the address of a static buffer (this could also be on the stack, static here meaning non-dynamic)
+
+//	Information used mostly for error trapping
+	struct static_buf_struct static_buf_info = (struct static_buf_struct){.address = static_buf, .size = sizeof(static_buf)};
+
+//	Assign the allocator, if no error detection is desired, the .app_data could simply be the buffer address, and the static_buf_struct above eliminated.
+	str_allocator_t str_static_allocator = (str_allocator_t){.allocator = static_allocator, .app_data = &static_buf_info};
+
+	buf = str_buf_create(INITIAL_BUF_CAPACITY, str_static_allocator);
+
+	DBG("Concatenating DDDDDDDDDD EEEEEEEEEE FFFFFFFFFF");
+	str_buf_cat(&buf, cstr("DDDDDDDDDD"), cstr("EEEEEEEEEE"), cstr("FFFFFFFFFF"));
+	assert(buf->capacity >= 30);
+	assert(buf->size == 30);
+	DBG("Result = %s\n", buf->cstr);
+	assert(!strcmp(buf->cstr, "DDDDDDDDDDEEEEEEEEEEFFFFFFFFFF"));
+
+	DBG("** Testing str_buf_append_char() **");
+	str_buf_cat(&buf, cstr(""));
+	str_buf_shrink(&buf);
+
+	chrptr = "Once upon a time there was a very smelly camel that poked it's tongue out and puffed it up.";
+	while(*chrptr)
+		str_buf_append_char(&buf, *chrptr++);
+
+	str1 = str_buf_str(&buf);
+	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
+	assert(!memcmp("Once upon a time there was a very smelly camel that poked it's tongue out and puffed it up.", str1.data, str1.size));
+
+	DBG("Current capacity = %zu - Shrinking buffer", buf->capacity);
+	str_buf_shrink(&buf);
+	DBG("Current capacity = %zu\n", buf->capacity);
+	assert(buf->capacity == strlen(buf->cstr));
+
+	DBG("** Destroying the buffer (str_buf_destroy)**\n");
+	str_buf_destroy(&buf);
+	assert(buf == NULL);
+
+	DBG("** Now we can create the buffer again (str_buf_create)**\n\n\n");
+	buf = str_buf_create(INITIAL_BUF_CAPACITY, str_static_allocator);
+	assert(buf);	
+
+	DBG("** Complete **\n");
 
 	return 0;
 }
@@ -398,3 +461,28 @@ static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free
 	return result;
 }
 
+static void* static_allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
+{
+	(void)caller_filename; (void)caller_line;
+	struct static_buf_struct* info = this_allocator->app_data;
+	intptr_t alignment_mask;
+
+	if(size)
+	{
+		//check alignment
+		alignment_mask = sizeof(void*)-1;
+		alignment_mask &= (intptr_t)info->address;
+		assert(alignment_mask == 0);
+
+		//check size
+		assert(size <= info->size);
+
+		//check we are not trying to make a new allocation (re-allocation is ok, a new allocation is not)
+		assert(ptr_to_free || !info->already_allocated);
+		info->already_allocated = true;
+	}
+	else
+		info->already_allocated = false;
+
+	return info->address;
+}
