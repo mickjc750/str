@@ -101,7 +101,7 @@ then:
 
 
 //	Buffer structure. Allocates and owns the buffer memory.
-//	Maintains null termination, so classic c style (null terminated) strings can be accessed with .cstr
+//	Maintains null termination, so classic c style (null terminated) strings can be accessed with ->cstr
 	typedef struct str_buf_t
 	{
 		size_t size;
