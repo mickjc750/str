@@ -44,7 +44,7 @@ int main(int argc, const char* argv[])
 	#define INITIAL_BUF_CAPACITY 10
 
 	str_allocator_t str_allocator = {.allocator = allocator};
-	str_buf_t buf;
+	str_buf_t* buf;
 	str_t str1, str2;
 	str_search_result_t search_result;
 
@@ -52,32 +52,32 @@ int main(int argc, const char* argv[])
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
 	buf = str_buf_create(INITIAL_BUF_CAPACITY, str_allocator);
 
-	assert(buf.cstr);
-	assert(buf.size == 0);
-	assert(buf.capacity == INITIAL_BUF_CAPACITY);
-	assert(buf.cstr[0] == 0);
+	assert(buf->cstr);
+	assert(buf->size == 0);
+	assert(buf->capacity == INITIAL_BUF_CAPACITY);
+	assert(buf->cstr[0] == 0);
 
 	DBG("Concatenating AAAAAAAAAA BBBBBBBBBB CCCCCCCCCC");
 	str_buf_cat(&buf, cstr("AAAAAAAAAA"), cstr("BBBBBBBBBB"), cstr("CCCCCCCCCC"));
-	assert(buf.capacity >= 30);
-	assert(buf.size == 30);
-	DBG("Result = %s\n", buf.cstr);
-	assert(!strcmp(buf.cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC"));
+	assert(buf->capacity >= 30);
+	assert(buf->size == 30);
+	DBG("Result = %s\n", buf->cstr);
+	assert(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC"));
 
-	DBG("Current capacity = %zu - Shrinking buffer", buf.capacity);
+	DBG("Current capacity = %zu - Shrinking buffer", buf->capacity);
 	str_buf_shrink(&buf);
-	DBG("Current capacity = %zu\n", buf.capacity);
-	assert(buf.capacity == 30);
+	DBG("Current capacity = %zu\n", buf->capacity);
+	assert(buf->capacity == 30);
 
 	DBG("Appending -AFTER to existing buffer");
 	str_buf_cat(&buf, str_buf_str(&buf), cstr("-AFTER"));
-	DBG("Result = %s\n", buf.cstr);
-	assert(!strcmp(buf.cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
+	DBG("Result = %s\n", buf->cstr);
+	assert(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	DBG("Prepending BEFORE- to existing buffer");
 	str_buf_cat(&buf, cstr("BEFORE-"), str_buf_str(&buf));
-	DBG("Result = %s\n", buf.cstr);
-	assert(!strcmp(buf.cstr, "BEFORE-AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
+	DBG("Result = %s\n", buf->cstr);
+	assert(!strcmp(buf->cstr, "BEFORE-AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	DBG("Extracting BBBBBBBBBB from center of string");
 	str1 = str_buf_str(&buf);
@@ -390,6 +390,9 @@ int main(int argc, const char* argv[])
 static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
 {
 	(void)this_allocator; (void)caller_filename; (void)caller_line;
-	return realloc(ptr_to_free, size);
+	void* result;
+	result = realloc(ptr_to_free, size);
+	assert(size==0 || result);	// You need to catch a failed allocation here.
+	return result;
 }
 

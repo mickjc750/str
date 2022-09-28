@@ -74,7 +74,10 @@
 static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
 {
 	(void)this_allocator; (void)caller_filename; (void)caller_line;
-	return realloc(ptr_to_free, size);
+	void* result;
+	result = realloc(ptr_to_free, size);
+	assert(size==0 || result);	// You need to catch a failed allocation here.
+	return result;
 }
 
 then:
@@ -101,10 +104,10 @@ then:
 //	Maintains null termination, so classic c style (null terminated) strings can be accessed with .cstr
 	typedef struct str_buf_t
 	{
-		char* cstr;
 		size_t size;
 		size_t capacity;
 		str_allocator_t allocator;
+		char cstr[];
 	} str_buf_t;
 
 //	Search result
@@ -127,29 +130,29 @@ then:
 //********************************************************************************************************
 
 //	Create a new buffer and return it.
-	str_buf_t str_buf_create(size_t initial_capacity, str_allocator_t allocator);
+	str_buf_t* str_buf_create(size_t initial_capacity, str_allocator_t allocator);
 
 /*	Concatenate one or more str_t and assign the result to the buffer.
 	Ideally should be used from the macro str_buf_cat() which performs the argument counting for you.
 	Returns a str_t of the buffer contents.
 	The returned str_t is always valid, even if the none of the arguments are valid */
-	str_t _str_buf_cat(str_buf_t* buf_ptr, int n_args, ...);
+	str_t _str_buf_cat(str_buf_t** buf_ptr, int n_args, ...);
 
 //	The non-variadic version of _str_buf_cat
-	str_t str_buf_vcat(str_buf_t* buf_ptr, int n_args, va_list va);
+	str_t str_buf_vcat(str_buf_t** buf_ptr, int n_args, va_list va);
 
 //	Return a str_t of the buffer contents
-	str_t str_buf_str(str_buf_t* buf_ptr);
+	str_t str_buf_str(str_buf_t** buf_ptr);
 
 //	Append a single character to the buffer, and return a str_t of the buffer contents
-	str_t str_buf_append_char(str_buf_t* buf_ptr, char c);
+	str_t str_buf_append_char(str_buf_t** buf_ptr, char c);
 
 //	Shrink the buffers capacity to the minimum required to hold it's contents.
 //	No other buffer operations will perform this, they can only expand the buffer.
-	str_t str_buf_shrink(str_buf_t* buf_ptr);
+	str_t str_buf_shrink(str_buf_t** buf_ptr);
 
 //	Calls the allocators deallocate() to free the buffers memory
-	void str_buf_destroy(str_buf_t* buf_ptr);
+	void str_buf_destroy(str_buf_t** buf_ptr);
 
 //	Return a str_t from a null terminated const char string.
 //	If the argument is a string literal, cstr_SL() may be used instead, to prevent traversing the string literal to measure it's length
