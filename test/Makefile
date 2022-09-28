@@ -3,18 +3,18 @@
 #
 
 # Target file name (without extension).
-TARGET = main
+TARGET = test
 
 # List C source files here. (C dependencies are automatically generated.)
 # To exclude certain files in a folder remove the $(wildcard) and 
 # list them seperated by spaces, ie src/main.c src/util.c 
-SRC = $(wildcard app/src/*.c) $(wildcard *.c)
+SRC = $(wildcard ../*.c) $(wildcard *.c)
 
 # List any extra directories to look for include files here.
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = . ./app/inc
+EXTRAINCDIRS = . ..
 
 # Object and list files directory
 #     To put .o and .lst files alongside .c files use a dot (.), do NOT make

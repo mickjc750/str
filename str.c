@@ -7,8 +7,8 @@
 // Local defines
 //********************************************************************************************************
 
-	#include <stdio.h>
-	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
+//	#include <stdio.h>
+//	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
 //********************************************************************************************************
 // Private prototypes
