@@ -101,7 +101,7 @@ then:
 //	Maintains null termination, so classic c style (null terminated) strings can be accessed with .data
 	typedef struct str_buf_t
 	{
-		char* data;
+		char* cstr;
 		size_t size;
 		size_t capacity;
 		str_allocator_t allocator;

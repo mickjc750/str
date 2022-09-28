@@ -52,17 +52,17 @@ int main(int argc, const char* argv[])
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
 	buf = str_buf_create(INITIAL_BUF_CAPACITY, str_allocator);
 
-	assert(buf.data);
+	assert(buf.cstr);
 	assert(buf.size == 0);
 	assert(buf.capacity == INITIAL_BUF_CAPACITY);
-	assert(buf.data[0] == 0);
+	assert(buf.cstr[0] == 0);
 
 	DBG("Concatenating AAAAAAAAAA BBBBBBBBBB CCCCCCCCCC");
 	str_buf_cat(&buf, cstr("AAAAAAAAAA"), cstr("BBBBBBBBBB"), cstr("CCCCCCCCCC"));
 	assert(buf.capacity >= 30);
 	assert(buf.size == 30);
-	DBG("Result = %s\n", buf.data);
-	assert(!strcmp(buf.data, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC"));
+	DBG("Result = %s\n", buf.cstr);
+	assert(!strcmp(buf.cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC"));
 
 	DBG("Current capacity = %zu - Shrinking buffer", buf.capacity);
 	str_buf_shrink(&buf);
@@ -71,13 +71,13 @@ int main(int argc, const char* argv[])
 
 	DBG("Appending -AFTER to existing buffer");
 	str_buf_cat(&buf, str_buf_str(&buf), cstr("-AFTER"));
-	DBG("Result = %s\n", buf.data);
-	assert(!strcmp(buf.data, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
+	DBG("Result = %s\n", buf.cstr);
+	assert(!strcmp(buf.cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	DBG("Prepending BEFORE- to existing buffer");
 	str_buf_cat(&buf, cstr("BEFORE-"), str_buf_str(&buf));
-	DBG("Result = %s\n", buf.data);
-	assert(!strcmp(buf.data, "BEFORE-AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
+	DBG("Result = %s\n", buf.cstr);
+	assert(!strcmp(buf.cstr, "BEFORE-AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	DBG("Extracting BBBBBBBBBB from center of string");
 	str1 = str_buf_str(&buf);

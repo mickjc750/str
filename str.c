@@ -62,7 +62,7 @@ str_t str_buf_str(str_buf_t* buf_ptr)
 
 char* str_buf_cstr(str_buf_t* buf_ptr)
 {
-	return buf_ptr->data;
+	return buf_ptr->cstr;
 }
 
 str_t str_buf_append_char(str_buf_t* buf_ptr, char c)
@@ -141,12 +141,12 @@ static str_buf_t create_buf(size_t initial_capacity, str_allocator_t allocator)
 {
 	str_buf_t buf;
 
-	buf.data = allocator.allocator(&allocator, NULL, initial_capacity+1,  __FILE__, __LINE__);
+	buf.cstr = allocator.allocator(&allocator, NULL, initial_capacity+1,  __FILE__, __LINE__);
 	buf.size = 0;
 	buf.capacity = initial_capacity;
 	buf.allocator = allocator;
 
-	buf.data[buf.size] = 0;
+	buf.cstr[buf.size] = 0;
 
 	return buf;
 }
@@ -154,7 +154,7 @@ static str_buf_t create_buf(size_t initial_capacity, str_allocator_t allocator)
 static str_t str_of_buf(str_buf_t* buf)
 {
 	str_t str;
-	str.data = buf->data;
+	str.data = buf->cstr;
 	str.size = buf->size;
 	return str;
 }
@@ -177,15 +177,15 @@ static void append_str_to_buf(str_buf_t* buf_ptr, str_t str)
 	if(buf_ptr->capacity < buf_ptr->size + str.size)
 		change_buf_capacity(buf_ptr, round_up_capacity(buf_ptr->size + str.size));
 
-	memcpy(&buf_ptr->data[buf_ptr->size], str.data, str.size);
+	memcpy(&buf_ptr->cstr[buf_ptr->size], str.data, str.size);
 	buf_ptr->size += str.size;
-	buf_ptr->data[buf_ptr->size] = 0;
+	buf_ptr->cstr[buf_ptr->size] = 0;
 }
 
 static void destroy_buf(str_buf_t* buf_ptr)
 {
-	buf_ptr->allocator.allocator(&buf_ptr->allocator, buf_ptr->data, 0, __FILE__, __LINE__);
-	buf_ptr->data = NULL;
+	buf_ptr->allocator.allocator(&buf_ptr->allocator, buf_ptr->cstr, 0, __FILE__, __LINE__);
+	buf_ptr->cstr = NULL;
 	buf_ptr->size = 0;
 	buf_ptr->capacity = 0;
 	buf_ptr->allocator = (str_allocator_t){.allocator=NULL, .app_data=NULL};
@@ -198,7 +198,7 @@ static void change_buf_capacity(str_buf_t* buf_ptr, size_t new_capacity)
 
 	if(new_capacity != buf_ptr->capacity)
 	{
-		buf_ptr->data = buf_ptr->allocator.allocator(&buf_ptr->allocator, buf_ptr->data, new_capacity+1, __FILE__, __LINE__);
+		buf_ptr->cstr = buf_ptr->allocator.allocator(&buf_ptr->allocator, buf_ptr->cstr, new_capacity+1, __FILE__, __LINE__);
 		buf_ptr->capacity = new_capacity;
 	};
 }
@@ -370,9 +370,9 @@ static void append_char_to_buf(str_buf_t* str_buf, char c)
 {
 	if(str_buf->size+1 < str_buf->capacity)
 		change_buf_capacity(str_buf, round_up_capacity(str_buf->size + 1));
-	str_buf->data[str_buf->size] = c;
+	str_buf->cstr[str_buf->size] = c;
 	str_buf->size++;
-	str_buf->data[str_buf->size] = 0;
+	str_buf->cstr[str_buf->size] = 0;
 }
 
 static size_t round_up_capacity(size_t capacity)
