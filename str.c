@@ -118,16 +118,14 @@ str_t str_sub(str_t str, int begin, int end)
 
 str_t str_trim(str_t str, str_t chars_to_trim)
 {
-	while(str_contains_char(chars_to_trim, *str.data) && str.size)
+	while(str.size && str_contains_char(chars_to_trim, *str.data))
 	{
 		str.data++;
 		str.size--;
 	};
-	while(str_contains_char(chars_to_trim, str.data[str.size]) && str.size)
-	{
-		str.data--;
+	while(str.size && str_contains_char(chars_to_trim, str.data[str.size-1]))
 		str.size--;
-	};
+
 	return str;
 }
 

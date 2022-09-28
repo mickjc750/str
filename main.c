@@ -360,9 +360,25 @@ int main(int argc, const char* argv[])
 	str1.data = NULL;
 	str1.size = 0;
 	str1 = str_buf_cat(&buf, str1);
-	DBG("Size = %zu\n", str1.size);
+	DBG("Size = %zu\n\n\n", str1.size);
 	assert(str1.size == 0);
 	assert(str1.data);
+
+	DBG("** Testing str_is_match() **");
+	str_buf_cat(&buf, cstr("Hello"));
+	assert(str_is_match(str_buf_str(&buf), cstr("Hello")));
+	str1 = cstr_SL("Test");
+	str2 = cstr("Test");
+	assert(str_is_match(str1, str2));
+	DBG("OK\n\n\n");
+
+	DBG("** Testing str_trim() **");
+	str1 = cstr("/.;/hello;./;.");
+	str2 = cstr("./;");
+	DBG("Trimming \"%"PRIstr"\" from \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
+	str1 = str_trim(str1, str2);
+	DBG("Result = \"%"PRIstr"\"", PRIstrarg(str1));
+	assert(!memcmp("hello", str1.data, str1.size));
 
 	return 0;
 }
