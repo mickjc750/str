@@ -33,8 +33,7 @@
 // Private prototypes
 //********************************************************************************************************
 
-	static void* allocate(str_allocator_t* this_allocator, size_t size, const char* caller_filename, int caller_line);
-	static void deallocate(str_allocator_t* this_allocator, void* ptr, const char* caller_filename, int caller_line);
+	static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
 
 //********************************************************************************************************
 // Public functions
@@ -44,14 +43,14 @@ int main(int argc, const char* argv[])
 {
 	#define INITIAL_BUF_CAPACITY 10
 
-	str_allocator_t allocator = {.allocate = allocate, .deallocate = deallocate};
+	str_allocator_t str_allocator = {.allocator = allocator};
 	str_buf_t buf;
 	str_t str1, str2;
 	str_search_result_t search_result;
 
 	printf("\n\n");
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
-	buf = str_buf_create(INITIAL_BUF_CAPACITY, allocator);
+	buf = str_buf_create(INITIAL_BUF_CAPACITY, str_allocator);
 
 	assert(buf.data);
 	assert(buf.size == 0);
@@ -372,15 +371,9 @@ int main(int argc, const char* argv[])
 // Private functions
 //********************************************************************************************************
 
-static void* allocate(str_allocator_t* this_allocator, size_t size, const char* caller_filename, int caller_line)
+static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
 {
 	(void)this_allocator; (void)caller_filename; (void)caller_line;
-	return malloc(size);
-}
-
-static void deallocate(str_allocator_t* this_allocator, void* ptr, const char* caller_filename, int caller_line)
-{
-	(void)this_allocator; (void)caller_filename; (void)caller_line;
-	free(ptr);
+	return realloc(ptr_to_free, size);
 }
 

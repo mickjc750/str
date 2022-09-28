@@ -141,7 +141,7 @@ static str_buf_t create_buf(size_t initial_capacity, str_allocator_t allocator)
 {
 	str_buf_t buf;
 
-	buf.data = allocator.allocate(&allocator, initial_capacity+1, __FILE__, __LINE__);
+	buf.data = allocator.allocator(&allocator, NULL, initial_capacity+1,  __FILE__, __LINE__);
 	buf.size = 0;
 	buf.capacity = initial_capacity;
 	buf.allocator = allocator;
@@ -184,26 +184,22 @@ static void append_str_to_buf(str_buf_t* buf_ptr, str_t str)
 
 static void destroy_buf(str_buf_t* buf_ptr)
 {
-	buf_ptr->allocator.deallocate(&buf_ptr->allocator, buf_ptr->data, __FILE__, __LINE__);
+	buf_ptr->allocator.allocator(&buf_ptr->allocator, buf_ptr->data, 0, __FILE__, __LINE__);
 	buf_ptr->data = NULL;
 	buf_ptr->size = 0;
 	buf_ptr->capacity = 0;
-	buf_ptr->allocator = (str_allocator_t){.allocate=NULL, .deallocate=NULL, .app_data=NULL};
+	buf_ptr->allocator = (str_allocator_t){.allocator=NULL, .app_data=NULL};
 }
 
 static void change_buf_capacity(str_buf_t* buf_ptr, size_t new_capacity)
 {
-	char* old_ptr = buf_ptr->data;
-
 	if(new_capacity < buf_ptr->size)
 		new_capacity = buf_ptr->size;
 
 	if(new_capacity != buf_ptr->capacity)
 	{
-		buf_ptr->data = buf_ptr->allocator.allocate(&buf_ptr->allocator, new_capacity+1, __FILE__, __LINE__);
+		buf_ptr->data = buf_ptr->allocator.allocator(&buf_ptr->allocator, buf_ptr->data, new_capacity+1, __FILE__, __LINE__);
 		buf_ptr->capacity = new_capacity;
-		memcpy(buf_ptr->data, old_ptr, buf_ptr->size+1);
-		buf_ptr->allocator.deallocate(&buf_ptr->allocator, old_ptr, __FILE__, __LINE__);
 	};
 }
 

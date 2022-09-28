@@ -66,29 +66,25 @@
 	#define str_buf_cat(buf_ptr, ...) _str_buf_cat(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 
 /*	Structure for providing the buffer with an allocator.
-	An example of how to do this using malloc looks like:
-	
-static void* allocate(str_allocator_t* this_allocator, size_t size, const char* caller_filename, int caller_line)
-{
-	(void)this_allocator; (void)caller_filename; (void)caller_line;
-	return malloc(size);
-}
+	When a new allocation is required, ptr_to_free will be NULL and size will be >0
+	When a re-allocation is required,  ptr_to_free will be not be NULL and size will be >0
+	When a de-allocation is required,  ptr_to_free may or may not be NULL, and size will be 0
+	stdlib's realloc handles this perfectly, example:
 
-static void deallocate(str_allocator_t* this_allocator, void* ptr, const char* caller_filename, int caller_line)
+static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
 {
 	(void)this_allocator; (void)caller_filename; (void)caller_line;
-	free(ptr);
+	return realloc(ptr_to_free, size);
 }
 
 then:
-	str_allocator_t allocator = {.allocate = allocate, .deallocate = deallocate};
+	str_allocator_t str_allocator = {.allocator = allocator};
 
 */
 	typedef struct str_allocator_t
 	{
 		void* app_data;
-		void* (*allocate)(struct str_allocator_t* this_allocator, size_t size, const char* caller_filename, int caller_line);
-		void (*deallocate)(struct str_allocator_t* this_allocator, void* ptr, const char* caller_filename, int caller_line);
+		void* (*allocator)(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
 	} str_allocator_t;
 
 
