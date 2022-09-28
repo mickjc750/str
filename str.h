@@ -98,7 +98,7 @@ then:
 
 
 //	Buffer structure. Allocates and owns the buffer memory.
-//	Maintains null termination, so classic c style (null terminated) strings can be accessed with .data
+//	Maintains null termination, so classic c style (null terminated) strings can be accessed with .cstr
 	typedef struct str_buf_t
 	{
 		char* cstr;

@@ -60,11 +60,6 @@ str_t str_buf_str(str_buf_t* buf_ptr)
 	return str_of_buf(buf_ptr);
 }
 
-char* str_buf_cstr(str_buf_t* buf_ptr)
-{
-	return buf_ptr->cstr;
-}
-
 str_t str_buf_append_char(str_buf_t* buf_ptr, char c)
 {
 	append_char_to_buf(buf_ptr, c);
@@ -95,7 +90,7 @@ bool str_is_valid(str_t str)
 
 bool str_is_match(str_t str1, str_t str2)
 {
-	return (str1.size == str2.size) && !memcmp(str1.data, str2.data, str1.size);
+	return (str1.size == str2.size) && (str1.data == str2.data || !memcmp(str1.data, str2.data, str1.size));
 }
 
 bool str_contains(str_t haystack, str_t needle)
