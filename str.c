@@ -40,37 +40,56 @@ str_t _str_buf_cat(str_buf_t* buf_ptr, int n_args, ...)
 {
 	va_list va;
 	va_start(va, n_args);
-	str_t str = str_buf_vcat(buf_ptr, n_args, va);
+	str_t str = {0};
+	if(buf_ptr)
+		str = buffer_vcat(buf_ptr, n_args, va);
 	va_end(va);
 	return str;
 }
 
 str_t str_buf_vcat(str_buf_t* buf_ptr, int n_args, va_list va)
 {
-	return buffer_vcat(buf_ptr, n_args, va);
+	str_t str = {0};
+	if(buf_ptr)
+		str = buffer_vcat(buf_ptr, n_args, va);
+	return str;
 }
 
 str_t str_buf_str(str_buf_t* buf_ptr)
 {
-	return str_of_buf(buf_ptr);
+	str_t str = {0};
+	if(buf_ptr)
+		str = str_of_buf(buf_ptr);
+	return str;
 }
 
 str_t str_buf_append_char(str_buf_t* buf_ptr, char c)
 {
-	append_char_to_buf(buf_ptr, c);
-	return str_of_buf(buf_ptr);
+	str_t str = {0};
+	if(buf_ptr)
+	{
+		append_char_to_buf(buf_ptr, c);
+		str = str_of_buf(buf_ptr);
+	};
+	return str;
 }
 
 // reduce allocation size to minimum possible
 str_t str_buf_shrink(str_buf_t* buf_ptr)
 {
-	change_buf_capacity(buf_ptr, buf_ptr->size);
-	return str_of_buf(buf_ptr);
+	str_t str = {0};
+	if(buf_ptr)
+	{
+		change_buf_capacity(buf_ptr, buf_ptr->size);
+		str = str_of_buf(buf_ptr);
+	};
+	return str;
 }
 
 void str_buf_destroy(str_buf_t* buf_ptr)
 {
-	destroy_buf(buf_ptr);
+	if(buf_ptr)
+		destroy_buf(buf_ptr);
 }
 
 str_t cstr(const char* c_str)

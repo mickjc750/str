@@ -61,7 +61,7 @@
 /*	Use str_buf_cat to concatenate an arbitrary number of strings into a buffer.
 	The buffers contents itself may be used as an argument.
 	This facilitates appending, prepending, or even inserting by using str_sub().
-	A string representing the result is returned. The string returned is always valid.
+	A string representing the result is returned. The string returned is always valid providing buf_ptr is not NULL.
 	Example to append to a buffer:  str_buf_cat(&mybuffer, str_buf_str(&mybuffer), str_to_append) */
 	#define str_buf_cat(buf_ptr, ...) _str_buf_cat(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 
