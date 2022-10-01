@@ -6,7 +6,6 @@
 	#include <stdarg.h>
 	#include <string.h>
 
-	#include "membound.h"
 	#include "str.h"
 
 //********************************************************************************************************
@@ -95,7 +94,6 @@ then:
 //	Maintains null termination, so classic c style (null terminated) strings can be accessed with ->cstr
 	typedef struct strbuf_t
 	{
-		struct membound_struct mb;
 		size_t size;
 		size_t capacity;
 		str_allocator_t allocator;
