@@ -466,6 +466,54 @@ int main(int argc, const char* argv[])
 
 	DBG("** OK **\n\n\n");
 
+	DBG("** Testing edge cases for str_sub() **\n");
+
+	str1 = str_sub(cstr("X"), 0, 0);	//return a valid string of length 0 within the buffer space
+	assert(str_is_valid(str1));
+	assert(str1.size == 0);
+	assert(str1.data[0] == 'X');
+
+	str1 = str_sub(cstr("X"), -1, -1);	//return a valid string of length 0 within the buffer space
+	assert(str_is_valid(str1));
+	assert(str1.size == 0);
+	assert(str1.data[0] == 'X');
+
+	str1 = str_sub(cstr("X"), 0, -1);	//return a valid string of length 0 within the buffer space
+	assert(str_is_valid(str1));
+	assert(str1.size == 0);
+	assert(str1.data[0] == 'X');
+
+	str1 = str_sub(cstr("X"), -1, 0);	//return a valid string of length 0 within the buffer space
+	assert(str_is_valid(str1));
+	assert(str1.size == 0);
+	assert(str1.data[0] == 'X');
+
+	str1 = str_sub(cstr("X"), 1, 0);	//return an invalid string if end is before beginning
+	assert(!str_is_valid(str1));
+	assert(str1.size == 0);
+
+	str1 = str_sub(cstr("X"), 1, -1);	//return an invalid string if end is before beginning
+	assert(!str_is_valid(str1));
+	assert(str1.size == 0);
+
+	str1 = str_sub(cstr(""), 0, 0);		//return a valid string of length 0
+	assert(str_is_valid(str1));
+	assert(str1.size == 0);
+
+	str1 = str_sub(cstr(""), -1, -1);		//return a valid string of length 0
+	assert(str_is_valid(str1));
+	assert(str1.size == 0);
+
+	str1 = str_sub(cstr(""), -1, 0);		//return a valid string of length 0
+	assert(str_is_valid(str1));
+	assert(str1.size == 0);
+
+	str1 = str_sub(cstr(""), 0, -1);		//return a valid string of length 0
+	assert(str_is_valid(str1));
+	assert(str1.size == 0);
+
+	DBG("** OK **\n\n\n");
+
 	DBG("** Testing number conversions **\n");
 
 	tmpll = str_to_ll(cstr("  -289765138"));

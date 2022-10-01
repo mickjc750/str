@@ -68,15 +68,19 @@ str_t str_sub(str_t str, int begin, int end)
 			begin = str.size + begin;
 		if(end < 0)
 			end = str.size + end;
+		
+		if(begin <= end && begin < str.size && end >= 0)
+		{
+			if(begin < 0)
+				begin = 0;
+			if(end > str.size)
+				end = str.size;
 
-		if(begin > str.size)		//begin is inclusive, so must be < size
-			begin = str.size-1;
-		if(end > str.size)			//end is non-inclusive, so must be <= size
-			end = str.size;
-
-		result.size = end-begin;
-		if(begin < str.size)
+			result.size = end-begin;
 			result.data = &str.data[begin];
+		}
+		else
+			result.data = NULL;
 	};
 
 	return result;
@@ -256,6 +260,10 @@ unsigned long long str_to_ull(str_t str)
 	return result;
 }
 
+//********************************************************************************************************
+// Private functions
+//********************************************************************************************************
+
 static unsigned long long interpret_hex(str_t str)
 {
 	unsigned long long result = 0;
@@ -300,10 +308,6 @@ static unsigned long long interpret_dec(str_t str)
 
 	return result;
 }
-
-//********************************************************************************************************
-// Private functions
-//********************************************************************************************************
 
 static bool contains_char(str_t str, char c)
 {
