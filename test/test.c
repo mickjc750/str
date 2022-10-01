@@ -7,6 +7,7 @@
 	#include <limits.h>
 	#include <stdint.h>
 
+	#include "strbuf.h"
 	#include "str.h"
 
 //********************************************************************************************************
@@ -55,14 +56,14 @@ int main(int argc, const char* argv[])
 	#define INITIAL_BUF_CAPACITY 16
 
 	str_allocator_t str_allocator = {.allocator = allocator};
-	str_buf_t* buf;
+	strbuf_t* buf;
 	str_t str1, str2;
 	str_search_result_t search_result;
 	const char* chrptr;
 
 	printf("\n\n");
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
-	buf = str_buf_create(INITIAL_BUF_CAPACITY, str_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_allocator);
 
 	assert(buf->cstr);
 	assert(buf->size == 0);
@@ -70,38 +71,38 @@ int main(int argc, const char* argv[])
 	assert(buf->cstr[0] == 0);
 
 	DBG("Concatenating AAAAAAAAAA BBBBBBBBBB CCCCCCCCCC");
-	str_buf_cat(&buf, cstr("AAAAAAAAAA"), cstr("BBBBBBBBBB"), cstr("CCCCCCCCCC"));
+	strbuf_cat(&buf, cstr("AAAAAAAAAA"), cstr("BBBBBBBBBB"), cstr("CCCCCCCCCC"));
 	assert(buf->capacity >= 30);
 	assert(buf->size == 30);
 	DBG("Result = %s\n", buf->cstr);
 	assert(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC"));
 
 	DBG("Appending -AFTER to existing buffer");
-	str_buf_cat(&buf, str_buf_str(&buf), cstr("-AFTER"));
+	strbuf_cat(&buf, strbuf_str(&buf), cstr("-AFTER"));
 	DBG("Result = %s\n", buf->cstr);
 	assert(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	DBG("Prepending BEFORE- to existing buffer");
-	str_buf_cat(&buf, cstr("BEFORE-"), str_buf_str(&buf));
+	strbuf_cat(&buf, cstr("BEFORE-"), strbuf_str(&buf));
 	DBG("Result = %s\n", buf->cstr);
 	assert(!strcmp(buf->cstr, "BEFORE-AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	DBG("Extracting BBBBBBBBBB from center of string");
-	str1 = str_buf_str(&buf);
+	str1 = strbuf_str(&buf);
 	str1 = str_sub(str1, 17, 27);
 	DBG("Result = %"PRIstr"\n", PRIstrarg(str1));
 	assert(str1.size == 10);
 	assert(!memcmp("BBBBBBBBBB", str1.data, str1.size));
 
 	DBG("Extracting BEFORE from start of string");
-	str1 = str_buf_str(&buf);
+	str1 = strbuf_str(&buf);
 	str1 = str_sub(str1, 0, 6);
 	DBG("Result = %"PRIstr"\n", PRIstrarg(str1));
 	assert(str1.size == 6);
 	assert(!memcmp("BEFORE", str1.data, str1.size));
 
 	DBG("Extracting AFTER from end of string");
-	str1 = str_buf_str(&buf);
+	str1 = strbuf_str(&buf);
 	str1 = str_sub(str1, -5, INT_MAX);
 	DBG("Result = %"PRIstr"\n\n\n", PRIstrarg(str1));
 	assert(str1.size == 5);
@@ -109,8 +110,8 @@ int main(int argc, const char* argv[])
 
 	DBG("**Testing str_pop_first_split()**\n");
 
-	str_buf_cat(&buf, cstr("123/456/789"));
-	str2 = str_buf_str(&buf);
+	strbuf_cat(&buf, cstr("123/456/789"));
+	str2 = strbuf_str(&buf);
 	DBG("Splitting %"PRIstr, PRIstrarg(str2));
 	
 	str1 = str_pop_first_split(&str2, cstr("/"));
@@ -121,13 +122,13 @@ int main(int argc, const char* argv[])
 	assert(!memcmp("456", str1.data, str1.size));
 	assert(!memcmp("789", str2.data, str2.size));
 
-	str1 = str_buf_str(&buf);
+	str1 = strbuf_str(&buf);
 	DBG("Meanwhile, the buffer remains unchanged! %"PRIstr"\n\n\n", PRIstrarg(str1));
 
 	DBG("**Testing edge cases for str_pop_first_split()**\n");
 
-	str_buf_cat(&buf, cstr("/456/789/"));
-	str2 = str_buf_str(&buf);
+	strbuf_cat(&buf, cstr("/456/789/"));
+	str2 = strbuf_str(&buf);
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
 	str1 = str_pop_first_split(&str2, cstr("/"));
@@ -161,8 +162,8 @@ int main(int argc, const char* argv[])
 	assert(str2.size == 0);
 	assert(str2.data);
 
-	str_buf_cat(&buf, cstr("no-delimiters"));
-	str2 = str_buf_str(&buf);
+	strbuf_cat(&buf, cstr("no-delimiters"));
+	str2 = strbuf_str(&buf);
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
 	str1 = str_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n\n\n", PRIstrarg(str1), PRIstrarg(str2));
@@ -173,8 +174,8 @@ int main(int argc, const char* argv[])
 
 	DBG("**Testing str_pop_last_split()**\n");
 
-	str_buf_cat(&buf, cstr("123/456/789"));
-	str2 = str_buf_str(&buf);
+	strbuf_cat(&buf, cstr("123/456/789"));
+	str2 = strbuf_str(&buf);
 	DBG("Splitting %"PRIstr, PRIstrarg(str2));
 	
 	str1 = str_pop_last_split(&str2, cstr("/"));
@@ -194,8 +195,8 @@ int main(int argc, const char* argv[])
 
 	DBG("**Testing edge cases for str_pop_last_split()**\n");
 
-	str_buf_cat(&buf, cstr("/456/789/"));
-	str2 = str_buf_str(&buf);
+	strbuf_cat(&buf, cstr("/456/789/"));
+	str2 = strbuf_str(&buf);
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
 	str1 = str_pop_last_split(&str2, cstr("/"));
@@ -351,35 +352,35 @@ int main(int argc, const char* argv[])
 	assert(str_is_valid(str1));
 	DBG("str_is_valid() works\n\n");
 
-	DBG("** Testing str_buf_append_char() **");
-	str_buf_cat(&buf, cstr(""));
-	str_buf_shrink(&buf);
+	DBG("** Testing strbuf_append_char() **");
+	strbuf_cat(&buf, cstr(""));
+	strbuf_shrink(&buf);
 
 	chrptr = "THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG. CONGRATULATIONS, YOUR TYPEWRITER WORKS!";
 	while(*chrptr)
-		str_buf_append_char(&buf, *chrptr++);
+		strbuf_append_char(&buf, *chrptr++);
 
-	str1 = str_buf_str(&buf);
+	str1 = strbuf_str(&buf);
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG. CONGRATULATIONS, YOUR TYPEWRITER WORKS!", str1.data, str1.size));
 
 	DBG("Current capacity = %zu - Shrinking buffer", buf->capacity);
-	str_buf_shrink(&buf);
+	strbuf_shrink(&buf);
 	DBG("Current capacity = %zu\n", buf->capacity);
 	assert(buf->capacity == strlen(buf->cstr));
 
-	DBG("** Testing str_buf_cat() with a single invalid str **");
-	DBG("str_buf_cat() should always return a valid string");
+	DBG("** Testing strbuf_cat() with a single invalid str **");
+	DBG("strbuf_cat() should always return a valid string");
 	str1.data = NULL;
 	str1.size = 0;
-	str1 = str_buf_cat(&buf, str1);
+	str1 = strbuf_cat(&buf, str1);
 	DBG("Size = %zu\n\n\n", str1.size);
 	assert(str1.size == 0);
 	assert(str1.data);
 
 	DBG("** Testing str_is_match() **");
-	str_buf_cat(&buf, cstr("Hello"));
-	assert(str_is_match(str_buf_str(&buf), cstr("Hello")));
+	strbuf_cat(&buf, cstr("Hello"));
+	assert(str_is_match(strbuf_str(&buf), cstr("Hello")));
 	str1 = cstr_SL("Test");
 	str2 = cstr("Test");
 	assert(str_is_match(str1, str2));
@@ -394,11 +395,11 @@ int main(int argc, const char* argv[])
 	assert(!memcmp("hello", str1.data, str1.size));
 
 	DBG("** Destroying the buffer **\n\n\n");
-	str_buf_destroy(&buf);
+	strbuf_destroy(&buf);
 	assert(buf == NULL);
 
 	DBG("** Testing with an allocator that only returns an address to a single static buffer");
-	DBG("** This can be done, but str_buf_cat() must NOT be passed a str_t referencing data within the target buffer");
+	DBG("** This can be done, but strbuf_cat() must NOT be passed a str_t referencing data within the target buffer");
 	DBG("** Because it will be unable to allocate an additional temporary buffer to build the output\n");
 
 //	Create an allocator which simply returns the address of a static buffer (this could also be on the stack, static here meaning non-dynamic)
@@ -409,38 +410,38 @@ int main(int argc, const char* argv[])
 //	Assign the allocator, if no error detection is desired, the .app_data could simply be the buffer address, and the static_buf_struct above eliminated.
 	str_allocator_t str_static_allocator = (str_allocator_t){.allocator = static_allocator, .app_data = &static_buf_info};
 
-	buf = str_buf_create(INITIAL_BUF_CAPACITY, str_static_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_static_allocator);
 
 	DBG("Concatenating DDDDDDDDDD EEEEEEEEEE FFFFFFFFFF");
-	str_buf_cat(&buf, cstr("DDDDDDDDDD"), cstr("EEEEEEEEEE"), cstr("FFFFFFFFFF"));
+	strbuf_cat(&buf, cstr("DDDDDDDDDD"), cstr("EEEEEEEEEE"), cstr("FFFFFFFFFF"));
 	assert(buf->capacity >= 30);
 	assert(buf->size == 30);
 	DBG("Result = %s\n", buf->cstr);
 	assert(!strcmp(buf->cstr, "DDDDDDDDDDEEEEEEEEEEFFFFFFFFFF"));
 
-	DBG("** Testing str_buf_append_char() **");
-	str_buf_cat(&buf, cstr(""));
-	str_buf_shrink(&buf);
+	DBG("** Testing strbuf_append_char() **");
+	strbuf_cat(&buf, cstr(""));
+	strbuf_shrink(&buf);
 
 	chrptr = "Once upon a time there was a very smelly camel that poked it's tongue out and puffed it up.";
 	while(*chrptr)
-		str_buf_append_char(&buf, *chrptr++);
+		strbuf_append_char(&buf, *chrptr++);
 
-	str1 = str_buf_str(&buf);
+	str1 = strbuf_str(&buf);
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("Once upon a time there was a very smelly camel that poked it's tongue out and puffed it up.", str1.data, str1.size));
 
 	DBG("Current capacity = %zu - Shrinking buffer", buf->capacity);
-	str_buf_shrink(&buf);
+	strbuf_shrink(&buf);
 	DBG("Current capacity = %zu\n", buf->capacity);
 	assert(buf->capacity == strlen(buf->cstr));
 
-	DBG("** Destroying the buffer (str_buf_destroy)**\n");
-	str_buf_destroy(&buf);
+	DBG("** Destroying the buffer (strbuf_destroy)**\n");
+	strbuf_destroy(&buf);
 	assert(buf == NULL);
 
-	DBG("** Now we can create the buffer again (str_buf_create)**\n\n\n");
-	buf = str_buf_create(INITIAL_BUF_CAPACITY, str_static_allocator);
+	DBG("** Now we can create the buffer again (strbuf_create)**\n\n\n");
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_static_allocator);
 	assert(buf);	
 
 	DBG("** Complete **\n");

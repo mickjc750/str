@@ -14,84 +14,11 @@
 // Private prototypes
 //********************************************************************************************************
 
-	static str_buf_t* create_buf(size_t initial_capacity, str_allocator_t allocator);
-	static str_t buffer_vcat(str_buf_t** buf_ptr, int n_args, va_list va);
-	static void append_str_to_buf(str_buf_t** buf_ptr, str_t str);
-	static void destroy_buf(str_buf_t** buf_ptr);
-	static void change_buf_capacity(str_buf_t** buf_ptr, size_t new_capacity);
-	static void assign_str_to_buf(str_buf_t** buf_ptr, str_t str);
-	static void append_char_to_buf(str_buf_t** str_buf, char c);
-	static str_search_result_t find_first_needle(str_t haystack, str_t needle);
-	static bool str_contains_char(str_t str, char c);
-	static size_t round_up_capacity(size_t capacity);
-	static str_t str_of_buf(str_buf_t* buf);
-	static bool buf_contains_str(str_buf_t* buf, str_t str);
+	static bool contains_char(str_t str, char c);
 
 //********************************************************************************************************
 // Public functions
 //********************************************************************************************************
-
-str_buf_t* str_buf_create(size_t initial_capacity, str_allocator_t allocator)
-{
-	return create_buf(initial_capacity, allocator);
-}
-
-// concatenate a number of str's this can include the buffer itself, str_buf.str for appending
-str_t _str_buf_cat(str_buf_t** buf_ptr, int n_args, ...)
-{
-	va_list va;
-	va_start(va, n_args);
-	str_t str = {0};
-	if(buf_ptr)
-		str = buffer_vcat(buf_ptr, n_args, va);
-	va_end(va);
-	return str;
-}
-
-str_t str_buf_vcat(str_buf_t** buf_ptr, int n_args, va_list va)
-{
-	str_t str = {0};
-	if(buf_ptr)
-		str = buffer_vcat(buf_ptr, n_args, va);
-	return str;
-}
-
-str_t str_buf_str(str_buf_t** buf_ptr)
-{
-	str_t str = {0};
-	if(buf_ptr && *buf_ptr)
-		str = str_of_buf(*buf_ptr);
-	return str;
-}
-
-str_t str_buf_append_char(str_buf_t** buf_ptr, char c)
-{
-	str_t str = {0};
-	if(buf_ptr && *buf_ptr)
-	{
-		append_char_to_buf(buf_ptr, c);
-		str = str_of_buf(*buf_ptr);
-	};
-	return str;
-}
-
-// reduce allocation size to the minimum possible
-str_t str_buf_shrink(str_buf_t** buf_ptr)
-{
-	str_t str = {0};
-	if(buf_ptr && *buf_ptr)
-	{
-		change_buf_capacity(buf_ptr, (*buf_ptr)->size);
-		str = str_of_buf(*buf_ptr);
-	};
-	return str;
-}
-
-void str_buf_destroy(str_buf_t** buf_ptr)
-{
-	if(buf_ptr && *buf_ptr)
-		destroy_buf(buf_ptr);
-}
 
 str_t cstr(const char* c_str)
 {
@@ -110,7 +37,7 @@ bool str_is_match(str_t str1, str_t str2)
 
 bool str_contains(str_t haystack, str_t needle)
 {
-	return find_first_needle(haystack, needle).found;
+	return str_find_first(haystack, needle).found;
 }
 
 str_t str_sub(str_t str, int begin, int end)
@@ -138,12 +65,12 @@ str_t str_sub(str_t str, int begin, int end)
 
 str_t str_trim(str_t str, str_t chars_to_trim)
 {
-	while(str.size && str_contains_char(chars_to_trim, *str.data))
+	while(str.size && contains_char(chars_to_trim, *str.data))
 	{
 		str.data++;
 		str.size--;
 	};
-	while(str.size && str_contains_char(chars_to_trim, str.data[str.size-1]))
+	while(str.size && contains_char(chars_to_trim, str.data[str.size-1]))
 		str.size--;
 
 	return str;
@@ -151,7 +78,23 @@ str_t str_trim(str_t str, str_t chars_to_trim)
 
 str_search_result_t str_find_first(str_t haystack, str_t needle)
 {
-	return find_first_needle(haystack, needle);
+	str_search_result_t result = (str_search_result_t){.found=false, .index=0};
+
+	const char* remaining_hay = haystack.data;
+
+	if(haystack.data && needle.data)
+	{
+		while((&haystack.data[haystack.size] - remaining_hay >= needle.size) && !result.found)
+		{
+			result.found = !memcmp(remaining_hay, needle.data, needle.size);
+			remaining_hay += !result.found;
+		};
+	};
+
+	if(result.found)
+		result.index = remaining_hay - haystack.data;
+
+	return result;
 }
 
 str_search_result_t str_find_last(str_t haystack, str_t needle)
@@ -186,7 +129,7 @@ str_t str_pop_first_split(str_t* str_ptr, str_t delimiters)
 		// trt to find the delimiter
 		while(ptr != &str_ptr->data[str_ptr->size] && !found)
 		{
-			found = str_contains_char(delimiters, *ptr);
+			found = contains_char(delimiters, *ptr);
 			ptr += !found;
 		};
 	};
@@ -219,7 +162,7 @@ str_t str_pop_last_split(str_t* str_ptr, str_t delimiters)
 		ptr = &str_ptr->data[str_ptr->size-1];
 		while(ptr != str_ptr->data-1 && !found)
 		{
-			found = str_contains_char(delimiters, *ptr);
+			found = contains_char(delimiters, *ptr);
 			ptr -= !found;
 		};
 	};
@@ -243,132 +186,7 @@ str_t str_pop_last_split(str_t* str_ptr, str_t delimiters)
 // Private functions
 //********************************************************************************************************
 
-static str_buf_t* create_buf(size_t initial_capacity, str_allocator_t allocator)
-{
-	str_buf_t* buf;
-
-	initial_capacity = round_up_capacity(initial_capacity);
-
-	buf = allocator.allocator(&allocator, NULL, sizeof(str_buf_t)+initial_capacity+1,  __FILE__, __LINE__);
-	buf->size = 0;
-	buf->capacity = initial_capacity;
-	buf->allocator = allocator;
-	buf->cstr[buf->size] = 0;
-
-	return buf;
-}
-
-static str_t str_of_buf(str_buf_t* buf)
-{
-	str_t str;
-	str.data = buf->cstr;
-	str.size = buf->size;
-	return str;
-}
-
-static str_t buffer_vcat(str_buf_t** buf_ptr, int n_args, va_list va)
-{
-	str_t 	str_array[n_args];
-	size_t 	size_needed = 0;
-	bool	tmp_buf_needed = false;
-	int 	i = 0;
-	str_buf_t* dst_buf = *buf_ptr;
-	str_buf_t* build_buf;
-
-	while(i != n_args)
-	{
-		str_array[i] = va_arg(va, str_t);
-		size_needed += str_array[i].size;
-		tmp_buf_needed |= buf_contains_str(dst_buf, str_array[i]);
-		i++;
-	};
-
-	if(tmp_buf_needed)
-		build_buf = create_buf(size_needed, dst_buf->allocator);
-	else
-	{
-		if(dst_buf->capacity < size_needed)
-			change_buf_capacity(&dst_buf, round_up_capacity(size_needed));
-		build_buf = dst_buf;
-		build_buf->size = 0;
-	};
-
-	i = 0;
-	while(i != n_args)
-		append_str_to_buf(&build_buf, str_array[i++]);
-
-	if(tmp_buf_needed)
-	{
-		assign_str_to_buf(&dst_buf, str_of_buf(build_buf));
-		destroy_buf(&build_buf);
-	};
-	*buf_ptr = dst_buf;
-
-	return str_of_buf(dst_buf);
-}
-
-static void append_str_to_buf(str_buf_t** buf_ptr, str_t str)
-{
-	str_buf_t* buf = *buf_ptr;
-	if(buf->capacity < buf->size + str.size)
-		change_buf_capacity(&buf, round_up_capacity(buf->size + str.size));
-
-	memcpy(&buf->cstr[buf->size], str.data, str.size);
-	buf->size += str.size;
-	buf->cstr[buf->size] = 0;
-	*buf_ptr = buf;
-}
-
-static void destroy_buf(str_buf_t** buf_ptr)
-{
-	str_buf_t* buf = *buf_ptr;
-	buf->allocator.allocator(&buf->allocator, buf, 0, __FILE__, __LINE__);
-	*buf_ptr = NULL;
-}
-
-static void change_buf_capacity(str_buf_t** buf_ptr, size_t new_capacity)
-{
-	str_buf_t* buf = *buf_ptr;
-
-	if(new_capacity < buf->size)
-		new_capacity = buf->size;
-
-	if(new_capacity != buf->capacity)
-	{
-		buf = buf->allocator.allocator(&buf->allocator, buf, sizeof(str_buf_t)+new_capacity+1, __FILE__, __LINE__);
-		buf->capacity = new_capacity;
-	};
-	*buf_ptr = buf;
-}
-
-static void assign_str_to_buf(str_buf_t** buf_ptr, str_t str)
-{
-	(*buf_ptr)->size = 0;
-	append_str_to_buf(buf_ptr, str);
-}
-
-static str_search_result_t find_first_needle(str_t haystack, str_t needle)
-{
-	str_search_result_t result = (str_search_result_t){.found=false, .index=0};
-
-	const char* remaining_hay = haystack.data;
-
-	if(haystack.data && needle.data)
-	{
-		while((&haystack.data[haystack.size] - remaining_hay >= needle.size) && !result.found)
-		{
-			result.found = !memcmp(remaining_hay, needle.data, needle.size);
-			remaining_hay += !result.found;
-		};
-	};
-
-	if(result.found)
-		result.index = remaining_hay - haystack.data;
-
-	return result;
-}
-
-static bool str_contains_char(str_t str, char c)
+static bool contains_char(str_t str, char c)
 {
 	bool found = false;
 	const char* ptr = str.data;
@@ -379,29 +197,4 @@ static bool str_contains_char(str_t str, char c)
 	};
 
 	return found;
-}
-
-static void append_char_to_buf(str_buf_t** buf_ptr, char c)
-{
-	str_buf_t* buf = *buf_ptr;
-
-	if(buf->size+1 > buf->capacity)
-		change_buf_capacity(&buf, round_up_capacity(buf->size + 1));
-
-	buf->cstr[buf->size] = c;
-	buf->size++;
-	buf->cstr[buf->size] = 0;
-	*buf_ptr = buf;
-}
-
-static size_t round_up_capacity(size_t capacity)
-{
-	if(capacity % STR_CAPACITY_GROW_STEP)
-		capacity = (capacity + STR_CAPACITY_GROW_STEP) - (capacity % STR_CAPACITY_GROW_STEP);
-	return capacity;
-}
-
-static bool buf_contains_str(str_buf_t* buf, str_t str)
-{
-	return &buf->cstr[0] <= str.data && str.data < &buf->cstr[buf->size];
 }
