@@ -28,9 +28,9 @@ str_t cstr(const char* c_str)
 char* str_to_cstr(char* dst, size_t dst_size, str_t str)
 {
 	size_t copy_size;
-	if(dst_size && *dst)
+	if(dst_size && dst)
 	{
-		copy_size = (dst_size-1) < str.size ? dst_size:str.size;
+		copy_size = (dst_size-1) < str.size ? (dst_size-1):str.size;
 		memcpy(dst, str.data, copy_size);
 		dst[copy_size] = 0;
 	};

@@ -444,6 +444,26 @@ int main(int argc, const char* argv[])
 	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_static_allocator);
 	assert(buf);	
 
+	DBG("** Testing various edge cases of str_to_cstr() **\n");
+	static_buf[0] = 0x7F;
+
+	str_to_cstr(static_buf, 0, cstr_SL("string"));
+	assert(static_buf[0] == 0x7F);
+
+	str_to_cstr(static_buf, 1, cstr_SL("string"));
+	assert(static_buf[0] == 0);
+
+	str_to_cstr(static_buf, 4, cstr_SL("string"));
+	assert(!memcmp(static_buf, "str", 4));
+
+	str_to_cstr(static_buf, 4, cstr_SL("str"));
+	assert(!memcmp(static_buf, "str", 4));
+
+	str_to_cstr(static_buf, 100, cstr_SL("string"));
+	assert(!memcmp(static_buf, "string", sizeof("string")));
+
+	DBG("** OK **\n\n\n");
+
 	DBG("** Complete **\n");
 
 	return 0;
