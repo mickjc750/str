@@ -90,5 +90,17 @@
 //	Convert number to unsigned long long
 	unsigned long long str_to_ull(str_t str);
 
+//	Other standard sizes just cast the return value
+	#define str_to_int(str) 		((int)str_to_ll(str))
+	#define str_to_int8_t(str) 		((int8_t)str_to_ll(str))
+	#define str_to_int16_t(str) 	((int16_t)str_to_ll(str))
+	#define str_to_int32_t(str) 	((int32_t)str_to_ll(str))
+	#define str_to_int64_t(str) 	((int64_t)str_to_ll(str))
+	#define str_to_unsigned(str)	((unsigned)str_to_ull(str))
+	#define str_to_uint8_t(str) 	((uint8_t)str_to_ull(str))
+	#define str_to_uint16_t(str) 	((uint16_t)str_to_ull(str))
+	#define str_to_uint32_t(str) 	((uint32_t)str_to_ull(str))
+	#define str_to_uint64_t(str) 	((uint64_t)str_to_ull(str))
+
 #endif
 
