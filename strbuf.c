@@ -3,7 +3,6 @@
 	#include <ctype.h>
 	#include "str.h"
 	#include "strbuf.h"
-	#include "membound.h"
 
 //********************************************************************************************************
 // Local defines
@@ -196,10 +195,8 @@ static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str)
 	if(buf->capacity < buf->size + str.size)
 		change_buf_capacity(&buf, round_up_capacity(buf->size + str.size));
 
-	struct membound_struct mb = MEMBOUND_SIZE(buf->cstr, buf->capacity+1);
-
 	if(&buf->cstr[index+str.size] !=  &buf->cstr[index])
-		memmove_mb(&mb, &buf->cstr[index+str.size], &buf->cstr[index], buf->size-index);
+		memmove(&buf->cstr[index+str.size], &buf->cstr[index], buf->size-index);
 
 	buf->size += str.size;
 	memcpy(&buf->cstr[index], str.data, str.size);
