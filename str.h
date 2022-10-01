@@ -84,4 +84,11 @@
 	If no delimeter is found, the returned string is invalid, and should be tested with str_is_valid() */
 	str_t str_pop_last_split(str_t* str_ptr, str_t delimiters);
 
+//	Convert number to long long
+	long long str_to_ll(str_t str);
+
+//	Convert number to unsigned long long
+	unsigned long long str_to_ull(str_t str);
+
 #endif
+

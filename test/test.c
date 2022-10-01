@@ -60,6 +60,8 @@ int main(int argc, const char* argv[])
 	str_t str1, str2;
 	str_search_result_t search_result;
 	const char* chrptr;
+	unsigned long long tmpull;
+	long long tmpll;
 
 	printf("\n\n");
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
@@ -463,6 +465,29 @@ int main(int argc, const char* argv[])
 	assert(!memcmp(static_buf, "string", sizeof("string")));
 
 	DBG("** OK **\n\n\n");
+
+	DBG("** Testing number conversions **\n");
+
+	tmpll = str_to_ll(cstr("  -289765138"));
+	assert(tmpll == -289765138);
+
+	tmpll = str_to_ll(cstr("-289765138  "));
+	assert(tmpll == -289765138);
+
+	tmpll = str_to_ll(cstr("  289765138"));
+	assert(tmpll == 289765138);
+
+	tmpll = str_to_ll(cstr("289765138  "));
+	assert(tmpll == 289765138);
+
+	tmpull = str_to_ull(cstr("0xFf715cC  "));
+	assert(tmpull == 0xFF715CC);
+
+	tmpull = str_to_ull(cstr("  0XFf715cC"));
+	assert(tmpull == 0xFF715CC);
+
+	tmpull = str_to_ull(cstr("0b110011010111"));
+	assert(tmpull == 0b110011010111);
 
 	DBG("** Complete **\n");
 

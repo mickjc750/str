@@ -1,6 +1,8 @@
 /*
 */
 
+	#include <limits.h>
+	#include <ctype.h>
 	#include "str.h"
 
 //********************************************************************************************************
@@ -15,6 +17,10 @@
 //********************************************************************************************************
 
 	static bool contains_char(str_t str, char c);
+
+	static unsigned long long interpret_hex(str_t str);
+	static unsigned long long interpret_bin(str_t str);
+	static unsigned long long interpret_dec(str_t str);
 
 //********************************************************************************************************
 // Public functions
@@ -63,13 +69,14 @@ str_t str_sub(str_t str, int begin, int end)
 		if(end < 0)
 			end = str.size + end;
 
-		if(begin >= str.size)		//begin is inclusive, so must be < size
+		if(begin > str.size)		//begin is inclusive, so must be < size
 			begin = str.size-1;
 		if(end > str.size)			//end is non-inclusive, so must be <= size
 			end = str.size;
 
-		result.data = &str.data[begin];
 		result.size = end-begin;
+		if(begin < str.size)
+			result.data = &str.data[begin];
 	};
 
 	return result;
@@ -189,6 +196,106 @@ str_t str_pop_last_split(str_t* str_ptr, str_t delimiters)
 		result.size--;
 		if(result.size)
 			result.data++; //only point the the character after the delimiter if there is one
+	};
+
+	return result;
+}
+
+long long str_to_ll(str_t str)
+{
+	unsigned long long magnitude = 0;
+	bool is_neg = false;
+
+	if(str.data)
+	{
+		// ignore leading whitespace
+		while(str.size && str.data[0] == ' ')
+			str = str_sub(str, 1, INT_MAX);
+		
+		// pop sign
+		if(str.size)
+		{
+			if(str.data[0] == '+')
+				str = str_sub(str, 1, INT_MAX);
+			else if(str.data[0] == '-')
+			{
+				is_neg = true;
+				str = str_sub(str, 1, INT_MAX);
+			};
+		};
+
+		magnitude = str_to_ull(str);
+	};
+
+	return is_neg ? magnitude*-1 : magnitude;
+}
+
+unsigned long long str_to_ull(str_t str)
+{
+	long long result = 0;
+	str_t base_str;
+
+	if(str.data)
+	{
+		// ignore leading whitespace
+		while(str.size && str.data[0] == ' ')
+			str = str_sub(str, 1, INT_MAX);
+
+		base_str = str_sub(str, 0, 2);
+		if( str_is_match(base_str, cstr("0x"))
+		||	str_is_match(base_str, cstr("0X")))
+			result = interpret_hex(str_sub(str, 2,INT_MAX));
+
+		else if(str_is_match(base_str, cstr("0b")))
+			result = interpret_bin(str_sub(str, 2,INT_MAX));
+
+		else
+			result = interpret_dec(str);
+	};
+
+	return result;
+}
+
+static unsigned long long interpret_hex(str_t str)
+{
+	unsigned long long result = 0;
+
+	while(str.size && isxdigit(str.data[0]))
+	{
+		result <<= 4;
+		if(isalpha(str.data[0]))
+			result += 10 + (str.data[0] & 0x4F) - 'A';
+		else
+			result += str.data[0] & 0x0F;
+		str = str_sub(str, 1, INT_MAX);
+	};
+
+	return result;
+}
+
+static unsigned long long interpret_bin(str_t str)
+{
+	unsigned long long result = 0;
+
+	while(str.size && (str.data[0]=='0' || str.data[0]=='1'))
+	{
+		result <<= 1;
+		result |= str.data[0] == '1';
+		str = str_sub(str, 1, INT_MAX);
+	};
+
+	return result;
+}
+
+static unsigned long long interpret_dec(str_t str)
+{
+	unsigned long long result = 0;
+
+	while(str.size && isdigit(str.data[0]))
+	{
+		result *= 10;
+		result += str.data[0] & 0x0F;
+		str = str_sub(str, 1, INT_MAX);
 	};
 
 	return result;
