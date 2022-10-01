@@ -1,6 +1,6 @@
 /*
 */
-
+	#include <ctype.h>
 	#include "str.h"
 	#include "strbuf.h"
 
@@ -8,8 +8,8 @@
 // Local defines
 //********************************************************************************************************
 
-//	#include <stdio.h>
-//	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
+	#include <stdio.h>
+	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
 //********************************************************************************************************
 // Private prototypes
@@ -17,7 +17,7 @@
 
 	static strbuf_t* create_buf(size_t initial_capacity, str_allocator_t allocator);
 	static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
-	static void append_str_to_buf(strbuf_t** buf_ptr, str_t str);
+	static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str);
 	static void destroy_buf(strbuf_t** buf_ptr);
 	static void change_buf_capacity(strbuf_t** buf_ptr, size_t new_capacity);
 	static void assign_str_to_buf(strbuf_t** buf_ptr, str_t str);
@@ -92,6 +92,27 @@ void strbuf_destroy(strbuf_t** buf_ptr)
 		destroy_buf(buf_ptr);
 }
 
+str_t strbuf_append(strbuf_t** buf_ptr, str_t str)
+{
+	if(buf_ptr && *buf_ptr)
+		insert_str_into_buf(buf_ptr, (*buf_ptr)->size, str);
+	return str_of_buf(*buf_ptr);
+}
+
+str_t strbuf_prepend(strbuf_t** buf_ptr, str_t str)
+{
+	if(buf_ptr && *buf_ptr)
+		insert_str_into_buf(buf_ptr, 0, str);
+	return str_of_buf(*buf_ptr);
+}
+
+str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str)
+{
+	if(buf_ptr && *buf_ptr)
+		insert_str_into_buf(buf_ptr, index, str);
+	return str_of_buf(*buf_ptr);
+}
+
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************
@@ -148,7 +169,7 @@ static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 
 	i = 0;
 	while(i != n_args)
-		append_str_to_buf(&build_buf, str_array[i++]);
+		insert_str_into_buf(&build_buf, build_buf->size, str_array[i++]);
 
 	if(tmp_buf_needed)
 	{
@@ -160,14 +181,25 @@ static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 	return str_of_buf(dst_buf);
 }
 
-static void append_str_to_buf(strbuf_t** buf_ptr, str_t str)
+static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str)
 {
 	strbuf_t* buf = *buf_ptr;
+
+	if(index > buf->size)
+		index = buf->size;
+	if(index < 0)
+		index += buf->size;
+	if(index < 0)
+		index = 0;
+
 	if(buf->capacity < buf->size + str.size)
 		change_buf_capacity(&buf, round_up_capacity(buf->size + str.size));
 
-	memcpy(&buf->cstr[buf->size], str.data, str.size);
+	if(&buf->cstr[index+str.size] !=  &buf->cstr[index])
+		memmove(&buf->cstr[index+str.size], &buf->cstr[index], buf->size-index);
+
 	buf->size += str.size;
+	memcpy(&buf->cstr[index], str.data, str.size);
 	buf->cstr[buf->size] = 0;
 	*buf_ptr = buf;
 }
@@ -197,7 +229,7 @@ static void change_buf_capacity(strbuf_t** buf_ptr, size_t new_capacity)
 static void assign_str_to_buf(strbuf_t** buf_ptr, str_t str)
 {
 	(*buf_ptr)->size = 0;
-	append_str_to_buf(buf_ptr, str);
+	insert_str_into_buf(buf_ptr, 0, str);
 }
 
 static void append_char_to_buf(strbuf_t** buf_ptr, char c)

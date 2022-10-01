@@ -6,6 +6,7 @@
 	#include <stdarg.h>
 	#include <string.h>
 
+	#include "membound.h"
 	#include "str.h"
 
 //********************************************************************************************************
@@ -58,7 +59,7 @@
          9,8,7,6,5,4,3,2,1,0
 
 /*	Use strbuf_cat to concatenate an arbitrary number of strings into a buffer.
-	The buffers contents itself may be used as an argument.
+	The buffers contents itself may be used as an argument, in this case a temporary buffer will be allcoated to build the output.
 	This facilitates appending, prepending, or even inserting by using str_sub().
 	A string representing the result is returned. The string returned is always valid providing buf_ptr is not NULL.
 	Example to append to a buffer:  strbuf_cat(&mybuffer, strbuf_str(&mybuffer), str_to_append) */
@@ -80,9 +81,9 @@ static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free
 	assert(size==0 || result);	// You need to catch a failed allocation here.
 	return result;
 }
-
 then:
 	str_allocator_t str_allocator = {.allocator = allocator}; */
+
 	typedef struct str_allocator_t
 	{
 		void* app_data;
@@ -94,6 +95,7 @@ then:
 //	Maintains null termination, so classic c style (null terminated) strings can be accessed with ->cstr
 	typedef struct strbuf_t
 	{
+		struct membound_struct mb;
 		size_t size;
 		size_t capacity;
 		str_allocator_t allocator;
@@ -129,5 +131,19 @@ then:
 
 //	Free memory allcoated to hold the buffer and it's contents
 	void strbuf_destroy(strbuf_t** buf_ptr);
+
+
+/*	The below are achievable using str_cat() only if a dynamic memory allocator is used, as a temporary buffer must be allocated.
+	If that is not the case, and your allocator only returns the address of a single static buffer then the below need to
+	be used to achieve append/prepend/insert */
+
+//	Append str_t to buffer
+	str_t strbuf_append(strbuf_t** buf_ptr, str_t str);
+
+//	Prepend str_t to buffer
+	str_t strbuf_prepend(strbuf_t** buf_ptr, str_t str);
+
+//	Insert str_t to buffer
+	str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str);
 
 #endif
