@@ -3,6 +3,7 @@
 	#include <ctype.h>
 	#include "str.h"
 	#include "strbuf.h"
+	#include "membound.h"
 
 //********************************************************************************************************
 // Local defines
@@ -192,11 +193,21 @@ static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str)
 	if(index < 0)
 		index = 0;
 
+	DBG("inserting %zu bytes at index %i, buffer size is currently %zu and capacity is currently %zu", str.size, index, buf->size, buf->capacity);
 	if(buf->capacity < buf->size + str.size)
+	{
+		DBG("expanding buffer capacity to %zu", round_up_capacity(buf->size + str.size));
 		change_buf_capacity(&buf, round_up_capacity(buf->size + str.size));
+	}
 
+	struct membound_struct mb = MEMBOUND_SIZE(buf->cstr, buf->capacity+1);
+
+	DBG("buffer is %p to %p (size %zu)", buf->cstr, &buf->cstr[buf->capacity+1], buf->capacity+1);
 	if(&buf->cstr[index+str.size] !=  &buf->cstr[index])
-		memmove(&buf->cstr[index+str.size], &buf->cstr[index], str.size);
+	{
+		DBG("moving %zu bytes of data from %p to %p", str.size, &buf->cstr[index], &buf->cstr[index+str.size]);
+		memmove_mb(&mb, &buf->cstr[index+str.size], &buf->cstr[index], str.size);
+	};
 
 	buf->size += str.size;
 	memcpy(&buf->cstr[index], str.data, str.size);
