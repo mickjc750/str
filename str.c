@@ -25,6 +25,18 @@ str_t cstr(const char* c_str)
 	return (str_t){.data = c_str, .size = strlen(c_str)};
 }
 
+char* str_to_cstr(char* dst, size_t dst_size, str_t str)
+{
+	size_t copy_size;
+	if(dst_size && *dst)
+	{
+		copy_size = (dst_size-1) < str.size ? dst_size:str.size;
+		memcpy(dst, str.data, copy_size);
+		dst[copy_size] = 0;
+	};
+	return dst;
+}
+
 bool str_is_valid(str_t str)
 {
 	return !!str.data;

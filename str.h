@@ -45,6 +45,10 @@
 //	If the argument is a string literal, cstr_SL() may be used instead, to prevent traversing the string literal to measure it's length
 	str_t cstr(const char* c_str);
 
+//	Write a str out to a null terminated char* buffer.
+//	The buffer memory and it's size must be provided by the caller
+	char* str_to_cstr(char* dst, size_t dst_size, str_t str);
+	
 //	Return true if the str_t is valid.
 // 	A str_t may be invalid if a delimiter is not found when attempting to split a string with str_pop_first_split() or str_pop_last_split()
 	bool str_is_valid(str_t str);
