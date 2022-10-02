@@ -550,6 +550,10 @@ int main(int argc, const char* argv[])
 	assert(str_compare(cstr("abc"), cstr("abc")) == 0);
 	assert(str_compare(cstr("abca"), cstr("abc")) > 0);
 	assert(str_compare(cstr("abc"), cstr("abca")) < 0);
+	str1.data = NULL;
+	str1.size = 0;
+	assert(!str_compare(cstr(""), str1));	//an empty string == an invalid string for str_compare();
+
 	DBG("** OK **\n\n\n");
 
 	DBG("** Complete **\n");
