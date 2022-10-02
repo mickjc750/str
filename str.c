@@ -9,8 +9,8 @@
 // Local defines
 //********************************************************************************************************
 
-//	#include <stdio.h>
-//	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
+	#include <stdio.h>
+	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
 //********************************************************************************************************
 // Private prototypes
@@ -21,6 +21,8 @@
 	static unsigned long long interpret_hex(str_t str);
 	static unsigned long long interpret_bin(str_t str);
 	static unsigned long long interpret_dec(str_t str);
+
+	static int memcmp_nocase(const char* a, const char* b, size_t size);
 
 //********************************************************************************************************
 // Public functions
@@ -51,6 +53,21 @@ bool str_is_valid(str_t str)
 bool str_is_match(str_t str1, str_t str2)
 {
 	return (str1.size == str2.size) && (str1.data == str2.data || !memcmp(str1.data, str2.data, str1.size));
+}
+
+bool str_is_match_nocase(str_t str1, str_t str2)
+{
+	return (str1.size == str2.size) && (str1.data == str2.data || !memcmp_nocase(str1.data, str2.data, str1.size));
+}
+
+int str_compare(str_t str1, str_t str2)
+{
+	int result = memcmp(str1.data, str2.data, str1.size < str2.size ? str1.size:str2.size);
+
+	if(!result && str1.size != str2.size)
+		result = str1.size > str2.size ? +1:-1;
+
+	return result;
 }
 
 bool str_contains(str_t haystack, str_t needle)
@@ -143,7 +160,7 @@ str_search_result_t str_find_last(str_t haystack, str_t needle)
 
 str_t str_pop_first_split(str_t* str_ptr, str_t delimiters)
 {
-		str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result = (str_t){.data = NULL, .size = 0};
 	bool found = false;
 	const char* ptr = str_ptr->data;
 
@@ -199,7 +216,7 @@ str_t str_pop_last_split(str_t* str_ptr, str_t delimiters)
 		// at this stage, the result still starts with the delimiter
 		result.size--;
 		if(result.size)
-			result.data++; //only point the the character after the delimiter if there is one
+			result.data++; //only point to the the character after the delimiter if there is one
 	};
 
 	return result;
@@ -212,11 +229,8 @@ long long str_to_ll(str_t str)
 
 	if(str.data)
 	{
-		// ignore leading whitespace
-		while(str.size && str.data[0] == ' ')
-			str = str_sub(str, 1, INT_MAX);
+		str = str_trim(str, cstr(" "));
 		
-		// pop sign
 		if(str.size)
 		{
 			if(str.data[0] == '+')
@@ -241,9 +255,7 @@ unsigned long long str_to_ull(str_t str)
 
 	if(str.data)
 	{
-		// ignore leading whitespace
-		while(str.size && str.data[0] == ' ')
-			str = str_sub(str, 1, INT_MAX);
+		str = str_trim(str, cstr(" "));
 
 		base_str = str_sub(str, 0, 2);
 		if( str_is_match(base_str, cstr("0x"))
@@ -320,4 +332,14 @@ static bool contains_char(str_t str, char c)
 	};
 
 	return found;
+}
+
+static int memcmp_nocase(const char* a, const char* b, size_t size)
+{
+	int result = 0;
+
+	while(size-- && !result)
+		result = toupper((unsigned)(*a++)) - toupper((unsigned)(*b++));
+
+	return result;
 }

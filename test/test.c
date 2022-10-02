@@ -388,6 +388,11 @@ int main(int argc, const char* argv[])
 	assert(str_is_match(str1, str2));
 	DBG("OK\n\n\n");
 
+	DBG("** Testing str_is_match_nocase() **");
+	assert(str_is_match_nocase(cstr("hEllO"), cstr("Hello")));
+	assert(!str_is_match_nocase(cstr("hEllO"), cstr("Hell")));
+	DBG("OK\n\n\n");
+
 	DBG("** Testing str_trim() **");
 	str1 = cstr("/.;/hello;./;.");
 	str2 = cstr("./;");
@@ -536,6 +541,16 @@ int main(int argc, const char* argv[])
 
 	tmpull = str_to_ull(cstr("0b110011010111"));
 	assert(tmpull == 0b110011010111);
+
+	DBG("** OK **\n\n\n");
+
+	DBG("** Testing string_compare() **\n");
+	assert(str_compare(cstr("abd"), cstr("abc")) > 0);
+	assert(str_compare(cstr("aba"), cstr("abd")) < 0);
+	assert(str_compare(cstr("abc"), cstr("abc")) == 0);
+	assert(str_compare(cstr("abca"), cstr("abc")) > 0);
+	assert(str_compare(cstr("abc"), cstr("abca")) < 0);
+	DBG("** OK **\n\n\n");
 
 	DBG("** Complete **\n");
 

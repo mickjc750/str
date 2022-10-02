@@ -56,6 +56,15 @@
 //	Return true if the strings match
 	bool str_is_match(str_t str1, str_t str2);
 
+//	Same as str_is_match() ignoring case
+	bool str_is_match_nocase(str_t str1, str_t str2);
+
+/*	Replaces strcmp()
+	returns >0 if the first non-matching character in str1 is greater (in ASCII) than that of str2.
+	returns <0 if the first non-matching character in str1 is lower   (in ASCII) than that of str2.
+	returns 0 if the strings are equal */
+	int str_compare(str_t str1, str_t str2);
+
 /*	Return the sub string indexed by begin->end. end is non-inclusive.
 	Negative values may be used, and will index from the end of the string backwards.
 	The indexes are clipped to the strings length, so INT_MAX may be safely used to index the end of the string */
