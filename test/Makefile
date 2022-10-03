@@ -49,7 +49,7 @@ CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
 EXTRALIBDIRS = .
-EXTRALIBS = 
+EXTRALIBS = -lm
 
 #---------------- Linker Options ----------------
 

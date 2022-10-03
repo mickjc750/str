@@ -6,6 +6,7 @@
 	#include <assert.h>
 	#include <limits.h>
 	#include <stdint.h>
+	#include <math.h>
 
 	#include "strbuf.h"
 	#include "str.h"
@@ -28,6 +29,17 @@
 		size_t size;
 		bool already_allocated;
 	};
+
+
+	#define TEST_STR_TO_FLOAT(fmt, arg)															\
+	do{																							\
+		str_t str = cstr(#arg);																	\
+		double desired = arg;																	\
+		double result = str_to_float(str);														\
+		DBG("\"%"PRIstr"\" returns "fmt, PRIstrarg(str), result);								\
+		assert(desired-fabs(desired*.001) < result && result < desired+fabs(desired*.001));		\
+	}while(0);
+
 
 //********************************************************************************************************
 // Public variables
@@ -401,6 +413,13 @@ int main(int argc, const char* argv[])
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("hello", str1.data, str1.size));
 
+	str1 = cstr(" 123");
+	str2 = cstr(" ");
+	DBG("Trimming \"%"PRIstr"\" from \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
+	str1 = str_trim(str1, str2);
+	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
+	assert(!memcmp("123", str1.data, str1.size));
+
 	DBG("** Destroying the buffer **\n\n\n");
 	strbuf_destroy(&buf);
 	assert(buf == NULL);
@@ -558,8 +577,31 @@ int main(int argc, const char* argv[])
 
 	DBG("** Complete **\n");
 
+	DBG("** Testing str_to_float() **\n");
+
+	str1 = cstr("inf");
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
+	assert(str_to_float(str1) == INFINITY);
+
+	str1 = cstr("-inf");
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
+	assert(str_to_float(str1) == -INFINITY);
+
+	str1 = cstr("nan");
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
+	assert(str_to_float(str1) != str_to_float(str1));
+
+	TEST_STR_TO_FLOAT("%f", 183.4179);
+	TEST_STR_TO_FLOAT("%f", -183.4179);
+	TEST_STR_TO_FLOAT("%e", 1000000);
+	TEST_STR_TO_FLOAT("%e", 148.913E-23);
+	TEST_STR_TO_FLOAT("%f", .002);
+	TEST_STR_TO_FLOAT("%f", -.002);
+	TEST_STR_TO_FLOAT("%.9f", .100000002);
+	TEST_STR_TO_FLOAT("%.9f", 39E-8);
 	return 0;
 }
+
 
 //********************************************************************************************************
 // Private functions

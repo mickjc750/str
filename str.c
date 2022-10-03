@@ -1,6 +1,9 @@
 /*
 */
 
+	#ifndef STR_NO_FLOAT
+		#include <math.h>
+	#endif
 	#include <limits.h>
 	#include <ctype.h>
 	#include "str.h"
@@ -21,6 +24,10 @@
 	static unsigned long long interpret_hex(str_t str);
 	static unsigned long long interpret_bin(str_t str);
 	static unsigned long long interpret_dec(str_t str);
+
+	#ifndef STR_NO_FLOAT
+	static str_float_t interpret_float(str_t str);
+	#endif
 
 	static int memcmp_nocase(const char* a, const char* b, size_t size);
 
@@ -103,16 +110,29 @@ str_t str_sub(str_t str, int begin, int end)
 	return result;
 }
 
-str_t str_trim(str_t str, str_t chars_to_trim)
+str_t str_trim_start(str_t str, str_t chars_to_trim)
 {
 	while(str.size && contains_char(chars_to_trim, *str.data))
 	{
 		str.data++;
 		str.size--;
 	};
+
+	return str;
+}
+
+str_t str_trim_end(str_t str, str_t chars_to_trim)
+{
 	while(str.size && contains_char(chars_to_trim, str.data[str.size-1]))
 		str.size--;
 
+	return str;
+}
+
+str_t str_trim(str_t str, str_t chars_to_trim)
+{
+	str = str_trim_start(str, chars_to_trim);
+	str = str_trim_end(str, chars_to_trim);
 	return str;
 }
 
@@ -183,7 +203,7 @@ str_t str_pop_first_split(str_t* str_ptr, str_t delimiters)
 
 		// at this stage, the remainder still includes the delimiter
 		str_ptr->size--;
-		if(str_ptr->size)	//only point the the character after the delimiter if there is one
+		if(str_ptr->size)	//only point to the character after the delimiter if there is one
 			str_ptr->data++;
 	};
 
@@ -272,6 +292,31 @@ unsigned long long str_to_ull(str_t str)
 	return result;
 }
 
+str_float_t str_to_float(str_t str)
+{
+	str_float_t result = 0;
+	bool is_neg = false;
+	if(str_is_valid(str))
+	{
+		str = str_trim(str, cstr(" "));
+
+		if(str_is_match_nocase(str, cstr("nan")))
+			result = NAN;
+		else if(str.data[0] == '+')
+			str = str_sub(str, 1, INT_MAX);
+		else if(str.data[0] == '-')
+		{
+			is_neg = true;
+			str = str_sub(str, 1, INT_MAX);
+		};
+		if(str_is_match_nocase(str, cstr("inf")))
+			result = INFINITY;
+		else if(!result)
+			result = interpret_float(str);
+	};
+	return is_neg ? result*-1.0:result;
+}
+
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************
@@ -310,7 +355,7 @@ static unsigned long long interpret_bin(str_t str)
 static unsigned long long interpret_dec(str_t str)
 {
 	unsigned long long result = 0;
-
+	
 	while(str.size && isdigit(str.data[0]))
 	{
 		result *= 10;
@@ -320,6 +365,49 @@ static unsigned long long interpret_dec(str_t str)
 
 	return result;
 }
+
+#ifndef STR_NO_FLOAT
+static str_float_t interpret_float(str_t str)
+{
+	str_float_t result = 0;
+	str_float_t fractional_digit_weight = 1;
+	int exponent;
+
+	while(str.size && isdigit(str.data[0]))
+	{
+		result *= 10;
+		result += str.data[0] & 0x0F;
+		str = str_sub(str, 1, INT_MAX);
+	};
+
+	if(str.size && str.data[0]=='.')
+	{
+		str = str_sub(str, 1, INT_MAX);
+
+		while(str.size && isdigit(str.data[0]))
+		{
+			fractional_digit_weight /= 10.0;
+			result += (str.data[0] & 0x0F) * fractional_digit_weight;
+			str = str_sub(str, 1, INT_MAX);
+		};
+	};
+
+	if(str.size && toupper(str.data[0])=='E')
+	{
+		str = str_sub(str, 1, INT_MAX);
+		exponent = (int)str_to_ll(str);
+		#ifdef STR_SUPPORT_FLOAT
+			result *= powf(10, exponent);
+		#elif defined STR_SUPPORT_LONG_DOUBLE
+			result *= powl(10, exponent);
+		#else
+			result *= pow(10, exponent);
+		#endif
+	};
+
+	return result;
+}
+#endif
 
 static bool contains_char(str_t str, char c)
 {
