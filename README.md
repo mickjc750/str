@@ -160,4 +160,5 @@ The above **str_to_ull** and **str_to_ll()** are also cast to stdint.h types usi
 
 The default precision of this function is double, but **str.h** accepts the following defined symbols:
 * STR_NO_FLOAT - Do not provide floating point conversions. 
+* STR_SUPPORT_FLOAT - Use float instead of double.
 * STR_SUPPORT_LONG_DOUBLE - Use long double instead of double.
