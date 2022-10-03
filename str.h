@@ -73,6 +73,12 @@
 //	Return a str_t with the start and end trimmed of all characters present in chars_to_trim
 	str_t str_trim(str_t str, str_t chars_to_trim);
 
+//	Return a str_t with the start trimmed of all characters present in chars_to_trim
+	str_t str_trim_start(str_t str, str_t chars_to_trim);
+
+//	Return a str_t with the end trimmed of all characters present in chars_to_trim
+	str_t str_trim_end(str_t str, str_t chars_to_trim);
+
 /*	Return the search result (bool found & index) for the first occurrence of needle in haystack
 	If needle is valid, and of length 0, it will always be found at the start of the string.
 	If needle is invalid, or if haystack is invalid, it will not be found. */
@@ -98,6 +104,21 @@
 
 //	Convert number to unsigned long long
 	unsigned long long str_to_ull(str_t str);
+
+/*	Convert number to float
+	By default str_to_float() works with and returns double
+	To support long doublg define STR_SUPPORT_LONG_DOUBLE
+	Or, to not supprt float conversions at all, define STR_NO_FLOAT*/
+	#ifndef STR_NO_FLOAT
+		#ifdef STR_SUPPORT_LONG_DOUBLE
+			typedef long double str_float_t;
+		#elif defined STR_SUPPORT_FLOAT
+			typedef float str_float_t;
+		#else
+			typedef double str_float_t;
+		#endif
+		str_float_t str_to_float(str_t str);
+	#endif
 
 //	Other standard sizes just cast the return value
 	#define str_to_int(str) 		((int)str_to_ll(str))
