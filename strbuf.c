@@ -201,13 +201,17 @@ static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 			change_buf_capacity(&dst_buf, round_up_capacity(size_needed));
 		build_buf = dst_buf;
 		build_buf->size = 0;
+		build_buf->cstr[0] = 0;
 	};
-	
-	if(build_buf->capacity >= size_needed)
+
+	if(buf_is_dynamic(build_buf) || !tmp_buf_needed)
 	{
-		i = 0;
-		while(i != n_args)
-			insert_str_into_buf(&build_buf, build_buf->size, str_array[i++]);
+		if(build_buf->capacity >= size_needed)
+		{
+			i = 0;
+			while(i != n_args)
+				insert_str_into_buf(&build_buf, build_buf->size, str_array[i++]);
+		};
 	};
 
 	if(tmp_buf_needed && buf_is_dynamic(build_buf))
@@ -242,6 +246,11 @@ static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str)
 		buf->size += str.size;
 		memcpy(&buf->cstr[index], str.data, str.size);
 		buf->cstr[buf->size] = 0;
+	}
+	else
+	{
+		buf->size = 0;
+		buf->cstr[0] = 0;
 	};
 	*buf_ptr = buf;
 }
@@ -275,6 +284,7 @@ static void change_buf_capacity(strbuf_t** buf_ptr, size_t new_capacity)
 static void assign_str_to_buf(strbuf_t** buf_ptr, str_t str)
 {
 	(*buf_ptr)->size = 0;
+	(*buf_ptr)->cstr[0] = 0;
 	insert_str_into_buf(buf_ptr, 0, str);
 }
 
@@ -290,6 +300,11 @@ static void append_char_to_buf(strbuf_t** buf_ptr, char c)
 		buf->cstr[buf->size] = c;
 		buf->size++;
 		buf->cstr[buf->size] = 0;
+	}
+	else
+	{
+		buf->size = 0;
+		buf->cstr[0] = 0;
 	};
 	*buf_ptr = buf;
 }

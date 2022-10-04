@@ -15,7 +15,7 @@
 // Configurable defines
 //********************************************************************************************************
 
-	#define STATIC_BUFFER_SIZE	1000
+	#define STATIC_BUFFER_SIZE	200
 
 //********************************************************************************************************
 // Local defines
@@ -446,6 +446,21 @@ int main(int argc, const char* argv[])
 	str1 = strbuf_str(&buf);
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("Once upon a time there was a very smelly camel that poked it's tongue out and puffed it up.", str1.data, str1.size));
+
+	DBG("Trying to pass data from the destination buffer into strbuf_cat() without a dynamic buffer (should fail and return empty buffer)");
+	str1 = strbuf_str(&buf);
+	str1 = str_sub(str1, 5, 10);
+	strbuf_cat(&buf, cstr("never "), str1, cstr(" seen"));
+	DBG("Result = %s\n", buf->cstr);
+	assert(buf->size == 0);
+	DBG("Trying append too much data to the buffer (should fail and return empty buffer)");
+	strbuf_cat(&buf, cstr("123"));
+	DBG("Result = %s", buf->cstr);
+	strbuf_append(&buf, cstr("BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH  "));
+	DBG("Result = %s", buf->cstr);
+	strbuf_append(&buf, cstr("BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH  "));
+	DBG("Result = %s\n\n", buf->cstr);
+	assert(buf->size == 0);
 
 
 	DBG("** Destroying the buffer (strbuf_destroy)**\n");
