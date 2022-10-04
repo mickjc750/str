@@ -2,6 +2,18 @@
 
 C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=QpAhX-gsHMs&t=3009s
 
+# Table of Contents
+1. [Introduction](#introduction)
+2. [Understanding the separate purposes of str.h and strbuf.h](#understanding-the-separate-purposes-of-strh-and-strbufh)
+3. [str.h](#strh)
+4. [str.h functions](#strh-functions)
+5. [strbuf.h](#strbufh)
+6. [Providing an allocator for strbuf_create().](#providing-an-allocator-for-strbufcreate)
+7. [Allocator examples](#allocator-examples)
+8. [Buffer re-sizing](#buffer-re-sizing)
+9. [strbuf.h functions](#strbufh-functions)
+
+&nbsp;
 &nbsp;
 ## Introduction
 
@@ -11,6 +23,26 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
  * Separating the ownership of a string (which can modify/build strings) from the access or view of strings (navigating/splitting/trimming).
  * Returning strings by value, to avoid pointers.
  * Ditching the requirement for null termination.
+
+&nbsp;
+# Understanding the separate purposes of str.h and strbuf.h
+This project is provided in two main parts, **str.h** which provides a **str_t** type, and **strbuf.c** which provides a **strbuf_t** type.
+
+To understand this approach to string handling, and the purpose of each, it helps to think in terms of string ownership.
+
+## str_t
+**str_t** doesn't own the string. It's just a view into a string, and can't be used to free it, and shouldn't be used to change it's characters. You can only change the range of the view, or split it into multiple views, or interpret a view as a number etc. **str_t** is intended for reading and parsing strings, not building them. As there is no null terminator requirement, binary strings including the full ascii set 0-255 can safely be worked with.
+**str.h** does not depend on **strbuf.h**, and can be useful on it’s own.
+
+&nbsp;
+## strbuf_t
+**strbuf_t** DOES own the string, and contains the information needed to resize it, change it's contents, or free it. The allocator used by **strbuf_t** is provided by the application, and dynamic memory allocation is not mandatory.
+
+Whether you pass a **str_t** or a **str_buf_t** to your functions depends on the use case.
+
+If you wish to pass a string to a function which frees it, then you need to pass ownership along with it, so in that case a strbuf_t needs to be passed.
+
+If you only wish to provide a view into an existing string (read only), then a **str_t** can be passed.
 
 &nbsp;
 ## Standard used
