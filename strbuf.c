@@ -121,7 +121,7 @@ static strbuf_t* create_buf(size_t initial_capacity, str_allocator_t allocator)
 {
 	strbuf_t* buf;
 
-	initial_capacity = round_up_capacity(initial_capacity);
+	initial_capacity = initial_capacity;
 
 	buf = allocator.allocator(&allocator, NULL, sizeof(strbuf_t)+initial_capacity+1,  __FILE__, __LINE__);
 	buf->size = 0;

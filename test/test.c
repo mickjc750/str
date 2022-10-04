@@ -23,12 +23,13 @@
 
 	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
-	struct static_buf_struct
+	// A structure which holds information about a static buffer
+	typedef struct static_buf_t
 	{
 		void* address;
 		size_t size;
 		bool already_allocated;
-	};
+	} static_buf_t;
 
 
 	#define TEST_STR_TO_FLOAT(fmt, arg)															\
@@ -279,7 +280,7 @@ int main(int argc, const char* argv[])
 	assert(search_result.index == 0);
 
 	str2.data = NULL;
-	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
+	DBG("Looking for (invalid) in \"%"PRIstr"\"", PRIstrarg(str1));
 	search_result = str_find_first(str1, str2);
 	assert(!search_result.found);
 	DBG("Not Found (a needle which is an invalid string should not be found)\n");
@@ -287,7 +288,7 @@ int main(int argc, const char* argv[])
 	str1.data = NULL;
 	str1.size = 0;
 	str2 = cstr("");
-	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
+	DBG("Looking for \"%"PRIstr"\" in (invalid)", PRIstrarg(str2));
 	search_result = str_find_first(str1, str2);
 	assert(!search_result.found);
 	DBG("Not Found (a needle in an invalid haystack should not be found)\n");
@@ -338,7 +339,7 @@ int main(int argc, const char* argv[])
 	assert(search_result.index == 8);
 
 	str2.data = NULL;
-	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
+	DBG("Looking for (invalid) in \"%"PRIstr"\"",  PRIstrarg(str1));
 	search_result = str_find_last(str1, str2);
 	assert(!search_result.found);
 	DBG("Not Found (a needle which is an invalid string should not be found)\n");
@@ -346,7 +347,7 @@ int main(int argc, const char* argv[])
 	str1.data = NULL;
 	str1.size = 0;
 	str2 = cstr("");
-	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
+	DBG("Looking for \"%"PRIstr"\" in (invalid)", PRIstrarg(str2));
 	search_result = str_find_first(str1, str2);
 	assert(!search_result.found);
 	DBG("Not Found (a needle in an invalid haystack should not be found)\n");
@@ -431,7 +432,7 @@ int main(int argc, const char* argv[])
 //	Create an allocator which simply returns the address of a static buffer (this could also be on the stack, static here meaning non-dynamic)
 
 //	Information used mostly for error trapping
-	struct static_buf_struct static_buf_info = (struct static_buf_struct){.address = static_buf, .size = sizeof(static_buf)};
+	static_buf_t static_buf_info = {.address = static_buf, .size = sizeof(static_buf)};
 
 //	Assign the allocator, if no error detection is desired, the .app_data could simply be the buffer address, and the static_buf_struct above eliminated.
 	str_allocator_t str_static_allocator = (str_allocator_t){.allocator = static_allocator, .app_data = &static_buf_info};
@@ -616,10 +617,11 @@ static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free
 	return result;
 }
 
+// Declare an allocator function for returning the address of a static buffer.
 static void* static_allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
 {
 	(void)caller_filename; (void)caller_line;
-	struct static_buf_struct* info = this_allocator->app_data;
+	static_buf_t* info = this_allocator->app_data;
 	intptr_t alignment_mask;
 
 	if(size)

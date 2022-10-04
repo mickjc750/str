@@ -20,12 +20,8 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 ## Usage
  Copy the source files __str.h__/__str.c__ and optionally __strbuf.h__/__strbuf.c__ into your project.
 
-&nbsp;
-## Todo:
-* Documentation for **strbuf.h**
 
 &nbsp;
-
 # str.h
  str.h provides functions for navigating, reading, and interpreting portions of const char string data. It may be used standalone, and does not depend on **strbuf.h**.
 
@@ -162,3 +158,115 @@ The default precision of this function is double, but **str.h** accepts the foll
 * STR_NO_FLOAT - Do not provide floating point conversions. 
 * STR_SUPPORT_FLOAT - Use float instead of double.
 * STR_SUPPORT_LONG_DOUBLE - Use long double instead of double.
+
+&nbsp;
+# strbuf.h
+ strbuf.h provides functions for allocating, building and storing strings.
+ Unlike the str_t type, a strbuf_t owns the string data, and contains all the information needed to modify it, resize it, or free it.
+ 
+ While dynamic memory allocation is very useful, it is not mandatory (with one exception regarding strbuf_cat()). The allocator can be as simple as something which returns the address of a static buffer. The size of the buffer must be the expected capacity (chars) + sizeof(strbuf_t) + 1 for a null terminator.
+
+ All strbuf functions maintain a null terminator at the end of the buffer, and the buffer may be accessed as a regular c string using mybuffer->cstr.
+
+ str.h defines the following strbuf_t type :
+
+	typedef struct strbuf_t
+	{
+		size_t size;
+		size_t capacity;
+		str_allocator_t allocator;
+		char cstr[];
+	} strbuf_t;
+
+&nbsp;
+# Providing an allocator for strbuf_create().
+
+ **strbuf_create()** requires an allocator to be passed.
+
+ The following str_allocator_t type is defined by strbuf.h
+
+	typedef struct str_allocator_t
+	{
+		void* app_data;
+		void* (*allocator)(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	} str_allocator_t;
+
+## Explanation:
+	void* app_data;
+ The address of the str_allocator_t is passed to the allocator. If the allocator requires access to some implementation specific data to work (such as in the case of a temporary allocator), then *app_data may be used to pass this.
+
+&nbsp;
+
+	void* (*allocator)(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+
+A pointer to the allocator function.
+
+&nbsp;
+&nbsp;
+
+The parameters to this function are:
+
+	struct str_allocator_t* this_allocator 	<-- A pointer to the str_allocator_t which may be used to access ->app_data.
+	void* ptr_to_free 						<-- Memory address to free OR reallocate.
+	size_t size 							<-- Size of allocation, or new size of the reallocation, or 0 if memory is to be freed.
+	const char* caller_filename 			<-- usually /path/strbuf.c, this is to support allocators which track caller ID.
+	int caller_line 						<-- The line within strbuf.c which called the allocator, this is also to support allocators which track caller ID.
+
+&nbsp;
+# Allocator examples
+There are 3 of these provided under allocator_examples/
+
+&nbsp;
+# Buffer re-sizing
+The initial capacity of the buffer will be exactly as provided to strbuf_create(). If an operation needs to extend the buffer, the size will be rounded up by STR_CAPACITY_GROW_STEP. The default value of this is 16, but this can be changed by defining it in a compiler flag ie. -DSTR_CAPACITY_GROW_STEP=32
+
+The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which case it will be reduced to the minimum possible.
+
+&nbsp;
+&nbsp;
+# strbuf.h functions:
+
+&nbsp;
+##	strbuf_t* strbuf_create(size_t initial_capacity, str_allocator_t allocator);
+ Create and return the address of a strbuf_t.
+
+&nbsp;
+##	str_t strbuf_cat(strbuf_t** buf_ptr, ...);
+ This is a macro, which concatenates one or more str_t into a buffer, and returns the str_t of the buffer. The returned str_t is always valid.
+
+ After performing some argument counting wizardry, it calls _strbuf_cat(strbuf_t** buf_ptr, int n_args, ...)
+
+ If the allocator is dynamic, input arguments may be from the output buffer itself. In this case a temporary buffer is allocated to build the output.
+
+&nbsp;
+##  str_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
+ The non-variadic version of _strbuf_cat.
+
+&nbsp;
+## str_t strbuf_append_char(strbuf_t** buf_ptr, char c);
+ Append a single character to the buffer.
+
+&nbsp;
+## str_t strbuf_str(strbuf_t** buf_ptr);
+ Return str_t of buffer contents.
+
+&nbsp;
+## str_t strbuf_shrink(strbuf_t** buf_ptr);
+ Shrink buffer to the minimum size required to hold it's contents.
+	
+&nbsp;
+## void strbuf_destroy(strbuf_t** buf_ptr);
+ Free memory allocated to hold the buffer and it's contents.
+
+&nbsp;
+## str_t strbuf_append(strbuf_t** buf_ptr, str_t str);
+ Append str_t to buffer.
+	
+&nbsp;
+## str_t strbuf_prepend(strbuf_t** buf_ptr, str_t str);
+ Prepend str_t to buffer.
+	
+&nbsp;
+## str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str);
+ Insert str_t to buffer at index.
+	
