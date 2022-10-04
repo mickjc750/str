@@ -10,9 +10,10 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 5.  [str.h functions](#strh-functions)
 6.  [strbuf.h](#strbufh)
 7.  [Providing an allocator for strbuf_create().](#providing-an-allocator-for-strbufcreate)
-8.  [Allocator examples](#allocator-examples)
+8.  [Allocator example](#allocator-example)
 9.  [Buffer re-sizing](#buffer-re-sizing)
-10. [strbuf.h functions](#strbufh-functions)
+10. [non-dynamic buffers](#non-dynamic-buffers)
+11. [strbuf.h functions](#strbufh-functions)
 
 &nbsp;
 &nbsp;
@@ -254,8 +255,8 @@ The parameters to this function are:
 	int caller_line                        <-- The line within strbuf.c which called the allocator, this is also to support allocators which track caller ID.
 
 &nbsp;
-# Allocator examples
-Three of these provided under allocator_examples/
+# Allocator example
+One for stdlib's realloc is provided under allocator_example/
 
 &nbsp;
 # Buffer re-sizing
@@ -264,12 +265,37 @@ The initial capacity of the buffer will be exactly as provided to strbuf_create(
 The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which case it will be reduced to the minimum possible.
 
 &nbsp;
+# non-dynamic buffers
+
+ A function **strbuf_create_fixed()** is provided for initializing a strbuf_t* from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than is available, this will result in an empty buffer.
+
+&nbsp;
 &nbsp;
 # strbuf.h functions:
 
 &nbsp;
 ##	strbuf_t* strbuf_create(size_t initial_capacity, str_allocator_t allocator);
  Create and return the address of a strbuf_t.
+
+&nbsp;
+## strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);
+ Create a new buffer with a fixed capacity from the given memory address. The address must be suitably aligned for a void*.
+
+ addr_size is the size of the memory available **(not the desired capacity)** and must be > sizeof(strbuf_t)+1.
+
+ The resulting buffer capacity will be the given memory size -sizeof(strbuf_t)-1, and can be checked with buf->capacity. If the function fails due to bad alignment or insufficient size, a NULL will be returned
+
+Example use:
+
+	#define STATIC_BUFFER_SIZE	200
+
+	strbuf_t* buf;
+	static char static_buf[STATIC_BUFFER_SIZE] __attribute__ ((aligned));
+	buf = strbuf_create_fixed(static_buf, STATIC_BUFFER_SIZE);
+
+	strbuf_cat(&buf, cstr("Hello"));	// Use buffer
+
+	strbuf_destroy(&buf);	// In this case doesn't free anything, affect is the same as buf=NULL;
 
 &nbsp;
 ##	str_t strbuf_cat(strbuf_t** buf_ptr, ...);
