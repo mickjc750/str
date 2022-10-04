@@ -178,19 +178,20 @@ static str_t str_of_buf(strbuf_t* buf)
 
 static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 {
-	str_t 	str_array[n_args];
+	str_t 	str;
 	size_t 	size_needed = 0;
 	bool	tmp_buf_needed = false;
 	int 	i = 0;
 	strbuf_t* dst_buf = *buf_ptr;
 	strbuf_t* build_buf;
+	va_list vb;
+	va_copy(vb, va);
 
-	while(i != n_args)
+	while(i++ != n_args)
 	{
-		str_array[i] = va_arg(va, str_t);
-		size_needed += str_array[i].size;
-		tmp_buf_needed |= buf_contains_str(dst_buf, str_array[i]);
-		i++;
+		str = va_arg(va, str_t);
+		size_needed += str.size;
+		tmp_buf_needed |= buf_contains_str(dst_buf, str);
 	};
 
 	if(tmp_buf_needed && buf_is_dynamic(dst_buf))
@@ -209,8 +210,8 @@ static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 		if(build_buf->capacity >= size_needed)
 		{
 			i = 0;
-			while(i != n_args)
-				insert_str_into_buf(&build_buf, build_buf->size, str_array[i++]);
+			while(i++ != n_args)
+				insert_str_into_buf(&build_buf, build_buf->size, va_arg(vb, str_t));	
 		};
 	};
 
@@ -221,6 +222,7 @@ static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 	};
 	*buf_ptr = dst_buf;
 
+	va_end(vb);
 	return str_of_buf(dst_buf);
 }
 
