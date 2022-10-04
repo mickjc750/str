@@ -203,7 +203,7 @@ static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 		build_buf->size = 0;
 	};
 	
-	if(dst_buf->capacity >= size_needed)
+	if(build_buf->capacity >= size_needed)
 	{
 		i = 0;
 		while(i != n_args)
@@ -308,5 +308,5 @@ static bool buf_contains_str(strbuf_t* buf, str_t str)
 
 static bool buf_is_dynamic(strbuf_t* buf)
 {
-	return !!buf->allocator.allocator;
+	return !!(buf->allocator.allocator);
 }
