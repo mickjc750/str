@@ -3,12 +3,12 @@
 #
 
 # Target file name (without extension).
-TARGET = static-buf
+TARGET = heap-buf
 
 # List C source files here. (C dependencies are automatically generated.)
 # To exclude certain files in a folder remove the $(wildcard) and 
 # list them seperated by spaces, ie src/main.c src/util.c 
-SRC = static-buf.c ../../strbuf.c ../../str.c
+SRC = heap-buf.c ../strbuf.c ../str.c
 
 # List any extra directories to look for include files here.
 #     Each directory must be seperated by a space.

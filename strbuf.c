@@ -1,5 +1,6 @@
 /*
 */
+	#include <stdint.h>
 	#include <ctype.h>
 	#include "str.h"
 	#include "strbuf.h"
@@ -25,6 +26,7 @@
 	static size_t round_up_capacity(size_t capacity);
 	static str_t str_of_buf(strbuf_t* buf);
 	static bool buf_contains_str(strbuf_t* buf, str_t str);
+	static bool buf_is_dynamic(strbuf_t* buf);
 
 //********************************************************************************************************
 // Public functions
@@ -32,7 +34,36 @@
 
 strbuf_t* strbuf_create(size_t initial_capacity, str_allocator_t allocator)
 {
-	return create_buf(initial_capacity, allocator);
+	strbuf_t* result;
+	if(allocator.allocator)
+		result = create_buf(initial_capacity, allocator);
+	else
+		result = NULL;
+	return result;
+}
+
+strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size)
+{
+	strbuf_t* result = NULL;
+	intptr_t alignment_mask;
+
+	if(addr_size > sizeof(strbuf_t) && addr)
+	{
+		//check alignment
+		alignment_mask = sizeof(void*)-1;
+		alignment_mask &= (intptr_t)addr;
+		if(alignment_mask == 0)
+		{
+			result = addr;
+			result->allocator.app_data = NULL;
+			result->allocator.allocator = NULL;
+			result->size = 0;
+			result->capacity = addr_size - sizeof(strbuf_t) - 1;
+			result->cstr[0] = 0;
+		};
+	};
+
+	return result;
 }
 
 // concatenate a number of str's this can include the buffer itself, strbuf.str for appending
@@ -80,7 +111,8 @@ str_t strbuf_shrink(strbuf_t** buf_ptr)
 	str_t str = {0};
 	if(buf_ptr && *buf_ptr)
 	{
-		change_buf_capacity(buf_ptr, (*buf_ptr)->size);
+		if(buf_is_dynamic(*buf_ptr))
+			change_buf_capacity(buf_ptr, (*buf_ptr)->size);
 		str = str_of_buf(*buf_ptr);
 	};
 	return str;
@@ -88,8 +120,12 @@ str_t strbuf_shrink(strbuf_t** buf_ptr)
 
 void strbuf_destroy(strbuf_t** buf_ptr)
 {
-	if(buf_ptr && *buf_ptr)
-		destroy_buf(buf_ptr);
+	if(buf_ptr)
+	{
+		if(*buf_ptr && buf_is_dynamic(*buf_ptr))
+			destroy_buf(buf_ptr);
+		*buf_ptr = NULL;
+	};	
 }
 
 str_t strbuf_append(strbuf_t** buf_ptr, str_t str)
@@ -157,21 +193,28 @@ static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 		i++;
 	};
 
-	if(tmp_buf_needed)
+	if(tmp_buf_needed && buf_is_dynamic(dst_buf))
 		build_buf = create_buf(size_needed, dst_buf->allocator);
 	else
 	{
-		if(dst_buf->capacity < size_needed)
+		if(buf_is_dynamic(dst_buf) && dst_buf->capacity < size_needed)
 			change_buf_capacity(&dst_buf, round_up_capacity(size_needed));
 		build_buf = dst_buf;
 		build_buf->size = 0;
+		build_buf->cstr[0] = 0;
 	};
 
-	i = 0;
-	while(i != n_args)
-		insert_str_into_buf(&build_buf, build_buf->size, str_array[i++]);
+	if(buf_is_dynamic(build_buf) || !tmp_buf_needed)
+	{
+		if(build_buf->capacity >= size_needed)
+		{
+			i = 0;
+			while(i != n_args)
+				insert_str_into_buf(&build_buf, build_buf->size, str_array[i++]);
+		};
+	};
 
-	if(tmp_buf_needed)
+	if(tmp_buf_needed && buf_is_dynamic(build_buf))
 	{
 		assign_str_to_buf(&dst_buf, str_of_buf(build_buf));
 		destroy_buf(&build_buf);
@@ -192,22 +235,31 @@ static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str)
 	if(index < 0)
 		index = 0;
 
-	if(buf->capacity < buf->size + str.size)
+	if(buf_is_dynamic(buf) && buf->capacity < buf->size + str.size)
 		change_buf_capacity(&buf, round_up_capacity(buf->size + str.size));
 
-	if(&buf->cstr[index+str.size] !=  &buf->cstr[index])
-		memmove(&buf->cstr[index+str.size], &buf->cstr[index], buf->size-index);
+	if(buf->capacity >= buf->size + str.size)
+	{
+		if(&buf->cstr[index+str.size] !=  &buf->cstr[index])
+			memmove(&buf->cstr[index+str.size], &buf->cstr[index], buf->size-index);
 
-	buf->size += str.size;
-	memcpy(&buf->cstr[index], str.data, str.size);
-	buf->cstr[buf->size] = 0;
+		buf->size += str.size;
+		memcpy(&buf->cstr[index], str.data, str.size);
+		buf->cstr[buf->size] = 0;
+	}
+	else
+	{
+		buf->size = 0;
+		buf->cstr[0] = 0;
+	};
 	*buf_ptr = buf;
 }
 
 static void destroy_buf(strbuf_t** buf_ptr)
 {
 	strbuf_t* buf = *buf_ptr;
-	buf->allocator.allocator(&buf->allocator, buf, 0, __FILE__, __LINE__);
+	if(buf_is_dynamic(buf))
+		buf->allocator.allocator(&buf->allocator, buf, 0, __FILE__, __LINE__);
 	*buf_ptr = NULL;
 }
 
@@ -215,13 +267,16 @@ static void change_buf_capacity(strbuf_t** buf_ptr, size_t new_capacity)
 {
 	strbuf_t* buf = *buf_ptr;
 
-	if(new_capacity < buf->size)
-		new_capacity = buf->size;
-
-	if(new_capacity != buf->capacity)
+	if(buf_is_dynamic(buf))
 	{
-		buf = buf->allocator.allocator(&buf->allocator, buf, sizeof(strbuf_t)+new_capacity+1, __FILE__, __LINE__);
-		buf->capacity = new_capacity;
+		if(new_capacity < buf->size)
+			new_capacity = buf->size;
+
+		if(new_capacity != buf->capacity)
+		{
+			buf = buf->allocator.allocator(&buf->allocator, buf, sizeof(strbuf_t)+new_capacity+1, __FILE__, __LINE__);
+			buf->capacity = new_capacity;
+		};
 	};
 	*buf_ptr = buf;
 }
@@ -229,6 +284,7 @@ static void change_buf_capacity(strbuf_t** buf_ptr, size_t new_capacity)
 static void assign_str_to_buf(strbuf_t** buf_ptr, str_t str)
 {
 	(*buf_ptr)->size = 0;
+	(*buf_ptr)->cstr[0] = 0;
 	insert_str_into_buf(buf_ptr, 0, str);
 }
 
@@ -236,12 +292,20 @@ static void append_char_to_buf(strbuf_t** buf_ptr, char c)
 {
 	strbuf_t* buf = *buf_ptr;
 
-	if(buf->size+1 > buf->capacity)
+	if(buf_is_dynamic(buf) && buf->size+1 > buf->capacity)
 		change_buf_capacity(&buf, round_up_capacity(buf->size + 1));
 
-	buf->cstr[buf->size] = c;
-	buf->size++;
-	buf->cstr[buf->size] = 0;
+	if(buf->size+1 <= buf->capacity)
+	{
+		buf->cstr[buf->size] = c;
+		buf->size++;
+		buf->cstr[buf->size] = 0;
+	}
+	else
+	{
+		buf->size = 0;
+		buf->cstr[0] = 0;
+	};
 	*buf_ptr = buf;
 }
 
@@ -255,4 +319,9 @@ static size_t round_up_capacity(size_t capacity)
 static bool buf_contains_str(strbuf_t* buf, str_t str)
 {
 	return &buf->cstr[0] <= str.data && str.data < &buf->cstr[buf->size];
+}
+
+static bool buf_is_dynamic(strbuf_t* buf)
+{
+	return !!(buf->allocator.allocator);
 }
