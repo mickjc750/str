@@ -3,15 +3,16 @@
 C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=QpAhX-gsHMs&t=3009s
 
 # Table of Contents
-1. [Introduction](#introduction)
-2. [Understanding the separate purposes of str.h and strbuf.h](#understanding-the-separate-purposes-of-strh-and-strbufh)
-3. [str.h](#strh)
-4. [str.h functions](#strh-functions)
-5. [strbuf.h](#strbufh)
-6. [Providing an allocator for strbuf_create().](#providing-an-allocator-for-strbufcreate)
-7. [Allocator examples](#allocator-examples)
-8. [Buffer re-sizing](#buffer-re-sizing)
-9. [strbuf.h functions](#strbufh-functions)
+1.  [Introduction](#introduction)
+2.  [Understanding the separate purposes of str.h and strbuf.h](#understanding-the-separate-purposes-of-strh-and-strbufh)
+3.  [str.h](#strh)
+4.  [Passing a str_t to printf()](#passing-a-strt-to-printf)
+5.  [str.h functions](#strh-functions)
+6.  [strbuf.h](#strbufh)
+7.  [Providing an allocator for strbuf_create().](#providing-an-allocator-for-strbufcreate)
+8.  [Allocator examples](#allocator-examples)
+9.  [Buffer re-sizing](#buffer-re-sizing)
+10. [strbuf.h functions](#strbufh-functions)
 
 &nbsp;
 &nbsp;
@@ -74,6 +75,14 @@ Note that this holds only:
 Some operations may return an invalid str_t, in this case .data=NULL and .size==0. Operations which can cause an invalid str_t to be returned include:
 * Attempting to split a string using non-existent delimiter with **str_pop_first_split()** or **str_pop_last_split()**
 * Requesting a substring range, which is entirely outside of the range of the input string.
+
+&nbsp;
+# Passing a str_t to printf()
+ There are two macros defined for this **PRIstr** and **PRIstrarg()**, which make use if printf's dynamic precision to limit the number of characters read.
+ 
+ Example usage:
+
+	printf("The string is {%"PRIstr"}\n", PRIstrarg(mystring));
 
 &nbsp;
 # str.h functions:
