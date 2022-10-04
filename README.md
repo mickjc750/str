@@ -201,6 +201,8 @@ The default precision of this function is double, but **str.h** accepts the foll
 * STR_SUPPORT_FLOAT - Use float instead of double.
 * STR_SUPPORT_LONG_DOUBLE - Use long double instead of double.
 
+These can be added to your compiler flags eg. -DSTR_SUPPORT_LONG_DOUBLE
+
 &nbsp;
 # strbuf.h
  strbuf.h provides functions for allocating, building and storing strings.
