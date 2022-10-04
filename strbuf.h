@@ -109,6 +109,12 @@ then:
 //	Create a new buffer with content size = initial_capacity  and return it.
 	strbuf_t* strbuf_create(size_t initial_capacity, str_allocator_t allocator);
 
+/*	Create a new buffer with a fixed capacity from the given memory address. The address must be suitably aligned for a void*.
+	size is the size of the memory available (not the desired capacity) and must be > sizeof(strbuf_t)+1
+	The resulting buffer capacity will be the given memory size -sizeof(strbuf_t)-1, and can be checked with buf->capacity
+	If the function fails due to bad alignment or insufficent size, a NULL will be returned */
+	strbuf_t* strbuf_create_fixed(void* addr, size_t size);
+
 /*	Concatenate one or more str_t and assign the result to the buffer.
 	Ideally should be used from the macro strbuf_cat() which performs the argument counting for you.
 	Returns a str_t of the buffer contents.

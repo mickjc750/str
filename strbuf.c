@@ -1,5 +1,6 @@
 /*
 */
+	#include <stdint.h>
 	#include <ctype.h>
 	#include "str.h"
 	#include "strbuf.h"
@@ -33,7 +34,36 @@
 
 strbuf_t* strbuf_create(size_t initial_capacity, str_allocator_t allocator)
 {
-	return create_buf(initial_capacity, allocator);
+	strbuf_t* result;
+	if(allocator.allocator)
+		result = create_buf(initial_capacity, allocator);
+	else
+		result = NULL;
+	return result;
+}
+
+strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size)
+{
+	strbuf_t* result = NULL;
+	intptr_t alignment_mask;
+
+	if(addr_size > sizeof(strbuf_t) && addr)
+	{
+		//check alignment
+		alignment_mask = sizeof(void*)-1;
+		alignment_mask &= (intptr_t)addr;
+		if(alignment_mask == 0)
+		{
+			result = addr;
+			result->allocator.app_data = NULL;
+			result->allocator.allocator = NULL;
+			result->size = 0;
+			result->capacity = addr_size - sizeof(void*) - 1;
+			result->cstr[0] = 0;
+		};
+	};
+
+	return result;
 }
 
 // concatenate a number of str's this can include the buffer itself, strbuf.str for appending
