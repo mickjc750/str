@@ -23,15 +23,6 @@
 
 	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
-	// A structure which holds information about a static buffer
-	typedef struct static_buf_t
-	{
-		void* address;
-		size_t size;
-		bool already_allocated;
-	} static_buf_t;
-
-
 	#define TEST_STR_TO_FLOAT(fmt, arg)															\
 	do{																							\
 		str_t str = cstr(#arg);																	\
@@ -58,7 +49,6 @@
 //********************************************************************************************************
 
 	static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
-	static void* static_allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
 
 //********************************************************************************************************
 // Public functions
@@ -425,30 +415,29 @@ int main(int argc, const char* argv[])
 	strbuf_destroy(&buf);
 	assert(buf == NULL);
 
-	DBG("** Testing with an allocator that only returns an address to a single static buffer");
-	DBG("** This can be done, but strbuf_cat() must NOT be passed a str_t referencing data within the target buffer");
-	DBG("** Because it will be unable to allocate an additional temporary buffer to build the output\n");
+	DBG("** Testing with a fixed capacity buffer (non-dynamic) from a given memory address");
+	DBG("** This can be done, but if strbuf_cat() is passed a str_t referencing data within the target buffer, it will fail and return an empty buffer.");
+	DBG("** This is because it will be unable to allocate a temporary buffer to build the output\n");
 
-//	Create an allocator which simply returns the address of a static buffer (this could also be on the stack, static here meaning non-dynamic)
+	assert(!strbuf_create_fixed(static_buf+3, STATIC_BUFFER_SIZE));	//fail due to badly aligned address
+	assert(!strbuf_create_fixed(static_buf, sizeof(strbuf_t)));		//fail due to insufficient space
 
-//	Information used mostly for error trapping
-	static_buf_t static_buf_info = {.address = static_buf, .size = sizeof(static_buf)};
-
-//	Assign the allocator, if no error detection is desired, the .app_data could simply be the buffer address, and the static_buf_struct above eliminated.
-	str_allocator_t str_static_allocator = (str_allocator_t){.allocator = static_allocator, .app_data = &static_buf_info};
-
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_static_allocator);
+	DBG("Creating strbuf_t from a fixed buffer of %i bytes", STATIC_BUFFER_SIZE);
+	buf = strbuf_create_fixed(static_buf, STATIC_BUFFER_SIZE);
+	DBG("Available capacity is %zu characters (size of strbuf_t = %zu)", buf->capacity, sizeof(strbuf_t));
+	assert(buf->capacity == STATIC_BUFFER_SIZE - sizeof(strbuf_t)-1);
 
 	DBG("Concatenating DDDDDDDDDD EEEEEEEEEE FFFFFFFFFF");
 	strbuf_cat(&buf, cstr("DDDDDDDDDD"), cstr("EEEEEEEEEE"), cstr("FFFFFFFFFF"));
-	assert(buf->capacity >= 30);
+	assert(buf->capacity == STATIC_BUFFER_SIZE - sizeof(strbuf_t)-1);
+	strbuf_shrink(&buf);
+	assert(buf->capacity == STATIC_BUFFER_SIZE - sizeof(strbuf_t)-1);	//strbuf_shrink should do nothing to a non-dynamic buffer
 	assert(buf->size == 30);
 	DBG("Result = %s\n", buf->cstr);
 	assert(!strcmp(buf->cstr, "DDDDDDDDDDEEEEEEEEEEFFFFFFFFFF"));
 
 	DBG("** Testing strbuf_append_char() **");
 	strbuf_cat(&buf, cstr(""));
-	strbuf_shrink(&buf);
 
 	chrptr = "Once upon a time there was a very smelly camel that poked it's tongue out and puffed it up.";
 	while(*chrptr)
@@ -458,18 +447,11 @@ int main(int argc, const char* argv[])
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("Once upon a time there was a very smelly camel that poked it's tongue out and puffed it up.", str1.data, str1.size));
 
-	DBG("Current capacity = %zu - Shrinking buffer", buf->capacity);
-	strbuf_shrink(&buf);
-	DBG("Current capacity = %zu\n", buf->capacity);
-	assert(buf->capacity == strlen(buf->cstr));
 
 	DBG("** Destroying the buffer (strbuf_destroy)**\n");
 	strbuf_destroy(&buf);
 	assert(buf == NULL);
 
-	DBG("** Now we can create the buffer again (strbuf_create)**\n\n\n");
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_static_allocator);
-	assert(buf);	
 
 	DBG("** Testing various edge cases of str_to_cstr() **\n");
 	static_buf[0] = 0x7F;
@@ -615,31 +597,4 @@ static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free
 	result = realloc(ptr_to_free, size);
 	assert(size==0 || result);	// You need to catch a failed allocation here.
 	return result;
-}
-
-// Declare an allocator function for returning the address of a static buffer.
-static void* static_allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
-{
-	(void)caller_filename; (void)caller_line;
-	static_buf_t* info = this_allocator->app_data;
-	intptr_t alignment_mask;
-
-	if(size)
-	{
-		//check alignment
-		alignment_mask = sizeof(void*)-1;
-		alignment_mask &= (intptr_t)info->address;
-		assert(alignment_mask == 0);
-
-		//check size
-		assert(size <= info->size);
-
-		//check we are not trying to make a new allocation (re-allocation is ok, a new allocation is not)
-		assert(ptr_to_free || !info->already_allocated);
-		info->already_allocated = true;
-	}
-	else
-		info->already_allocated = false;
-
-	return info->address;
 }

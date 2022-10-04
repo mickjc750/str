@@ -58,7 +58,7 @@ strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size)
 			result->allocator.app_data = NULL;
 			result->allocator.allocator = NULL;
 			result->size = 0;
-			result->capacity = addr_size - sizeof(void*) - 1;
+			result->capacity = addr_size - sizeof(strbuf_t) - 1;
 			result->cstr[0] = 0;
 		};
 	};
