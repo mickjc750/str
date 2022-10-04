@@ -139,16 +139,16 @@ Example usage:
 
 The above **str_to_ull** and **str_to_ll()** are also cast to stdint.h types using macros.
 
-	#define str_to_int(str) 		((int)str_to_ll(str))
-	#define str_to_int8_t(str) 		((int8_t)str_to_ll(str))
-	#define str_to_int16_t(str) 	((int16_t)str_to_ll(str))
-	#define str_to_int32_t(str) 	((int32_t)str_to_ll(str))
-	#define str_to_int64_t(str) 	((int64_t)str_to_ll(str))
-	#define str_to_unsigned(str)	((unsigned)str_to_ull(str))
-	#define str_to_uint8_t(str) 	((uint8_t)str_to_ull(str))
-	#define str_to_uint16_t(str) 	((uint16_t)str_to_ull(str))
-	#define str_to_uint32_t(str) 	((uint32_t)str_to_ull(str))
-	#define str_to_uint64_t(str) 	((uint64_t)str_to_ull(str))
+	#define str_to_int(str)         ((int)str_to_ll(str))
+	#define str_to_int8_t(str)      ((int8_t)str_to_ll(str))
+	#define str_to_int16_t(str)     ((int16_t)str_to_ll(str))
+	#define str_to_int32_t(str)     ((int32_t)str_to_ll(str))
+	#define str_to_int64_t(str)     ((int64_t)str_to_ll(str))
+	#define str_to_unsigned(str)    ((unsigned)str_to_ull(str))
+	#define str_to_uint8_t(str)     ((uint8_t)str_to_ull(str))
+	#define str_to_uint16_t(str)    ((uint16_t)str_to_ull(str))
+	#define str_to_uint32_t(str)    ((uint32_t)str_to_ull(str))
+	#define str_to_uint64_t(str)    ((uint64_t)str_to_ull(str))
 
 &nbsp;
 ## double str_to_float(str_t str);
@@ -206,15 +206,15 @@ A pointer to the allocator function.
 
 The parameters to this function are:
 
-	struct str_allocator_t* this_allocator 	<-- A pointer to the str_allocator_t which may be used to access ->app_data.
-	void* ptr_to_free 						<-- Memory address to free OR reallocate.
-	size_t size 							<-- Size of allocation, or new size of the reallocation, or 0 if memory is to be freed.
-	const char* caller_filename 			<-- usually /path/strbuf.c, this is to support allocators which track caller ID.
-	int caller_line 						<-- The line within strbuf.c which called the allocator, this is also to support allocators which track caller ID.
+	struct str_allocator_t* this_allocator <-- A pointer to the str_allocator_t which may be used to access ->app_data.
+	void* ptr_to_free                      <-- Memory address to free OR reallocate.
+	size_t size                            <-- Size of allocation, or new size of the reallocation, or 0 if memory is to be freed.
+	const char* caller_filename            <-- usually /path/strbuf.c, this is to support allocators which track caller ID.
+	int caller_line                        <-- The line within strbuf.c which called the allocator, this is also to support allocators which track caller ID.
 
 &nbsp;
 # Allocator examples
-There are 3 of these provided under allocator_examples/
+Three of these provided under allocator_examples/
 
 &nbsp;
 # Buffer re-sizing
