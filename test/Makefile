@@ -32,6 +32,7 @@ CSTANDARD = -std=gnu99
 
 # Place -D or -U options here for C sources
 CDEFS = -DPLATFORM_PC
+CDEFS += -DSTRBUF_PROVIDE_PRINTF
 
 #---------------- Compiler Options C ----------------
 #  -g 			 debug information

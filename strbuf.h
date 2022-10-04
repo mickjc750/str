@@ -150,4 +150,10 @@ then:
 //	Insert str_t to buffer
 	str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str);
 
+// 	Provide formatted printing to a strbuf_t (uses vsnprintf() from stdio.h)
+#ifdef STRBUF_PROVIDE_PRINTF
+	str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);
+	str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
+#endif
+
 #endif

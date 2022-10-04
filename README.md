@@ -13,7 +13,8 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 8.  [Allocator example](#allocator-example)
 9.  [Buffer re-sizing](#buffer-re-sizing)
 10. [non-dynamic buffers](#non-dynamic-buffers)
-11. [strbuf.h functions](#strbufh-functions)
+11. [printf to a strbuf_t](#printf-to-a-strbuf_t)
+12. [strbuf.h functions](#strbufh-functions)
 
 &nbsp;
 &nbsp;
@@ -272,6 +273,15 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
  A function **strbuf_create_fixed()** is provided for initializing a strbuf_t* from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than is available, this will result in an empty buffer.
 
 &nbsp;
+# printf to a strbuf_t
+
+ To enable this feature, you must define the symbol STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler flags
+
+ **strbuf.h** will then define __str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);__
+
+ This uses vsnprintf() from stdio.h internally.
+
+&nbsp;
 &nbsp;
 # strbuf.h functions:
 
@@ -338,4 +348,12 @@ Example use:
 &nbsp;
 ## str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str);
  Insert str_t to buffer at index.
-	
+
+
+&nbsp;
+&nbsp;
+## str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);
+## str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
+### Theese functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler flags
+ These provide the variadic and non-variadic versions of printf, which output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit. If the buffer is non-dynamic, and the output string does not fit, the buffer will be emptied.
+

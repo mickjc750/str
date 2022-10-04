@@ -597,6 +597,19 @@ int main(int argc, const char* argv[])
 	TEST_STR_TO_FLOAT("%f", -.002);
 	TEST_STR_TO_FLOAT("%.9f", .100000002);
 	TEST_STR_TO_FLOAT("%.9f", 39E-8);
+
+	#ifdef STRBUF_PROVIDE_PRINTF
+	DBG("\n\n");
+	DBG("** Testing str_printf() **\n");
+
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_allocator);
+	str1 = strbuf_printf(&buf, "Hello from printf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
+
+	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
+	assert(!memcmp(str1.data, "Hello from printf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
+	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+	#endif
+	
 	return 0;
 }
 
