@@ -173,6 +173,14 @@ Example usage:
  Same as **str_pop_first_split()** but searches from the end of the string backwards.
 
 &nbsp;
+## str_t str_pop_first_split_nocase(str_t* str_ptr, str_t delimiters);
+Same as **str_pop_first_split()** but ignores the case of the delimiters
+
+&nbsp;
+## str_t str_pop_last_split_nocase(str_t* str_ptr, str_t delimiters);
+Same as **str_pop_last_split()** but ignores the case of the delimiters
+
+&nbsp;
 ## long long str_to_ll(str_t str);
  Convert the ascii representation of the signed long long in **str**, into a long long value.
  The input string is first  trimmed of any leading spaces, and may start with 0x or 0X for hex numbers, or 0b for binary numbers.
