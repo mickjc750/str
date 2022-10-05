@@ -9,12 +9,19 @@
 		#include <stdio.h>
 	#endif
 
+	#ifdef STRBUF_PROVIDE_PRNF
+		#include "prnf.h"
+	#endif
+
+	//todo: remove
+	#define STRBUF_PROVIDE_PRNF
+
 //********************************************************************************************************
 // Local defines
 //********************************************************************************************************
 
-//	#include <stdio.h>
-//	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
+	#include <stdio.h>
+	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
 //********************************************************************************************************
 // Private prototypes
@@ -31,6 +38,10 @@
 	static str_t str_of_buf(strbuf_t* buf);
 	static bool buf_contains_str(strbuf_t* buf, str_t str);
 	static bool buf_is_dynamic(strbuf_t* buf);
+
+#ifdef STRBUF_PROVIDE_PRNF
+	static void char_handler_for_prnf(void* dst, char c);
+#endif
 
 //********************************************************************************************************
 // Public functions
@@ -129,6 +140,48 @@ str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
 		str = strbuf_str(&buf);
 		*buf_ptr = buf;
 		va_end(vb);
+	};
+	return str;
+}
+#endif
+
+#ifdef STRBUF_PROVIDE_PRNF
+str_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	str_t str = {0};
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_vprnf(buf_ptr, format, va);
+		va_end(va);;
+	};
+	return str;
+}
+
+str_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	int size;
+	strbuf_t* buf;
+	str_t str = {0};
+	int char_count;
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+
+		buf->size = 0;
+		buf->cstr[0] = 0;
+
+		char_count = vfptrprnf(char_handler_for_prnf, &buf,  format, va);
+
+		if(char_count > buf->size)
+		{
+			buf->size = 0;
+			buf->cstr[0] = 0;
+		};
+
+		str = strbuf_str(&buf);
+		*buf_ptr = buf;
 	};
 	return str;
 }
@@ -375,3 +428,10 @@ static bool buf_is_dynamic(strbuf_t* buf)
 {
 	return !!(buf->allocator.allocator);
 }
+
+#ifdef STRBUF_PROVIDE_PRNF
+static void char_handler_for_prnf(void* dst, char c)
+{
+	append_char_to_buf((strbuf_t**)dst, c);
+}
+#endif

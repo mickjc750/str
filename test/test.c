@@ -573,8 +573,6 @@ int main(int argc, const char* argv[])
 
 	DBG("** OK **\n\n\n");
 
-	DBG("** Complete **\n");
-
 	DBG("** Testing str_to_float() **\n");
 
 	str1 = cstr("inf");
@@ -609,7 +607,21 @@ int main(int argc, const char* argv[])
 	assert(!memcmp(str1.data, "Hello from printf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
 	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
 	#endif
-	
+
+	#ifdef STRBUF_PROVIDE_PRNF
+	DBG("\n\n");
+	DBG("** Testing str_prnf() **\n");
+
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_allocator);
+	str1 = strbuf_prnf(&buf, "Hello from prnf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
+
+	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
+	assert(!memcmp(str1.data, "Hello from prnf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
+	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+	#endif
+
+	DBG("\n\n\n*** Everything worked ***\n");
+
 	return 0;
 }
 

@@ -14,7 +14,8 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 9.  [Buffer re-sizing](#buffer-re-sizing)
 10. [non-dynamic buffers](#non-dynamic-buffers)
 11. [printf to a strbuf_t](#printf-to-a-strbuf_t)
-12. [strbuf.h functions](#strbufh-functions)
+12. [prnf to a strbuf_t](#prnf-to-a-strbuft)
+13. [strbuf.h functions](#strbufh-functions)
 
 &nbsp;
 &nbsp;
@@ -282,6 +283,14 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
  This uses vsnprintf() from stdio.h internally.
 
 &nbsp;
+# prnf to a strbuf_t
+
+ To enable this feature, you must define the symbol STRBUF_PROVIDE_PRNF.
+ This is an alternative text formatter available here https://github.com/mickjc750/prnf
+
+ **strbuf.h** will then define __str_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...);__
+
+&nbsp;
 &nbsp;
 # strbuf.h functions:
 
@@ -354,6 +363,12 @@ Example use:
 &nbsp;
 ## str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);
 ## str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
-### Theese functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler flags
+### These functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler flags
  These provide the variadic and non-variadic versions of printf, which output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit. If the buffer is non-dynamic, and the output string does not fit, the buffer will be emptied.
 
+&nbsp;
+&nbsp;
+## str_t strbuf_prntf(strbuf_t** buf_ptr, const char* format, ...);
+## str_t strbuf_vprntf(strbuf_t** buf_ptr, const char* format, va_list va);
+### These functions are available if you define STRBUF_PROVIDE_PRNF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler flags
+ Similar to printf, but uses the alternative test formatter https://github.com/mickjc750/prnf
