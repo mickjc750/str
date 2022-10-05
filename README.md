@@ -378,5 +378,5 @@ Example use:
 &nbsp;
 ## str_t strbuf_prntf(strbuf_t** buf_ptr, const char* format, ...);
 ## str_t strbuf_vprntf(strbuf_t** buf_ptr, const char* format, va_list va);
-### These functions are available if you define STRBUF_PROVIDE_PRNF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler flags
+### These functions are available if you define STRBUF_PROVIDE_PRNF, ideally by adding -DSTRBUF_PROVIDE_PRNF to your compiler flags
  Similar to printf, but uses the alternative test formatter https://github.com/mickjc750/prnf
