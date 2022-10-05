@@ -130,6 +130,20 @@ int main(int argc, const char* argv[])
 	str1 = strbuf_str(&buf);
 	DBG("Meanwhile, the buffer remains unchanged! %"PRIstr"\n\n\n", PRIstrarg(str1));
 
+	DBG("**Testing str_pop_first_split_nocase()**\n");
+
+	strbuf_cat(&buf, cstr("123r456R789"));
+	str2 = strbuf_str(&buf);
+	DBG("Splitting %"PRIstr, PRIstrarg(str2));
+	
+	str1 = str_pop_first_split_nocase(&str2, cstr("r"));
+	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"", PRIstrarg(str1), PRIstrarg(str2));
+	assert(!memcmp("123", str1.data, str1.size));
+	str1 = str_pop_first_split_nocase(&str2, cstr("r"));
+	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
+	assert(!memcmp("456", str1.data, str1.size));
+	assert(!memcmp("789", str2.data, str2.size));
+
 	DBG("**Testing edge cases for str_pop_first_split()**\n");
 
 	strbuf_cat(&buf, cstr("/456/789/"));

@@ -15,11 +15,17 @@
 //	#include <stdio.h>
 //	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
+	#define CASE_SENSETIVE		true
+	#define NOT_CASE_SENSETIVE	false
+
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
 
-	static bool contains_char(str_t str, char c);
+	static bool contains_char(str_t str, char c, bool case_sensetive);
+
+	static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_sensetive);
+	static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetive);
 
 	static unsigned long long interpret_hex(str_t str);
 	static unsigned long long interpret_bin(str_t str);
@@ -112,7 +118,7 @@ str_t str_sub(str_t str, int begin, int end)
 
 str_t str_trim_start(str_t str, str_t chars_to_trim)
 {
-	while(str.size && contains_char(chars_to_trim, *str.data))
+	while(str.size && contains_char(chars_to_trim, *str.data, CASE_SENSETIVE))
 	{
 		str.data++;
 		str.size--;
@@ -123,7 +129,7 @@ str_t str_trim_start(str_t str, str_t chars_to_trim)
 
 str_t str_trim_end(str_t str, str_t chars_to_trim)
 {
-	while(str.size && contains_char(chars_to_trim, str.data[str.size-1]))
+	while(str.size && contains_char(chars_to_trim, str.data[str.size-1], CASE_SENSETIVE))
 		str.size--;
 
 	return str;
@@ -181,31 +187,19 @@ str_search_result_t str_find_last(str_t haystack, str_t needle)
 str_t str_pop_first_split(str_t* str_ptr, str_t delimiters)
 {
 	str_t result = (str_t){.data = NULL, .size = 0};
-	bool found = false;
-	const char* ptr = str_ptr->data;
+	
+	if(str_ptr)
+		result = pop_first_split(str_ptr, delimiters, CASE_SENSETIVE);
 
-	if(str_ptr->data && delimiters.data)
-	{
-		// trt to find the delimiter
-		while(ptr != &str_ptr->data[str_ptr->size] && !found)
-		{
-			found = contains_char(delimiters, *ptr);
-			ptr += !found;
-		};
-	};
+	return result;
+}
 
-	if(found)
-	{
-		result.data = str_ptr->data;
-		result.size = ptr - str_ptr->data;
-		str_ptr->data = ptr;
-		str_ptr->size -= result.size;
-
-		// at this stage, the remainder still includes the delimiter
-		str_ptr->size--;
-		if(str_ptr->size)	//only point to the character after the delimiter if there is one
-			str_ptr->data++;
-	};
+str_t str_pop_first_split_nocase(str_t* str_ptr, str_t delimiters)
+{
+	str_t result = (str_t){.data = NULL, .size = 0};
+	
+	if(str_ptr)
+		result = pop_first_split(str_ptr, delimiters, NOT_CASE_SENSETIVE);
 
 	return result;
 }
@@ -213,31 +207,19 @@ str_t str_pop_first_split(str_t* str_ptr, str_t delimiters)
 str_t str_pop_last_split(str_t* str_ptr, str_t delimiters)
 {
 	str_t result = (str_t){.data = NULL, .size = 0};
-	bool found = false;
-	const char* ptr;
+	
+	if(str_ptr)
+		result = pop_last_split(str_ptr, delimiters, CASE_SENSETIVE);
 
-	if(str_ptr->data && str_ptr->size && delimiters.data)
-	{
-		// starting from the last character, try to find the delimiter backwards
-		ptr = &str_ptr->data[str_ptr->size-1];
-		while(ptr != str_ptr->data-1 && !found)
-		{
-			found = contains_char(delimiters, *ptr);
-			ptr -= !found;
-		};
-	};
+	return result;
+}
 
-	if(found)
-	{
-		result.data = ptr;
-		result.size = &str_ptr->data[str_ptr->size] - ptr;
-		str_ptr->size -= result.size;
-
-		// at this stage, the result still starts with the delimiter
-		result.size--;
-		if(result.size)
-			result.data++; //only point to the the character after the delimiter if there is one
-	};
+str_t str_pop_last_split_nocase(str_t* str_ptr, str_t delimiters)
+{
+	str_t result = (str_t){.data = NULL, .size = 0};
+	
+	if(str_ptr)
+		result = pop_last_split(str_ptr, delimiters, NOT_CASE_SENSETIVE);
 
 	return result;
 }
@@ -409,13 +391,17 @@ static str_float_t interpret_float(str_t str)
 }
 #endif
 
-static bool contains_char(str_t str, char c)
+static bool contains_char(str_t str, char c, bool case_sensetive)
 {
 	bool found = false;
 	const char* ptr = str.data;
+
 	while(!found && ptr != &str.data[str.size])
 	{
-		found = *ptr == c;
+		if(case_sensetive)
+			found = *ptr == c;
+		else
+			found = toupper(*ptr) == toupper(c);
 		ptr++;
 	};
 
@@ -428,6 +414,72 @@ static int memcmp_nocase(const char* a, const char* b, size_t size)
 
 	while(size-- && !result)
 		result = toupper((unsigned)(*a++)) - toupper((unsigned)(*b++));
+
+	return result;
+}
+
+static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_sensetive)
+{
+	str_t result = (str_t){.data = NULL, .size = 0};
+	bool found = false;
+	const char* ptr;
+	
+	ptr = str_ptr->data;
+
+	if(str_ptr->data && delimiters.data)
+	{
+		// trt to find the delimiter
+		while(ptr != &str_ptr->data[str_ptr->size] && !found)
+		{
+			found = contains_char(delimiters, *ptr, case_sensetive);
+			ptr += !found;
+		};
+	};
+
+	if(found)
+	{
+		result.data = str_ptr->data;
+		result.size = ptr - str_ptr->data;
+		str_ptr->data = ptr;
+		str_ptr->size -= result.size;
+
+		// at this stage, the remainder still includes the delimiter
+		str_ptr->size--;
+		if(str_ptr->size)	//only point to the character after the delimiter if there is one
+			str_ptr->data++;
+	};
+
+	return result;
+}
+
+static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetive)
+{
+	str_t result = (str_t){.data = NULL, .size = 0};
+	bool found = false;
+	const char* ptr;
+
+	if(str_ptr->data && str_ptr->size && delimiters.data)
+	{
+		// starting from the last character, try to find the delimiter backwards
+		ptr = &str_ptr->data[str_ptr->size-1];
+		while(ptr != str_ptr->data-1 && !found)
+		{
+			found = contains_char(delimiters, *ptr, case_sensetive);
+			ptr -= !found;
+		};
+	};
+
+	if(found)
+	{
+		result.data = ptr;
+		result.size = &str_ptr->data[str_ptr->size] - ptr;
+		str_ptr->size -= result.size;
+
+		// at this stage, the result still starts with the delimiter
+		result.size--;
+		if(result.size)
+			result.data++; //only point to the the character after the delimiter if there is one
+	};
 
 	return result;
 }

@@ -94,10 +94,16 @@
 	If no delimeter is found, the returned string is invalid, and should be tested with str_is_valid() */
 	str_t str_pop_first_split(str_t* str_ptr, str_t delimiters);
 
+//	Same as str_pop_first_split, ignoring case on the delimiters
+	str_t str_pop_first_split_nocase(str_t* str_ptr, str_t delimiters);
+
 /*	Return a str_t representing the contents of the source string from (but not including) the last delimiter found.
 	Additionally this text, and the delimeter itself is removed (popped) from the end of the source string.
 	If no delimeter is found, the returned string is invalid, and should be tested with str_is_valid() */
 	str_t str_pop_last_split(str_t* str_ptr, str_t delimiters);
+
+//	Same as str_pop_last_split, ignoring case on the delimiters
+	str_t str_pop_last_split_nocase(str_t* str_ptr, str_t delimiters);
 
 //	Convert number to long long
 	long long str_to_ll(str_t str);
