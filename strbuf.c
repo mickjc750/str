@@ -13,15 +13,12 @@
 		#include "prnf.h"
 	#endif
 
-	//todo: remove
-	#define STRBUF_PROVIDE_PRNF
-
 //********************************************************************************************************
 // Local defines
 //********************************************************************************************************
 
-	#include <stdio.h>
-	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
+//	#include <stdio.h>
+//	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
 //********************************************************************************************************
 // Private prototypes
@@ -161,7 +158,6 @@ str_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...)
 
 str_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
 {
-	int size;
 	strbuf_t* buf;
 	str_t str = {0};
 	int char_count;
