@@ -113,7 +113,7 @@
 
 /*	Convert number to float
 	By default str_to_float() works with and returns double
-	To support long doublg define STR_SUPPORT_LONG_DOUBLE
+	To support long double define STR_SUPPORT_LONG_DOUBLE
 	Or, to not supprt float conversions at all, define STR_NO_FLOAT*/
 	#ifndef STR_NO_FLOAT
 		#ifdef STR_SUPPORT_LONG_DOUBLE

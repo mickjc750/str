@@ -154,12 +154,16 @@ then:
 #ifdef STRBUF_PROVIDE_PRINTF
 	str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);
 	str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
+	str_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...);
+	str_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
 #endif
 
 // 	Provide formatted printing to a strbuf_t using the alternative text formatter prnf.h (https://github.com/mickjc750/prnf)
 #ifdef STRBUF_PROVIDE_PRNF
 	str_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...);
 	str_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);
+	str_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...);
+	str_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);
 #endif
 
 #endif

@@ -612,7 +612,7 @@ int main(int argc, const char* argv[])
 
 	#ifdef STRBUF_PROVIDE_PRINTF
 	DBG("\n\n");
-	DBG("** Testing str_printf() **\n");
+	DBG("** Testing strbuf_printf() **\n");
 
 	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_allocator);
 	str1 = strbuf_printf(&buf, "Hello from printf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
@@ -620,11 +620,19 @@ int main(int argc, const char* argv[])
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp(str1.data, "Hello from printf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
 	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+
+	DBG("** Testing strbuf_append_printf() **\n");
+
+	str1 = strbuf_append_printf(&buf, " Appending one more number %i", 748921);
+	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
+	assert(!memcmp(str1.data, "Hello from printf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597 Appending one more number 748921", str1.size));
+	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+
 	#endif
 
 	#ifdef STRBUF_PROVIDE_PRNF
 	DBG("\n\n");
-	DBG("** Testing str_prnf() **\n");
+	DBG("** Testing strbuf_prnf() **\n");
 
 	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_allocator);
 	str1 = strbuf_prnf(&buf, "Hello from prnf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
@@ -633,6 +641,14 @@ int main(int argc, const char* argv[])
 	assert(!memcmp(str1.data, "Hello from prnf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
 	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
 	#endif
+
+	DBG("** Testing strbuf_append_prnf() **\n");
+
+	str1 = strbuf_append_prnf(&buf, " Appending one more number %i", 748921);
+
+	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
+	assert(!memcmp(str1.data, "Hello from prnf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597 Appending one more number 748921", str1.size));
+	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
 
 	DBG("\n\n\n*** Everything worked ***\n");
 

@@ -371,12 +371,20 @@ Example use:
 &nbsp;
 ## str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);
 ## str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
-### These functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler flags
+### These functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler options
  These provide the variadic and non-variadic versions of printf, which output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit. If the buffer is non-dynamic, and the output string does not fit, the buffer will be emptied.
+
+&nbsp;
+&nbsp;
+## str_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...);
+## str_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
+ The output is appended to the buffer. If the buffer is non-dynamic, and the output string does not fit, the buffer will be emptied.
 
 &nbsp;
 &nbsp;
 ## str_t strbuf_prntf(strbuf_t** buf_ptr, const char* format, ...);
 ## str_t strbuf_vprntf(strbuf_t** buf_ptr, const char* format, va_list va);
-### These functions are available if you define STRBUF_PROVIDE_PRNF, ideally by adding -DSTRBUF_PROVIDE_PRNF to your compiler flags
- Similar to printf, but uses the alternative test formatter https://github.com/mickjc750/prnf
+## str_t strbuf_append_prntf(strbuf_t** buf_ptr, const char* format, ...);
+## str_t strbuf_append_vprntf(strbuf_t** buf_ptr, const char* format, va_list va);
+### These functions are available if you define STRBUF_PROVIDE_PRNF, ideally by adding -DSTRBUF_PROVIDE_PRNF to your compiler options
+ These behave like the printf functions, but use an alternative text formatter https://github.com/mickjc750/prnf

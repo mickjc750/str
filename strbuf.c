@@ -140,6 +140,50 @@ str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
 	};
 	return str;
 }
+
+str_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	str_t str = {0};
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_append_vprintf(buf_ptr, format, va);
+		va_end(va);
+	};
+	return str;
+}
+
+str_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	int size;
+	strbuf_t* buf;
+	str_t str = {0};
+	va_list vb;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_copy(vb, va);
+		buf = *buf_ptr;
+		size = buf->size;
+		size += vsnprintf(NULL, 0, format, va);
+
+		if(buf_is_dynamic(buf) && size > buf->capacity)
+			change_buf_capacity(&buf, round_up_capacity(size));
+
+		if(size <= buf->capacity)
+			buf->size += vsnprintf(&buf->cstr[buf->size], buf->capacity - buf->size, format, vb);
+		else
+		{
+			buf->size = 0;
+			buf->cstr[0] = 0;
+		};
+		str = strbuf_str(&buf);
+		*buf_ptr = buf;
+		va_end(vb);
+	};
+	return str;
+}
+
 #endif
 
 #ifdef STRBUF_PROVIDE_PRNF
@@ -181,6 +225,44 @@ str_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
 	};
 	return str;
 }
+
+str_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	str_t str = {0};
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_append_vprnf(buf_ptr, format, va);
+		va_end(va);;
+	};
+	return str;
+}
+
+str_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	strbuf_t* buf;
+	str_t str = {0};
+	int char_count;
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+
+		char_count = buf->size;
+		char_count += vfptrprnf(char_handler_for_prnf, &buf,  format, va);
+
+		if(char_count > buf->size)
+		{
+			buf->size = 0;
+			buf->cstr[0] = 0;
+		};
+
+		str = strbuf_str(&buf);
+		*buf_ptr = buf;
+	};
+	return str;
+}
+
 #endif
 
 str_t strbuf_str(strbuf_t** buf_ptr)
