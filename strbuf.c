@@ -114,29 +114,14 @@ str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...)
 
 str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
 {
-	int size;
-	strbuf_t* buf;
 	str_t str = {0};
-	va_list vb;
 	if(buf_ptr && *buf_ptr)
 	{
-		va_copy(vb, va);
-		buf = *buf_ptr;
-		size = vsnprintf(NULL, 0, format, va);
+		(*buf_ptr)->size = 0;
+		(*buf_ptr)->cstr[0] = 0;
 
-		if(buf_is_dynamic(buf) && size > buf->capacity)
-			change_buf_capacity(&buf, round_up_capacity(size));
+		str = strbuf_append_vprintf(buf_ptr, format, va);
 
-		if(size <= buf->capacity)
-			buf->size = vsnprintf(buf->cstr, buf->capacity, format, vb);
-		else
-		{
-			buf->size = 0;
-			buf->cstr[0] = 0;
-		};
-		str = strbuf_str(&buf);
-		*buf_ptr = buf;
-		va_end(vb);
 	};
 	return str;
 }
