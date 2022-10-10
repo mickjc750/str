@@ -24,7 +24,7 @@
 // Private prototypes
 //********************************************************************************************************
 
-	static strbuf_t* create_buf(size_t initial_capacity, str_allocator_t allocator);
+	static strbuf_t* create_buf(size_t initial_capacity, strbuf_allocator_t allocator);
 	static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
 	static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str);
 	static void destroy_buf(strbuf_t** buf_ptr);
@@ -45,7 +45,7 @@
 // Public functions
 //********************************************************************************************************
 
-strbuf_t* strbuf_create(size_t initial_capacity, str_allocator_t allocator)
+strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t allocator)
 {
 	strbuf_t* result;
 	if(allocator.allocator)
@@ -304,7 +304,7 @@ str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str)
 // Private functions
 //********************************************************************************************************
 
-static strbuf_t* create_buf(size_t initial_capacity, str_allocator_t allocator)
+static strbuf_t* create_buf(size_t initial_capacity, strbuf_allocator_t allocator)
 {
 	strbuf_t* buf;
 

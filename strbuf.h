@@ -72,7 +72,7 @@
 	When a de-allocation is required,  ptr_to_free may or may not be NULL, and size will be 0
 	stdlib's realloc handles this perfectly, example:
 
-static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
+static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
 {
 	(void)this_allocator; (void)caller_filename; (void)caller_line;
 	void* result;
@@ -81,13 +81,13 @@ static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free
 	return result;
 }
 then:
-	str_allocator_t str_allocator = {.allocator = allocator}; */
+	strbuf_allocator_t strbuf_allocator = {.allocator = allocator}; */
 
-	typedef struct str_allocator_t
+	typedef struct strbuf_allocator_t
 	{
 		void* app_data;
-		void* (*allocator)(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
-	} str_allocator_t;
+		void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	} strbuf_allocator_t;
 
 
 //	Buffer structure. Allocates and owns the buffer memory.
@@ -96,7 +96,7 @@ then:
 	{
 		size_t size;
 		size_t capacity;
-		str_allocator_t allocator;
+		strbuf_allocator_t allocator;
 		char cstr[];
 	} strbuf_t;
 
@@ -107,7 +107,7 @@ then:
 //********************************************************************************************************
 
 //	Create a new buffer with content size = initial_capacity  and return it.
-	strbuf_t* strbuf_create(size_t initial_capacity, str_allocator_t allocator);
+	strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t allocator);
 
 /*	Create a new buffer with a fixed capacity from the given memory address. The address must be suitably aligned for a void*.
 	size is the size of the memory available (not the desired capacity) and must be > sizeof(strbuf_t)+1

@@ -48,7 +48,7 @@
 // Private prototypes
 //********************************************************************************************************
 
-	static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
 
 //********************************************************************************************************
 // Public functions
@@ -58,7 +58,7 @@ int main(int argc, const char* argv[])
 {
 	#define INITIAL_BUF_CAPACITY 16
 
-	str_allocator_t str_allocator = {.allocator = allocator};
+	strbuf_allocator_t strbuf_allocator = {.allocator = allocator};
 	strbuf_t* buf;
 	str_t str1, str2;
 	str_search_result_t search_result;
@@ -68,7 +68,7 @@ int main(int argc, const char* argv[])
 
 	printf("\n\n");
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, strbuf_allocator);
 
 	assert(buf->cstr);
 	assert(buf->size == 0);
@@ -614,7 +614,7 @@ int main(int argc, const char* argv[])
 	DBG("\n\n");
 	DBG("** Testing strbuf_printf() **\n");
 
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, strbuf_allocator);
 	str1 = strbuf_printf(&buf, "Hello from printf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
 
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
@@ -634,7 +634,7 @@ int main(int argc, const char* argv[])
 	DBG("\n\n");
 	DBG("** Testing strbuf_prnf() **\n");
 
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, strbuf_allocator);
 	str1 = strbuf_prnf(&buf, "Hello from prnf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
 
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
@@ -660,7 +660,7 @@ int main(int argc, const char* argv[])
 // Private functions
 //********************************************************************************************************
 
-static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
+static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
 {
 	(void)this_allocator; (void)caller_filename; (void)caller_line;
 	void* result;
