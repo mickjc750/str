@@ -228,7 +228,7 @@ These can be added to your compiler flags eg. -DSTR_SUPPORT_LONG_DOUBLE
 	{
 		size_t size;
 		size_t capacity;
-		str_allocator_t allocator;
+		strbuf_allocator_t allocator;
 		char cstr[];
 	} strbuf_t;
 
@@ -237,21 +237,21 @@ These can be added to your compiler flags eg. -DSTR_SUPPORT_LONG_DOUBLE
 
  **strbuf_create()** requires an allocator to be passed.
 
- The following str_allocator_t type is defined by strbuf.h
+ The following strbuf_allocator_t type is defined by strbuf.h
 
-	typedef struct str_allocator_t
+	typedef struct strbuf_allocator_t
 	{
 		void* app_data;
-		void* (*allocator)(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
-	} str_allocator_t;
+		void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	} strbuf_allocator_t;
 
 ## Explanation:
 	void* app_data;
- The address of the str_allocator_t is passed to the allocator. If the allocator requires access to some implementation specific data to work (such as in the case of a temporary allocator), then *app_data may be used to pass this.
+ The address of the strbuf_allocator_t is passed to the allocator. If the allocator requires access to some implementation specific data to work (such as in the case of a temporary allocator), then *app_data may be used to pass this.
 
 &nbsp;
 
-	void* (*allocator)(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
 
 A pointer to the allocator function.
 
@@ -260,7 +260,7 @@ A pointer to the allocator function.
 
 The parameters to this function are:
 
-	struct str_allocator_t* this_allocator <-- A pointer to the str_allocator_t which may be used to access ->app_data.
+	struct strbuf_allocator_t* this_allocator <-- A pointer to the strbuf_allocator_t which may be used to access ->app_data.
 	void* ptr_to_free                      <-- Memory address to free OR reallocate.
 	size_t size                            <-- Size of allocation, or new size of the reallocation, or 0 if memory is to be freed.
 	const char* caller_filename            <-- usually /path/strbuf.c, this is to support allocators which track caller ID.
@@ -303,7 +303,7 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 # strbuf.h functions:
 
 &nbsp;
-##	strbuf_t* strbuf_create(size_t initial_capacity, str_allocator_t allocator);
+##	strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t allocator);
  Create and return the address of a strbuf_t.
 
 &nbsp;
