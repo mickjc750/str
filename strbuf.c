@@ -35,6 +35,7 @@
 	static str_t str_of_buf(strbuf_t* buf);
 	static bool buf_contains_str(strbuf_t* buf, str_t str);
 	static bool buf_is_dynamic(strbuf_t* buf);
+	static void empty_buf(strbuf_t* buf);
 
 #ifdef STRBUF_PROVIDE_PRNF
 	static void char_handler_for_prnf(void* dst, char c);
@@ -69,9 +70,8 @@ strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size)
 			result = addr;
 			result->allocator.app_data = NULL;
 			result->allocator.allocator = NULL;
-			result->size = 0;
 			result->capacity = addr_size - sizeof(strbuf_t) - 1;
-			result->cstr[0] = 0;
+			empty_buf(result);
 		};
 	};
 
@@ -117,11 +117,8 @@ str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
 	str_t str = {0};
 	if(buf_ptr && *buf_ptr)
 	{
-		(*buf_ptr)->size = 0;
-		(*buf_ptr)->cstr[0] = 0;
-
+		empty_buf(*buf_ptr);
 		str = strbuf_append_vprintf(buf_ptr, format, va);
-
 	};
 	return str;
 }
@@ -158,10 +155,8 @@ str_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
 		if(size <= buf->capacity)
 			buf->size += vsnprintf(&buf->cstr[buf->size], buf->capacity - buf->size, format, vb);
 		else
-		{
-			buf->size = 0;
-			buf->cstr[0] = 0;
-		};
+			empty_buf(buf);
+
 		str = strbuf_str(&buf);
 		*buf_ptr = buf;
 		va_end(vb);
@@ -193,17 +188,12 @@ str_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
 	if(buf_ptr && *buf_ptr)
 	{
 		buf = *buf_ptr;
-
-		buf->size = 0;
-		buf->cstr[0] = 0;
+		empty_buf(buf);
 
 		char_count = vfptrprnf(char_handler_for_prnf, &buf,  format, va);
 
 		if(char_count > buf->size)
-		{
-			buf->size = 0;
-			buf->cstr[0] = 0;
-		};
+			empty_buf(buf);
 
 		str = strbuf_str(&buf);
 		*buf_ptr = buf;
@@ -237,10 +227,7 @@ str_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
 		char_count += vfptrprnf(char_handler_for_prnf, &buf,  format, va);
 
 		if(char_count > buf->size)
-		{
-			buf->size = 0;
-			buf->cstr[0] = 0;
-		};
+			empty_buf(buf);
 
 		str = strbuf_str(&buf);
 		*buf_ptr = buf;
@@ -324,10 +311,9 @@ static strbuf_t* create_buf(size_t initial_capacity, str_allocator_t allocator)
 	initial_capacity = initial_capacity;
 
 	buf = allocator.allocator(&allocator, NULL, sizeof(strbuf_t)+initial_capacity+1,  __FILE__, __LINE__);
-	buf->size = 0;
 	buf->capacity = initial_capacity;
 	buf->allocator = allocator;
-	buf->cstr[buf->size] = 0;
+	empty_buf(buf);
 
 	return buf;
 }
@@ -365,8 +351,7 @@ static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 		if(buf_is_dynamic(dst_buf) && dst_buf->capacity < size_needed)
 			change_buf_capacity(&dst_buf, round_up_capacity(size_needed));
 		build_buf = dst_buf;
-		build_buf->size = 0;
-		build_buf->cstr[0] = 0;
+		empty_buf(build_buf);
 	};
 
 	if(buf_is_dynamic(build_buf) || !tmp_buf_needed)
@@ -414,10 +399,8 @@ static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str)
 		buf->cstr[buf->size] = 0;
 	}
 	else
-	{
-		buf->size = 0;
-		buf->cstr[0] = 0;
-	};
+		empty_buf(buf);
+
 	*buf_ptr = buf;
 }
 
@@ -449,8 +432,7 @@ static void change_buf_capacity(strbuf_t** buf_ptr, size_t new_capacity)
 
 static void assign_str_to_buf(strbuf_t** buf_ptr, str_t str)
 {
-	(*buf_ptr)->size = 0;
-	(*buf_ptr)->cstr[0] = 0;
+	empty_buf(*buf_ptr);
 	insert_str_into_buf(buf_ptr, 0, str);
 }
 
@@ -468,10 +450,8 @@ static void append_char_to_buf(strbuf_t** buf_ptr, char c)
 		buf->cstr[buf->size] = 0;
 	}
 	else
-	{
-		buf->size = 0;
-		buf->cstr[0] = 0;
-	};
+		empty_buf(buf);
+
 	*buf_ptr = buf;
 }
 
@@ -490,6 +470,12 @@ static bool buf_contains_str(strbuf_t* buf, str_t str)
 static bool buf_is_dynamic(strbuf_t* buf)
 {
 	return !!(buf->allocator.allocator);
+}
+
+static void empty_buf(strbuf_t* buf)
+{
+	buf->size = 0;
+	buf->cstr[0] = 0;
 }
 
 #ifdef STRBUF_PROVIDE_PRNF
