@@ -610,6 +610,67 @@ int main(int argc, const char* argv[])
 	TEST_STR_TO_FLOAT("%.9f", .100000002);
 	TEST_STR_TO_FLOAT("%.9f", 39E-8);
 
+	DBG("\n\n");
+	DBG("** Testing str_pop_split() **\n");
+	str1 = cstr("123");
+	str2 = str_pop_split(&str1, 1);
+	assert(str1.size == 2);
+	assert(str2.size == 1);
+	assert(str_is_valid(str1));
+	assert(str_is_valid(str2));
+	assert(!memcmp(str1.data, "23", str1.size));
+	assert(!memcmp(str2.data, "1", str2.size));
+
+	str1 = cstr("123");
+	str2 = str_pop_split(&str1, -1);
+	assert(str1.size == 2);
+	assert(str2.size == 1);
+	assert(str_is_valid(str1));
+	assert(str_is_valid(str2));
+	assert(!memcmp(str1.data, "12", str1.size));
+	assert(!memcmp(str2.data, "3", str2.size));
+
+	str1 = cstr("123");
+	str2 = str_pop_split(&str1, 0);
+	assert(str1.size == 3);
+	assert(str2.size == 0);
+	assert(str_is_valid(str1));
+	assert(str_is_valid(str2));
+	assert(!memcmp(str1.data, "123", str1.size));
+	assert(!memcmp(str2.data, "", str2.size));
+
+	str1 = cstr("123");
+	str2 = str_pop_split(&str1, -3);
+	assert(str1.size == 0);
+	assert(str2.size == 3);
+	assert(str_is_valid(str1));
+	assert(str_is_valid(str2));
+	assert(!memcmp(str1.data, "", str1.size));
+	assert(!memcmp(str2.data, "123", str2.size));
+
+	str1 = cstr("123");
+	str2 = str_pop_split(&str1, 3);
+	assert(str1.size == 0);
+	assert(str2.size == 3);
+	assert(str_is_valid(str1));
+	assert(str_is_valid(str2));
+	assert(!memcmp(str1.data, "", str1.size));
+	assert(!memcmp(str2.data, "123", str2.size));
+
+	str1 = cstr("123");
+	str2 = str_pop_split(&str1, 4);	//out of range
+	assert(str1.size == 3);
+	assert(str_is_valid(str1));
+	assert(!str_is_valid(str2));
+	assert(!memcmp(str1.data, "123", str1.size));
+
+	str1 = cstr("123");
+	str2 = str_pop_split(&str1, -4);	//out of range
+	assert(str1.size == 3);
+	assert(str_is_valid(str1));
+	assert(!str_is_valid(str2));
+	assert(!memcmp(str1.data, "123", str1.size));
+
 	#ifdef STRBUF_PROVIDE_PRINTF
 	DBG("\n\n");
 	DBG("** Testing strbuf_printf() **\n");

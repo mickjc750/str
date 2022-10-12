@@ -181,6 +181,20 @@ Same as **str_pop_first_split()** but ignores the case of the delimiters
 Same as **str_pop_last_split()** but ignores the case of the delimiters
 
 &nbsp;
+## str_t str_pop_split(str_t* str_ptr, int index);
+Split a str_t at a specified index n.
+* For n >= 0
+ Return a str_t representing the first n characters of the source string.
+ Additionally the first n characters are removed (popped) from the start of the source string.
+
+* For n < 0
+ Return a str_t representing the last -n characters of the source string.
+ Additionally the last -n characters are removed (popped) from the end of the source string.
+
+If the index is outside of the range of the source string, then an invalid str_t is returned and the source is unmodified
+
+
+&nbsp;
 ## long long str_to_ll(str_t str);
  Convert the ascii representation of the signed long long in **str**, into a long long value.
  The input string is first  trimmed of any leading spaces, and may start with 0x or 0X for hex numbers, or 0b for binary numbers.

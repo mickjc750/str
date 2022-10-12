@@ -26,6 +26,7 @@
 
 	static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_sensetive);
 	static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetive);
+	static str_t pop_split(str_t* str_ptr, int index);
 
 	static unsigned long long interpret_hex(str_t str);
 	static unsigned long long interpret_bin(str_t str);
@@ -220,6 +221,16 @@ str_t str_pop_last_split_nocase(str_t* str_ptr, str_t delimiters)
 	
 	if(str_ptr)
 		result = pop_last_split(str_ptr, delimiters, NOT_CASE_SENSETIVE);
+
+	return result;
+}
+
+str_t str_pop_split(str_t* str_ptr, int index)
+{
+	str_t result = (str_t){.data = NULL, .size = 0};
+
+	if(str_ptr)
+		result = pop_split(str_ptr, index);
 
 	return result;
 }
@@ -479,6 +490,34 @@ static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetiv
 		result.size--;
 		if(result.size)
 			result.data++; //only point to the the character after the delimiter if there is one
+	};
+
+	return result;
+}
+
+static str_t pop_split(str_t* str_ptr, int index)
+{
+	str_t result = (str_t){0};
+	str_t remainder = *str_ptr;
+	bool neg = index < 0;
+
+	if(neg)
+		index = str_ptr->size + index;
+		
+	if(0 <= index && index <= str_ptr->size)
+	{
+		result.data = remainder.data;
+		result.size = index;
+		remainder.data += index;
+		remainder.size -= index;
+
+		if(!neg)
+			*str_ptr = remainder;
+		else
+		{
+			*str_ptr = result;
+			result = remainder;
+		};
 	};
 
 	return result;

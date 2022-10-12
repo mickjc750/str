@@ -105,6 +105,19 @@
 //	Same as str_pop_last_split, ignoring case on the delimiters
 	str_t str_pop_last_split_nocase(str_t* str_ptr, str_t delimiters);
 
+/*	Split a str_t at a specified index n.
+	For n >= 0
+		Return a str_t representing the first n characters of the source string.
+		Additionally the first n characters are removed (popped) from the start of the source string.
+
+	For n < 0
+		Return a str_t representing the last -n characters of the source string.
+		Additionally the last -n characters are removed (popped) from the end of the source string.
+
+	If the index is outside of the range of the source string, then an invalid str_t is returned and the source is unmodified
+*/
+	str_t str_pop_split(str_t* str_ptr, int index);
+
 //	Convert number to long long
 	long long str_to_ll(str_t str);
 
