@@ -118,6 +118,14 @@
 */
 	str_t str_pop_split(str_t* str_ptr, int index);
 
+/*	Return the first char of str, and remove it from the str.
+	Returns 0 if there are no characters in str.
+	If str is known to contain at least one character, it is the equivalent of:
+		str_pop_split(&str, 1).data[0]
+	Only it avoids dereferencing a NULL pointer in the case where str_pop_split() returns an invalid str.
+*/
+	char str_pop_first_char(str_t* str_ptr);
+
 //	Convert number to long long
 	long long str_to_ll(str_t str);
 

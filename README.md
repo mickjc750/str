@@ -193,6 +193,15 @@ Split a str_t at a specified index n.
 
 If the index is outside of the range of the source string, then an invalid str_t is returned and the source is unmodified
 
+&nbsp;
+## char str_pop_first_char(str_t* str_ptr);
+Return the first char of str, and remove it from the str.
+Returns 0 if there are no characters in str.
+ If str is known to contain at least one character, it is the equivalent of:
+
+	str_pop_split(&str, 1).data[0]
+Only it avoids dereferencing a NULL pointer in the case where str_pop_split() would return an invalid str due to the str being empty.
+
 
 &nbsp;
 ## long long str_to_ll(str_t str);

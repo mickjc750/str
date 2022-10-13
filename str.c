@@ -235,6 +235,14 @@ str_t str_pop_split(str_t* str_ptr, int index)
 	return result;
 }
 
+char str_pop_first_char(str_t* str_ptr)
+{
+	char result = 0;
+	if(str_ptr && str_ptr->size)
+		result = pop_split(str_ptr, 1).data[0];
+	return result;
+}
+
 long long str_to_ll(str_t str)
 {
 	unsigned long long magnitude = 0;
