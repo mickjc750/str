@@ -512,20 +512,22 @@ static str_t pop_split(str_t* str_ptr, int index)
 	if(neg)
 		index = str_ptr->size + index;
 		
-	if(0 <= index && index <= str_ptr->size)
-	{
-		result.data = remainder.data;
-		result.size = index;
-		remainder.data += index;
-		remainder.size -= index;
+	if(index < 0)
+		index = 0;
+	if(index > str_ptr->size)
+		index = str_ptr->size;
 
-		if(!neg)
-			*str_ptr = remainder;
-		else
-		{
-			*str_ptr = result;
-			result = remainder;
-		};
+	result.data = remainder.data;
+	result.size = index;
+	remainder.data += index;
+	remainder.size -= index;
+
+	if(!neg)
+		*str_ptr = remainder;
+	else
+	{
+		*str_ptr = result;
+		result = remainder;
 	};
 
 	return result;

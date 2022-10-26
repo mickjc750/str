@@ -658,18 +658,20 @@ int main(int argc, const char* argv[])
 	assert(!memcmp(str2.data, "123", str2.size));
 
 	str1 = cstr("123");
-	str2 = str_pop_split(&str1, 4);	//out of range
-	assert(str1.size == 3);
+	str2 = str_pop_split(&str1, 4);	//over range, pops ALL
+	assert(str1.size == 0);
+	assert(str2.size == 3);
 	assert(str_is_valid(str1));
-	assert(!str_is_valid(str2));
-	assert(!memcmp(str1.data, "123", str1.size));
+	assert(str_is_valid(str2));
+	assert(!memcmp(str2.data, "123", str2.size));
 
 	str1 = cstr("123");
-	str2 = str_pop_split(&str1, -4);	//out of range
-	assert(str1.size == 3);
+	str2 = str_pop_split(&str1, -4);	//out of range, pops all
+	assert(str1.size == 0);
+	assert(str2.size == 3);
 	assert(str_is_valid(str1));
-	assert(!str_is_valid(str2));
-	assert(!memcmp(str1.data, "123", str1.size));
+	assert(str_is_valid(str2));
+	assert(!memcmp(str2.data, "123", str2.size));
 
 	#ifdef STRBUF_PROVIDE_PRINTF
 	DBG("\n\n");
@@ -720,6 +722,27 @@ int main(int argc, const char* argv[])
 	strbuf_assign(&buf, str_trim(strbuf_str(&buf), cstr("*")));
 	str1 = strbuf_assign(&buf, cstr("Hello test"));
 	assert(!memcmp(str1.data, "Hello test", str1.size));
+	assert(strlen(buf->cstr) == buf->size);
+
+	DBG("** Testing strbuf_append(), with source from the destination **\n");
+	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
+	strbuf_shrink(&buf);
+	str1 = strbuf_append(&buf, strbuf_str(&buf));
+	assert(!memcmp(str1.data, "{Hello-testing-some-string}{Hello-testing-some-string}", str1.size));
+	assert(strlen(buf->cstr) == buf->size);
+
+	DBG("** Testing strbuf_prepend(), with source from the destination **\n");
+	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
+	strbuf_shrink(&buf);
+	str1 = strbuf_prepend(&buf, strbuf_str(&buf));
+	assert(!memcmp(str1.data, "{Hello-testing-some-string}{Hello-testing-some-string}", str1.size));
+	assert(strlen(buf->cstr) == buf->size);
+
+	DBG("** Testing strbuf_insert(), with source from the destination **\n");
+	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
+	strbuf_shrink(&buf);
+	str1 = strbuf_insert(&buf, 6, strbuf_str(&buf));
+	assert(!memcmp(str1.data, "{Hello{Hello-testing-some-string}-testing-some-string}", str1.size));
 	assert(strlen(buf->cstr) == buf->size);
 
 	DBG("\n\n\n*** Everything worked ***\n");

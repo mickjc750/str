@@ -385,15 +385,15 @@ Example use:
 
 &nbsp;
 ## str_t strbuf_append(strbuf_t** buf_ptr, str_t str);
- Append str_t to buffer. str_t must NOT be owned by the output buffer.
+ Append str_t to buffer. str_t may be owned by the output buffer itself.
 	
 &nbsp;
 ## str_t strbuf_prepend(strbuf_t** buf_ptr, str_t str);
- Prepend str_t to buffer. str_t must NOT be owned by the output buffer.
+ Prepend str_t to buffer. str_t may be owned by the output buffer itself.
 	
 &nbsp;
 ## str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str);
- Insert str_t to buffer at index. str_t must NOT be owned by the output buffer.
+ Insert str_t to buffer at index. str_t may be owned by the output buffer itself.
 
 
 &nbsp;

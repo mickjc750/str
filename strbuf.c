@@ -397,6 +397,12 @@ static str_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str)
 {
 	strbuf_t* buf = *buf_ptr;
+	bool src_in_dst = buf_contains_str(buf, str);
+	size_t src_offset = str.data - buf->cstr;
+	str_t str_part_left_behind = {.data=NULL, .size=0};
+	str_t str_part_shifted;
+	char* move_src;
+	char* move_dst;
 
 	if(index > buf->size)
 		index = buf->size;
@@ -408,13 +414,29 @@ static void insert_str_into_buf(strbuf_t** buf_ptr, int index, str_t str)
 	if(buf_is_dynamic(buf) && buf->capacity < buf->size + str.size)
 		change_buf_capacity(&buf, round_up_capacity(buf->size + str.size));
 
+	if(src_in_dst && buf != *buf_ptr)
+		str.data = buf->cstr + src_offset;
+
 	if(buf->capacity >= buf->size + str.size)
 	{
-		if(&buf->cstr[index+str.size] !=  &buf->cstr[index])
-			memmove(&buf->cstr[index+str.size], &buf->cstr[index], buf->size-index);
+		str_part_shifted = str;
+		move_src = &buf->cstr[index];
+		move_dst = &buf->cstr[index+str.size];
+		if(str.size)
+		{
+			memmove(move_dst, move_src, buf->size-index);
+			if(src_in_dst)
+			{
+				if(move_src > str.data)
+					str_part_left_behind = str_pop_split(&str_part_shifted, move_src - str.data);
+				str_part_shifted.data += move_dst-move_src;
+			};
+		};
 
 		buf->size += str.size;
-		memcpy(&buf->cstr[index], str.data, str.size);
+		memcpy(move_src, str_part_left_behind.data, str_part_left_behind.size);
+		move_src += str_part_left_behind.size;
+		memcpy(move_src, str_part_shifted.data, str_part_shifted.size);
 		buf->cstr[buf->size] = 0;
 	}
 	else

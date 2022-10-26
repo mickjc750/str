@@ -109,12 +109,12 @@
 	For n >= 0
 		Return a str_t representing the first n characters of the source string.
 		Additionally the first n characters are removed (popped) from the start of the source string.
+		If n is greater than the size of the source string ALL characters will be popped.
 
 	For n < 0
 		Return a str_t representing the last -n characters of the source string.
 		Additionally the last -n characters are removed (popped) from the end of the source string.
-
-	If the index is outside of the range of the source string, then an invalid str_t is returned and the source is unmodified
+		If -n is greater than the size of the source string ALL characters will be popped.
 */
 	str_t str_pop_split(str_t* str_ptr, int index);
 
