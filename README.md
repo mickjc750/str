@@ -378,16 +378,22 @@ Example use:
  Free memory allocated to hold the buffer and it's contents.
 
 &nbsp;
+## str_t strbuf_assign(strbuf_t** buf_ptr, str_t str);
+ Assign str_t to buffer. str_t may be owned by the output buffer itself.
+ This allows a buffers contents to be cropped or trimmed using the str.h functions.
+ Example to trim whitespace:	strbuf_assign(&buf, str_trim(strbuf_str(&buf), cstr(" ")));
+
+&nbsp;
 ## str_t strbuf_append(strbuf_t** buf_ptr, str_t str);
- Append str_t to buffer.
+ Append str_t to buffer. str_t must NOT be owned by the output buffer.
 	
 &nbsp;
 ## str_t strbuf_prepend(strbuf_t** buf_ptr, str_t str);
- Prepend str_t to buffer.
+ Prepend str_t to buffer. str_t must NOT be owned by the output buffer.
 	
 &nbsp;
 ## str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str);
- Insert str_t to buffer at index.
+ Insert str_t to buffer at index. str_t must NOT be owned by the output buffer.
 
 
 &nbsp;

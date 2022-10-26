@@ -279,6 +279,25 @@ void strbuf_destroy(strbuf_t** buf_ptr)
 	};	
 }
 
+str_t strbuf_assign(strbuf_t** buf_ptr, str_t str)
+{
+	strbuf_t* buf = *buf_ptr;
+
+	if(str_is_valid(str))
+	{
+		if(str.size > buf->capacity)
+			change_buf_capacity(&buf, round_up_capacity(str.size));
+		memmove(buf->cstr, str.data, str.size);
+		buf->size = str.size;
+		buf->cstr[buf->size] = 0;
+	}
+	else
+		empty_buf(buf);
+
+	*buf_ptr = buf;
+	return str_of_buf(buf);
+}
+
 str_t strbuf_append(strbuf_t** buf_ptr, str_t str)
 {
 	if(buf_ptr && *buf_ptr)

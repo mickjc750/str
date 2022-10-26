@@ -711,6 +711,17 @@ int main(int argc, const char* argv[])
 	assert(!memcmp(str1.data, "Hello from prnf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597 Appending one more number 748921", str1.size));
 	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
 
+	DBG("** Testing strbuf_assign() source outside of the destination **\n");
+	str1 = strbuf_assign(&buf, cstr("***Hello test***"));
+	assert(!memcmp(str1.data, "***Hello test***", str1.size));
+	assert(strlen(buf->cstr) == buf->size);
+
+	DBG("** Testing strbuf_assign() source from the destination **\n");
+	strbuf_assign(&buf, str_trim(strbuf_str(&buf), cstr("*")));
+	str1 = strbuf_assign(&buf, cstr("Hello test"));
+	assert(!memcmp(str1.data, "Hello test", str1.size));
+	assert(strlen(buf->cstr) == buf->size);
+
 	DBG("\n\n\n*** Everything worked ***\n");
 
 	return 0;

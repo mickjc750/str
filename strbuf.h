@@ -136,18 +136,16 @@ then:
 //	Free memory allcoated to hold the buffer and it's contents
 	void strbuf_destroy(strbuf_t** buf_ptr);
 
+//	Assign str_t to buffer, str_t may be sourced from existing buffer contents
+	str_t strbuf_assign(strbuf_t** buf_ptr, str_t str);
 
-/*	The below are achievable using str_cat() only if a dynamic memory allocator is used, as a temporary buffer must be allocated.
-	If that is not the case, and your allocator only returns the address of a single static buffer then the below need to
-	be used to achieve append/prepend/insert */
-
-//	Append str_t to buffer
+//	Append str_t to buffer, str_t must not be sourced from existing buffer contents
 	str_t strbuf_append(strbuf_t** buf_ptr, str_t str);
 
-//	Prepend str_t to buffer
+//	Prepend str_t to buffer, str_t must not be sourced from existing buffer contents
 	str_t strbuf_prepend(strbuf_t** buf_ptr, str_t str);
 
-//	Insert str_t to buffer
+//	Insert str_t to buffer, str_t must not be sourced from existing buffer contents
 	str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str);
 
 // 	Provide formatted printing to a strbuf_t (uses vsnprintf() from stdio.h)
