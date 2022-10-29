@@ -281,20 +281,24 @@ void strbuf_destroy(strbuf_t** buf_ptr)
 
 str_t strbuf_assign(strbuf_t** buf_ptr, str_t str)
 {
-	strbuf_t* buf = *buf_ptr;
+	strbuf_t* buf;
 
-	if(str_is_valid(str))
+	if(buf_ptr && *buf_ptr)
 	{
-		if(str.size > buf->capacity)
-			change_buf_capacity(&buf, round_up_capacity(str.size));
-		memmove(buf->cstr, str.data, str.size);
-		buf->size = str.size;
-		buf->cstr[buf->size] = 0;
-	}
-	else
-		empty_buf(buf);
+		buf = *buf_ptr;
+		if(str_is_valid(str))
+		{
+			if(str.size > buf->capacity)
+				change_buf_capacity(&buf, round_up_capacity(str.size));
+			memmove(buf->cstr, str.data, str.size);
+			buf->size = str.size;
+			buf->cstr[buf->size] = 0;
+		}
+		else
+			empty_buf(buf);
+		*buf_ptr = buf;
+	};
 
-	*buf_ptr = buf;
 	return str_of_buf(buf);
 }
 
@@ -339,9 +343,12 @@ static strbuf_t* create_buf(size_t initial_capacity, strbuf_allocator_t allocato
 
 static str_t str_of_buf(strbuf_t* buf)
 {
-	str_t str;
-	str.data = buf->cstr;
-	str.size = buf->size;
+	str_t str = {.data = NULL, .size = 0};
+	if(buf)
+	{
+		str.data = buf->cstr;
+		str.size = buf->size;
+	};
 	return str;
 }
 
