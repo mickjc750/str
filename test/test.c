@@ -30,8 +30,22 @@
 		double result = str_to_float(str);														\
 		DBG("\"%"PRIstr"\" returns "fmt, PRIstrarg(str), result);								\
 		assert(desired-fabs(desired*.001) < result && result < desired+fabs(desired*.001));		\
-	}while(0);
+	}while(0)
 
+
+	#define TEST_LINE_POP(arg1)								\
+	do{														\
+		str2.data = NULL; str2.size = 0;					\
+		while(!str_is_valid(str2))							\
+		{													\
+			strbuf_append_char(&buf, *chrptr++);			\
+			str1 = strbuf_str(&buf);						\
+			str2 = str_pop_line(&str1, &eol);				\
+		};													\
+		DBG("[%"PRIstr"]", PRIstrarg(str2));				\
+		assert(!memcmp(str2.data, arg1, str1.size));		\
+		strbuf_assign(&buf, str1);							\
+	}while(0)
 
 //********************************************************************************************************
 // Public variables
@@ -703,7 +717,6 @@ int main(int argc, const char* argv[])
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp(str1.data, "Hello from prnf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
 	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
-	#endif
 
 	DBG("** Testing strbuf_append_prnf() **\n");
 
@@ -712,7 +725,10 @@ int main(int argc, const char* argv[])
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp(str1.data, "Hello from prnf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597 Appending one more number 748921", str1.size));
 	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+	strbuf_destroy(&buf);
+	#endif
 
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, strbuf_allocator);
 	DBG("** Testing strbuf_assign() source outside of the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("***Hello test***"));
 	assert(!memcmp(str1.data, "***Hello test***", str1.size));
@@ -744,6 +760,91 @@ int main(int argc, const char* argv[])
 	str1 = strbuf_insert(&buf, 6, strbuf_str(&buf));
 	assert(!memcmp(str1.data, "{Hello{Hello-testing-some-string}-testing-some-string}", str1.size));
 	assert(strlen(buf->cstr) == buf->size);
+
+	DBG("** Testing line parser with a few lines **");
+
+	const char* sometext = "\
+First line CRLF\r\n\
+Second line CR\r\
+Third line LF\n\
+CRLF line followed by an empty CR line\r\n\
+\r\
+CRLF line followed by an empty LF line\r\n\
+\n\
+CRLF line followed by an empty LFCR line\r\n\
+\n\r\
+LFCR line followed by an empty CR line\n\r\
+\r\
+LFCR line followed by an empty LF line\n\r\
+\n\
+LFCR line followed by an empty CRLF line\n\r\
+\r\n\
+CR line followed by an empty CRLF line\r\
+\r\n\
+CR line followed by an empty LFCR line\r\
+\n\r\
+LF line followed by an empty CRLF line\n\
+\r\n\
+LF line followed by an empty LFCR line\n\
+\n\r\
+This text has no line ending";
+
+	str2 = cstr(sometext);
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "First line CRLF", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "Second line CR", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "Third line LF", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CRLF line followed by an empty CR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CRLF line followed by an empty LF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CRLF line followed by an empty LFCR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LFCR line followed by an empty CR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LFCR line followed by an empty LF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LFCR line followed by an empty CRLF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CR line followed by an empty CRLF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CR line followed by an empty LFCR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LF line followed by an empty CRLF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LF line followed by an empty LFCR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+
+	str1 = str_pop_line(&str2, NULL); assert(!str_is_valid(str1)); assert(!memcmp(str2.data, "This text has no line ending", str1.size));
+
+	DBG("\n\n** Testing line parser by appending chars to a buffer 1 at a time **");
+
+	char eol = 0;
+	strbuf_assign(&buf, cstr(""));
+	chrptr = sometext;
+
+	TEST_LINE_POP("First line CRLF");
+	TEST_LINE_POP("Second line CR");
+	TEST_LINE_POP("Third line LF");
+	TEST_LINE_POP("CRLF line followed by an empty CR line");
+	TEST_LINE_POP("");
+	TEST_LINE_POP("CRLF line followed by an empty LF line");
+	TEST_LINE_POP("");
+	TEST_LINE_POP("CRLF line followed by an empty LFCR line");
+	TEST_LINE_POP("");
+	TEST_LINE_POP("LFCR line followed by an empty CR line");
+	TEST_LINE_POP("");
+	TEST_LINE_POP("LFCR line followed by an empty LF line");
+	TEST_LINE_POP("");
+	TEST_LINE_POP("LFCR line followed by an empty CRLF line");
+	TEST_LINE_POP("");
+	TEST_LINE_POP("CR line followed by an empty CRLF line");
+	TEST_LINE_POP("");
+	TEST_LINE_POP("CR line followed by an empty LFCR line");
+	TEST_LINE_POP("");
+	TEST_LINE_POP("LF line followed by an empty CRLF line");
+	TEST_LINE_POP("");
+	TEST_LINE_POP("LF line followed by an empty LFCR line");
+	TEST_LINE_POP("");
 
 	DBG("\n\n\n*** Everything worked ***\n");
 

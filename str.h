@@ -126,6 +126,24 @@
 */
 	char str_pop_first_char(str_t* str_ptr);
 
+
+/*
+	Returns a str_t representing the first line within the source string, not including the eol terminator.
+	The returned line and the terminator are removed (popped) from the source string.
+	If a line terminator is not found, an invalid str_t is returned and the source string is unmodified.
+
+	If the source string already contains one or more lines:
+		Any mixture of (CR,LF,CRLF,LFCR) can be handled, a CRLF or LFCR sequence will always be interpreted as 1 line ending.
+	In this case eol may be NULL.
+
+	If the source string is being appended to one character at a time, such as when gathering user input:
+		Any type of line ending can be handled by providing variable eol.
+		This variable stores the state of the eol discriminator, regarding if a future CR or LF needs to be ignored.
+		It's initial value should be 0.
+*/
+	str_t str_pop_line(str_t* str_ptr, char* eol);
+
+
 //	Convert number to long long
 	long long str_to_ll(str_t str);
 
