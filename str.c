@@ -243,6 +243,39 @@ char str_pop_first_char(str_t* str_ptr)
 	return result;
 }
 
+str_t str_pop_line(str_t* str_ptr, char* eol)
+{
+	str_t result = {.data=NULL, .size=0};
+	str_t src;
+	char e = 0;
+
+	if(str_ptr && str_ptr->size)
+	{
+		src = *str_ptr;
+		if(eol && *eol)
+		{
+			if(*eol + src.data[0] == '\r'+'\n')
+				str_pop_first_char(&src);
+		};
+
+		result = str_pop_first_split(&src, cstr("\r\n"));
+
+		if(str_is_valid(result))
+		{
+			e = result.data[result.size];
+			if(e + src.data[0] == '\r'+'\n')
+			{
+				str_pop_first_char(&src);
+				e = 0;
+			};
+			if(eol)
+				*eol = e;
+			*str_ptr = src;
+		};
+	};
+	return result;
+}
+
 long long str_to_ll(str_t str)
 {
 	unsigned long long magnitude = 0;
