@@ -155,6 +155,9 @@ then:
 //	Insert str_t to buffer, str_t 
 	str_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str_t str);
 
+//	Insert src at the starting location of dst in the buffer.
+	str_t strbuf_insert_before(strbuf_t** buf_ptr, str_t dst, str_t src);
+
 // 	Provide formatted printing to a strbuf_t (uses vsnprintf() from stdio.h)
 #ifdef STRBUF_PROVIDE_PRINTF
 	str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);

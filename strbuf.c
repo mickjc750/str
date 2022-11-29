@@ -323,6 +323,21 @@ str_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str_t str)
 	return str_of_buf(*buf_ptr);
 }
 
+str_t strbuf_insert_before(strbuf_t** buf_ptr, str_t dst, str_t src)
+{
+	strbuf_t* buf;
+
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+		if(buf->cstr <= dst.data && dst.data <= &buf->cstr[buf->size])
+			insert_str_into_buf(&buf, dst.data - buf->cstr, src);
+		*buf_ptr = buf;
+	};
+
+	return str_of_buf(*buf_ptr);
+}
+
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************
