@@ -845,11 +845,28 @@ This text has no line ending";
 	TEST_LINE_POP("LF line followed by an empty LFCR line");
 	TEST_LINE_POP("");
 
+	DBG("\n\n** Testing strbuf_insert_before() **");
+
 	strbuf_assign(&buf, cstr("Hello"));
 	str1 = str_find_last(strbuf_str(&buf), cstr(""));
 	strbuf_insert_before(&buf, str1, cstr("-test"));
-	assert(!memcmp(str1.data, "Hello-test", str1.size));
-	
+	assert(!memcmp(buf->cstr, "Hello-test", buf->size));
+
+	strbuf_assign(&buf, cstr("Hello Mellow"));
+	str1 = str_find_last(strbuf_str(&buf), cstr("ll"));
+	strbuf_insert_before(&buf, str1, cstr("..."));
+	assert(!memcmp(buf->cstr, "Hello Me...llow", buf->size));
+
+	strbuf_assign(&buf, cstr("Hello Mellow"));
+	str1 = str_find_first(strbuf_str(&buf), cstr("ll"));
+	strbuf_insert_before(&buf, str1, cstr("---"));
+	assert(!memcmp(buf->cstr, "He---llo Mellow", buf->size));
+
+	strbuf_assign(&buf, cstr("Hello Mellow"));
+	str1 = str_find_first(strbuf_str(&buf), cstr(""));
+	strbuf_insert_before(&buf, str1, cstr("***"));
+	assert(!memcmp(buf->cstr, "***Hello Mellow", buf->size));
+
 	DBG("\n\n\n*** Everything worked ***\n");
 
 	return 0;
