@@ -136,17 +136,24 @@ then:
 //	Free memory allcoated to hold the buffer and it's contents
 	void strbuf_destroy(strbuf_t** buf_ptr);
 
-//	Assign str_t to buffer, str_t may be sourced from existing buffer contents
+/*
+	For the below assign/append/prepend/insert functions:
+		str_t may be sourced from destination buffer contents,
+		even for static buffers, and even if the operation relocates or splits the source string.
+		eg, you can insert "fred" into the middle of itself to get "frfreded"
+*/
+
+//	Assign str_t to buffer 
 	str_t strbuf_assign(strbuf_t** buf_ptr, str_t str);
 
-//	Append str_t to buffer, str_t must not be sourced from existing buffer contents
+//	Append str_t to buffer, str_t 
 	str_t strbuf_append(strbuf_t** buf_ptr, str_t str);
 
-//	Prepend str_t to buffer, str_t must not be sourced from existing buffer contents
+//	Prepend str_t to buffer, str_t 
 	str_t strbuf_prepend(strbuf_t** buf_ptr, str_t str);
 
-//	Insert str_t to buffer, str_t must not be sourced from existing buffer contents
-	str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str);
+//	Insert str_t to buffer, str_t 
+	str_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str_t str);
 
 // 	Provide formatted printing to a strbuf_t (uses vsnprintf() from stdio.h)
 #ifdef STRBUF_PROVIDE_PRINTF

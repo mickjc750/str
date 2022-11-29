@@ -754,10 +754,10 @@ int main(int argc, const char* argv[])
 	assert(!memcmp(str1.data, "{Hello-testing-some-string}{Hello-testing-some-string}", str1.size));
 	assert(strlen(buf->cstr) == buf->size);
 
-	DBG("** Testing strbuf_insert(), with source from the destination **\n");
+	DBG("** Testing strbuf_insert_at_index(), with source from the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
 	strbuf_shrink(&buf);
-	str1 = strbuf_insert(&buf, 6, strbuf_str(&buf));
+	str1 = strbuf_insert_at_index(&buf, 6, strbuf_str(&buf));
 	assert(!memcmp(str1.data, "{Hello{Hello-testing-some-string}-testing-some-string}", str1.size));
 	assert(strlen(buf->cstr) == buf->size);
 

@@ -316,7 +316,7 @@ str_t strbuf_prepend(strbuf_t** buf_ptr, str_t str)
 	return str_of_buf(*buf_ptr);
 }
 
-str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str)
+str_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str_t str)
 {
 	if(buf_ptr && *buf_ptr)
 		insert_str_into_buf(buf_ptr, index, str);
