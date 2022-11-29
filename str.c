@@ -86,7 +86,7 @@ int str_compare(str_t str1, str_t str2)
 
 bool str_contains(str_t haystack, str_t needle)
 {
-	return str_find_first(haystack, needle).found;
+	return str_is_valid(str_find_first(haystack, needle));
 }
 
 str_t str_sub(str_t str, int begin, int end)
@@ -143,44 +143,52 @@ str_t str_trim(str_t str, str_t chars_to_trim)
 	return str;
 }
 
-str_search_result_t str_find_first(str_t haystack, str_t needle)
+str_t str_find_first(str_t haystack, str_t needle)
 {
-	str_search_result_t result = (str_search_result_t){.found=false, .index=0};
+	str_t result = (str_t){.data = NULL, .size = 0};
 
 	const char* remaining_hay = haystack.data;
+	bool found = false;
 
 	if(haystack.data && needle.data)
 	{
-		while((&haystack.data[haystack.size] - remaining_hay >= needle.size) && !result.found)
+		while((&haystack.data[haystack.size] - remaining_hay >= needle.size) && !found)
 		{
-			result.found = !memcmp(remaining_hay, needle.data, needle.size);
-			remaining_hay += !result.found;
+			found = !memcmp(remaining_hay, needle.data, needle.size);
+			remaining_hay += !found;
 		};
 	};
 
-	if(result.found)
-		result.index = remaining_hay - haystack.data;
+	if(found)
+	{
+		result.data = remaining_hay;
+		result.size = needle.size;
+	};
 
 	return result;
 }
 
-str_search_result_t str_find_last(str_t haystack, str_t needle)
+str_t str_find_last(str_t haystack, str_t needle)
 {
-	str_search_result_t result = (str_search_result_t){.found=false, .index=0};
+	str_t result = (str_t){.data = NULL, .size = 0};
 
 	const char* remaining_hay = &haystack.data[haystack.size - needle.size];
+	bool found = false;
 
 	if(haystack.data && needle.data)
 	{
-		while((remaining_hay >= haystack.data) && !result.found)
+		while((remaining_hay >= haystack.data) && !found)
 		{
-			result.found = !memcmp(remaining_hay, needle.data, needle.size);
-			remaining_hay -= !result.found;
+			found = !memcmp(remaining_hay, needle.data, needle.size);
+			remaining_hay -= !found;
 		};
 	};
 
-	if(result.found)
-		result.index = remaining_hay - haystack.data;
+	if(found)
+	{
+		result.data = remaining_hay;
+		result.size = needle.size;
+	};
 
 	return result;
 }

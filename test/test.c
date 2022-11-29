@@ -74,8 +74,7 @@ int main(int argc, const char* argv[])
 
 	strbuf_allocator_t strbuf_allocator = {.allocator = allocator};
 	strbuf_t* buf;
-	str_t str1, str2;
-	str_search_result_t search_result;
+	str_t str1, str2, search_result;
 	const char* chrptr;
 	unsigned long long tmpull;
 	long long tmpll;
@@ -269,38 +268,38 @@ int main(int argc, const char* argv[])
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_first(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu\n", search_result.index);
-	assert(search_result.index == 0);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 0);
 
 	str1 = cstr("needleneedle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_first(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu\n", search_result.index);
-	assert(search_result.index == 0);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 0);
 
 	str1 = cstr("needlneedle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_first(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu\n", search_result.index);
-	assert(search_result.index == 5);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 5);
 	
 	str1 = cstr("haystack");
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_first(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu (a valid needle of length 0 should be found)\n", search_result.index);
-	assert(search_result.index == 0);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu (a valid needle of length 0 should be found)\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 0);
 
 	str2.data = NULL;
 	DBG("Looking for (invalid) in \"%"PRIstr"\"", PRIstrarg(str1));
 	search_result = str_find_first(str1, str2);
-	assert(!search_result.found);
+	assert(!str_is_valid(search_result));
 	DBG("Not Found (a needle which is an invalid string should not be found)\n");
 
 	str1.data = NULL;
@@ -308,7 +307,7 @@ int main(int argc, const char* argv[])
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in (invalid)", PRIstrarg(str2));
 	search_result = str_find_first(str1, str2);
-	assert(!search_result.found);
+	assert(!str_is_valid(search_result));
 	DBG("Not Found (a needle in an invalid haystack should not be found)\n");
 
 
@@ -316,9 +315,9 @@ int main(int argc, const char* argv[])
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_first(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu (a valid needle of length 0 should be found in a valid haystack of length 0)\n\n\n", search_result.index);
-	assert(search_result.index == 0);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu (a valid needle of length 0 should be found in a valid haystack of length 0)\n\n\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 0);
 
 
 
@@ -328,38 +327,38 @@ int main(int argc, const char* argv[])
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_last(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu\n", search_result.index);
-	assert(search_result.index == 0);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 0);
 
 	str1 = cstr("needleneedle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_last(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu\n", search_result.index);
-	assert(search_result.index == 6);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 6);
 
 	str1 = cstr("needlneedle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_last(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu\n", search_result.index);
-	assert(search_result.index == 5);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 5);
 	
 	str1 = cstr("haystack");
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_last(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu (a valid needle of length 0 should be found at the index of the last char+1)\n", search_result.index);
-	assert(search_result.index == 8);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu (a valid needle of length 0 should be found at the index of the last char+1)\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 8);
 
 	str2.data = NULL;
 	DBG("Looking for (invalid) in \"%"PRIstr"\"",  PRIstrarg(str1));
 	search_result = str_find_last(str1, str2);
-	assert(!search_result.found);
+	assert(!str_is_valid(search_result));
 	DBG("Not Found (a needle which is an invalid string should not be found)\n");
 
 	str1.data = NULL;
@@ -367,16 +366,16 @@ int main(int argc, const char* argv[])
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in (invalid)", PRIstrarg(str2));
 	search_result = str_find_first(str1, str2);
-	assert(!search_result.found);
+	assert(!str_is_valid(search_result));
 	DBG("Not Found (a needle in an invalid haystack should not be found)\n");
 
 	str1 = cstr("");
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
 	search_result = str_find_first(str1, str2);
-	assert(search_result.found);
-	DBG("Found at index %zu (a valid needle of length 0 should be found at the index of the last char+1)\n\n\n", search_result.index);
-	assert(search_result.index == 0);
+	assert(str_is_valid(search_result));
+	DBG("Found at index %zu (a valid needle of length 0 should be found at the index of the last char+1)\n\n\n", (search_result.data - str1.data));
+	assert((search_result.data - str1.data) == 0);
 
 	DBG("** Testing str_is_valid() **");
 	str1.data = NULL;

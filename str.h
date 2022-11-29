@@ -23,13 +23,6 @@
 		size_t size;
 	} str_t;
 
-//	Search result
-	typedef struct str_search_result_t
-	{
-		bool found;
-		size_t index;
-	} str_search_result_t;
-
 //	Can be used instead of cstr, to avoid measuring the length of string literals at runtime
 	#define cstr_SL(sl_arg) ((str_t){.data=(sl_arg), .size=sizeof(sl_arg)-1})
 
@@ -82,12 +75,12 @@
 /*	Return the search result (bool found & index) for the first occurrence of needle in haystack
 	If needle is valid, and of length 0, it will always be found at the start of the string.
 	If needle is invalid, or if haystack is invalid, it will not be found. */
-	str_search_result_t str_find_first(str_t haystack, str_t needle);
+	str_t str_find_first(str_t haystack, str_t needle);
 
 /*	Return the search result (bool found & index) for the last occurrence of needle in haystack
 	If needle is valid, and of length 0, it will always be found at the index of the last character in haystack+1.
 	If needle is invalid, or if haystack is invalid, it will not be found. */
-	str_search_result_t str_find_last(str_t haystack, str_t needle);
+	str_t str_find_last(str_t haystack, str_t needle);
 
 /*	Return a str_t representing the contents of the source string up to, but not including, any of the delimiters.
 	Additionally this text, and the delimeter itself is removed (popped) from the source string.
