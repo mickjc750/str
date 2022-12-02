@@ -260,7 +260,7 @@ These can be added to your compiler flags eg. -DSTR_SUPPORT_LONG_DOUBLE
  strbuf.h provides functions for allocating, building and storing strings.
  Unlike the str_t type, a strbuf_t owns the string data, and contains all the information needed to modify it, resize it, or free it.
  
- While dynamic memory allocation is very useful, it is not mandatory (with one exception regarding strbuf_cat()). The allocator can be as simple as something which returns the address of a static buffer. The size of the buffer must be the expected capacity (chars) + sizeof(strbuf_t) + 1 for a null terminator.
+ While dynamic memory allocation is very useful, it is not mandatory (with one exception regarding strbuf_cat()). 
 
  All strbuf functions maintain a null terminator at the end of the buffer, and the buffer may be accessed as a regular c string using mybuffer->cstr.
 
@@ -277,7 +277,7 @@ These can be added to your compiler flags eg. -DSTR_SUPPORT_LONG_DOUBLE
 &nbsp;
 # Providing an allocator for strbuf_create().
 
- **strbuf_create()** may be passed an allocator. If you just want strbuf_create() to use stdlib's malloc and free, then simply add -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB to your compiler flags, and pass a NULL to the allocator parameter. If you want to check that stdlib's allocation/resize actually succeeded, you can add -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB which uses regular assert() to check this.
+ **strbuf_create()** *may* be passed an allocator. If you just want strbuf_create() to use stdlib's malloc and free, then simply add -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB to your compiler flags, and pass a NULL to the allocator parameter of strbuf_create(). If you want to check that stdlib's allocation/resize actually succeeded, you can add -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB which uses regular assert() to check this.
 
  The following strbuf_allocator_t type is defined by strbuf.h
 
@@ -321,7 +321,7 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 &nbsp;
 # non-dynamic buffers
 
- A function **strbuf_create_fixed()** is provided for initializing a strbuf_t* from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than is available, this will result in an empty buffer.
+ A function **strbuf_create_fixed()** is provided for initializing a strbuf_t* from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than is available, this will result in an empty buffer. The capacity will be slightly less than the buffer size, as the memory must also hold a strbuf_t, and due to this the memory provided must also be suitably aligned with __ attribute __ ((aligned))
 
 &nbsp;
 # printf to a strbuf_t
