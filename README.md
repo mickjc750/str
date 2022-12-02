@@ -6,7 +6,7 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 1.  [Introduction](#introduction)
 2.  [Understanding the separate purposes of str.h and strbuf.h](#understanding-the-separate-purposes-of-strh-and-strbufh)
 3.  [str.h](#strh)
-4.  [Passing a str_t to printf()](#passing-a-strt-to-printf)
+4.  [Passing a str_t to printf()](#passing-a-str_t-to-printf)
 5.  [str.h functions](#strh-functions)
 6.  [strbuf.h](#strbufh)
 7.  [Providing an allocator for strbuf_create().](#providing-an-allocator-for-strbufcreate)
@@ -90,7 +90,7 @@ Some operations may return an invalid str_t, in this case .data=NULL and .size==
  
  Example usage:
 
-	printf("The string is {%"PRIstr"}\n", PRIstrarg(mystring));
+	printf("The string is %"PRIstr"\n", PRIstrarg(mystring));
 
 &nbsp;
 # str.h functions:
