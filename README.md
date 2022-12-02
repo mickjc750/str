@@ -40,13 +40,15 @@ To understand this approach to string handling, and the purpose of each, it help
 
 &nbsp;
 ## strbuf_t
-**strbuf_t** DOES own the string, and contains the information needed to resize it, change it's contents, or free it. The allocator used by **strbuf_t** is provided by the application, and dynamic memory allocation is not mandatory.
+**strbuf_t** DOES own the string, and contains the information needed to resize it, change it's contents, or free it. Dynamic memory allocation is not mandatory. The memory space can be as simple as a static buffer provided by the application. For a dynamic buffer, the application may either provide it's own allocator, or strbuf can default to using malloc/free.
 
-Whether you pass a **str_t** or a **str_buf_t** to your functions depends on the use case.
+&nbsp;
 
-If you wish to pass a string to a function which frees it, then you need to pass ownership along with it, so in that case a strbuf_t needs to be passed.
+ Whether or not you pass a **str_t** or a **str_buf_t** to your functions depends on the use case.
 
-If you only wish to provide a view into an existing string (read only), then a **str_t** can be passed.
+ If you wish to pass a string to a function which frees it, then you need to pass ownership along with it, so in that case a strbuf_t needs to be passed.
+
+ If you only wish to provide a view into an existing string (read only), then a **str_t** can be passed.
 
 &nbsp;
 ## Standard used
@@ -55,6 +57,9 @@ If you only wish to provide a view into an existing string (read only), then a *
 &nbsp;
 ## Usage
  Copy the source files __str.h__/__str.c__ and optionally __strbuf.h__/__strbuf.c__ into your project.
+ Add any desired options (described below) to your compiler flags (eg. -DSTRBUF_PROVIDE_PRINTF).
+ str.c requires linking against the maths library for interpreting float values. So either add -lm to your linker options, or -DSTR_NO_FLOAT to your compiler options if you don't need float conversion.
+ A list and explanation of options is included at the top of each header file for convenient copy & pasting.
 
 
 &nbsp;
@@ -272,7 +277,7 @@ These can be added to your compiler flags eg. -DSTR_SUPPORT_LONG_DOUBLE
 &nbsp;
 # Providing an allocator for strbuf_create().
 
- **strbuf_create()** requires an allocator to be passed.
+ **strbuf_create()** may be passed an allocator. If you just want strbuf_create() to use stdlib's malloc and free, then simply add -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB to your compiler flags, and pass a NULL to the allocator parameter. If you want to check that stdlib's allocation/resize actually succeeded, you can add -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB which uses regular assert() to check this.
 
  The following strbuf_allocator_t type is defined by strbuf.h
 
@@ -340,8 +345,9 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 # strbuf.h functions:
 
 &nbsp;
-##	strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t allocator);
+##	strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator);
  Create and return the address of a strbuf_t.
+ If STRBUF_DEFAULT_ALLOCATOR_STDLIB is defined, then allocator may be NULL and malloc/free will be used.
 
 &nbsp;
 ## strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);

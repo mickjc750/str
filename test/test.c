@@ -81,7 +81,7 @@ int main(int argc, const char* argv[])
 
 	printf("\n\n");
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, strbuf_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, &strbuf_allocator);
 
 	assert(buf->cstr);
 	assert(buf->size == 0);
@@ -690,7 +690,7 @@ int main(int argc, const char* argv[])
 	DBG("\n\n");
 	DBG("** Testing strbuf_printf() **\n");
 
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, strbuf_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, &strbuf_allocator);
 	str1 = strbuf_printf(&buf, "Hello from printf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
 
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
@@ -710,7 +710,7 @@ int main(int argc, const char* argv[])
 	DBG("\n\n");
 	DBG("** Testing strbuf_prnf() **\n");
 
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, strbuf_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, &strbuf_allocator);
 	str1 = strbuf_prnf(&buf, "Hello from prnf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
 
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
@@ -727,7 +727,7 @@ int main(int argc, const char* argv[])
 	strbuf_destroy(&buf);
 	#endif
 
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, strbuf_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, &strbuf_allocator);
 	DBG("** Testing strbuf_assign() source outside of the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("***Hello test***"));
 	assert(!memcmp(str1.data, "***Hello test***", str1.size));
@@ -866,6 +866,40 @@ This text has no line ending";
 	str1 = str_find_first(strbuf_str(&buf), cstr(""));
 	strbuf_insert_before(&buf, str1, cstr("***"));
 	assert(!memcmp(buf->cstr, "***Hello Mellow", buf->size));
+
+	DBG("\n\n** Testing strbuf_insert_after() **");
+
+	strbuf_assign(&buf, cstr("Hello"));
+	str1 = str_find_last(strbuf_str(&buf), cstr(""));
+	strbuf_insert_after(&buf, str1, cstr("-test"));
+	assert(!memcmp(buf->cstr, "Hello-test", buf->size));
+
+	strbuf_assign(&buf, cstr("Hello Mellow"));
+	str1 = str_find_last(strbuf_str(&buf), cstr("ll"));
+	strbuf_insert_after(&buf, str1, cstr("..."));
+	assert(!memcmp(buf->cstr, "Hello Mell...ow", buf->size));
+
+	strbuf_assign(&buf, cstr("Hello Mellow"));
+	str1 = str_find_first(strbuf_str(&buf), cstr("ll"));
+	strbuf_insert_after(&buf, str1, cstr("---"));
+	assert(!memcmp(buf->cstr, "Hell---o Mellow", buf->size));
+
+	strbuf_assign(&buf, cstr("Hello Mellow"));
+	str1 = str_find_first(strbuf_str(&buf), cstr(""));
+	strbuf_insert_after(&buf, str1, cstr("***"));
+	assert(!memcmp(buf->cstr, "***Hello Mellow", buf->size));
+
+	strbuf_destroy(&buf);
+
+	#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
+	DBG("\n\n** Testing default allocator **");
+
+	buf = strbuf_create(1000,NULL);
+	assert(buf);
+	assert(buf->cstr);
+	assert(buf->size == 0);
+	assert(buf->capacity == 1000);
+	#endif
 
 	DBG("\n\n\n*** Everything worked ***\n");
 

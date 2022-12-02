@@ -1,3 +1,19 @@
+/*
+ The following may be added to compiler options:
+
+ -DSTRBUF_PROVIDE_PRINTF
+	Provides functions which use vprintf() internally to assign or append formatted text to a buffer.
+
+ -DSTRBUF_PROVIDE_PRNF
+ 	Similar to printf, -but uses an alternative text formatter https://github.com/mickjc750/prnf
+
+ -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
+	If you wish to use dynamic memory allocation, but can't be bothered providing an allocator.
+
+ -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
+ 	assert() that the malloc or realloc of the default allocator actually succeeded.
+
+*/
 #ifndef _STRBUF_H_
 	#define _STRBUF_H_
 
@@ -107,7 +123,7 @@ then:
 //********************************************************************************************************
 
 //	Create a new buffer with content size = initial_capacity  and return it.
-	strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t allocator);
+	strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator);
 
 /*	Create a new buffer with a fixed capacity from the given memory address. The address must be suitably aligned for a void*.
 	size is the size of the memory available (not the desired capacity) and must be > sizeof(strbuf_t)+1
@@ -155,8 +171,11 @@ then:
 //	Insert str_t to buffer, str_t 
 	str_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str_t str);
 
-//	Insert src at the starting location of dst in the buffer.
+//	Insert src at the starting location of dst in the buffer. dst must reference data contained within the buffer.
 	str_t strbuf_insert_before(strbuf_t** buf_ptr, str_t dst, str_t src);
+
+//	Insert src after the end of dst in the buffer. dst must reference data contained within the buffer.
+	str_t strbuf_insert_after(strbuf_t** buf_ptr, str_t dst, str_t src);
 
 // 	Provide formatted printing to a strbuf_t (uses vsnprintf() from stdio.h)
 #ifdef STRBUF_PROVIDE_PRINTF

@@ -13,6 +13,14 @@
 		#include "prnf.h"
 	#endif
 
+	#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
+		#include <stdlib.h>
+	#endif
+
+	#ifdef STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
+		#include <assert.h>
+	#endif
+
 //********************************************************************************************************
 // Local defines
 //********************************************************************************************************
@@ -41,15 +49,39 @@
 	static void char_handler_for_prnf(void* dst, char c);
 #endif
 
+#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
+	static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	static strbuf_allocator_t default_allocator = (strbuf_allocator_t){.allocator=allocfunc_stdlib, .app_data=NULL};
+#endif
+
 //********************************************************************************************************
 // Public functions
 //********************************************************************************************************
 
-strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t allocator)
+#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
+static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
+{
+	(void)this_allocator; (void)caller_filename; (void)caller_line;
+	void* result;
+	result = realloc(ptr_to_free, size);
+	#ifdef STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
+		assert(size==0 || result);
+	#endif
+	return result;
+}
+#endif
+
+strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator)
 {
 	strbuf_t* result;
-	if(allocator.allocator)
-		result = create_buf(initial_capacity, allocator);
+	
+	#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
+	if(!allocator)
+		allocator = &default_allocator;
+	#endif
+
+	if(allocator && allocator->allocator)
+		result = create_buf(initial_capacity, *allocator);
 	else
 		result = NULL;
 	return result;
@@ -332,6 +364,24 @@ str_t strbuf_insert_before(strbuf_t** buf_ptr, str_t dst, str_t src)
 		buf = *buf_ptr;
 		if(buf->cstr <= dst.data && dst.data <= &buf->cstr[buf->size])
 			insert_str_into_buf(&buf, dst.data - buf->cstr, src);
+		*buf_ptr = buf;
+	};
+
+	return str_of_buf(*buf_ptr);
+}
+
+str_t strbuf_insert_after(strbuf_t** buf_ptr, str_t dst, str_t src)
+{
+	strbuf_t* buf;
+	const char* dst_ptr;
+
+	if(buf_ptr && *buf_ptr && str_is_valid(dst))
+	{
+		buf = *buf_ptr;
+		dst_ptr = &dst.data[dst.size];
+
+		if(buf->cstr <= dst_ptr && dst_ptr <= &buf->cstr[buf->size])
+			insert_str_into_buf(&buf, dst_ptr - buf->cstr, src);
 		*buf_ptr = buf;
 	};
 

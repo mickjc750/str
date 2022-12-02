@@ -6,8 +6,8 @@
 	#include <assert.h>
 	#include <stdbool.h>
 
-	#include "../../strbuf.h"
-	#include "../../str.h"
+	#include "../strbuf.h"
+	#include "../str.h"
 
 //********************************************************************************************************
 // Configurable defines
@@ -25,7 +25,7 @@
 // Private prototypes
 //********************************************************************************************************
 
-	static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
 
 //********************************************************************************************************
 // Public functions
@@ -34,11 +34,11 @@
 int main(int argc, const char* argv[])
 {
 
-	str_allocator_t str_allocator = {.allocator = allocator};
+	strbuf_allocator_t str_allocator = {.allocator = allocator};
 	strbuf_t* buf;
 
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, str_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, &str_allocator);
 
 	strbuf_append(&buf, cstr("This "));
 	strbuf_append(&buf, cstr("buffer "));
@@ -61,7 +61,7 @@ int main(int argc, const char* argv[])
 // Private functions
 //********************************************************************************************************
 
-static void* allocator(struct str_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
+static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
 {
 	(void)this_allocator; (void)caller_filename; (void)caller_line;
 	void* result;

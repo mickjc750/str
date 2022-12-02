@@ -1,3 +1,20 @@
+/*/
+ The following may be added to compiler options:
+
+	The default precicion for floating point conversions id double.
+	If you with to change this the following options are available.
+
+	-DSTR_NO_FLOAT
+		Don't provide floating point conversions. str.c will not need linking against the math library (-lm)
+	
+	-DSTR_SUPPORT_LONG_DOUBLE
+		Convert floating point values with long double precision.
+
+	-DSTR_SUPPORT_FLOAT
+		Convert floating point values with float precision.
+
+*/
+
 #ifndef _STR_H_
 	#define _STR_H_
 
