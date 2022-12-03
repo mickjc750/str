@@ -91,7 +91,7 @@
 
 /*	Return the str_t for the first occurrence of needle in haystack.
  	If the needle is not found, str_find_first() returns an invalid str_t.
- 	If the needle is found, the returned str_t will match the contents of needle, only it will reference data within the haystack, and can be used with various strbuf.h functions as a means of specifying the position within the buffer.
+ 	If the needle is found, the returned str_t will match the contents of needle, only it will reference data within the haystack, and can be used with various strbuf.h functions as a means of specifying the position within the buffer. */
 	str_t str_find_first(str_t haystack, str_t needle);
 
 /*	Similar to str_find_first(), but returns the LAST occurrence of needle in haystack.
