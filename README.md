@@ -138,33 +138,28 @@ Some operations may return an invalid str_t, in this case .data=NULL and .size==
  Return a str_t with the end trimmed of all characters present in **chars_to_trim**.
 
 &nbsp;
-## str_search_result_t str_find_first(str_t haystack, str_t needle);
- Return the **str_search_result_t** (bool found & index) for the first occurrence of needle in haystack.
- **str_search_result_t** is defined as the following structure:
-
-	typedef struct str_search_result_t
-	{
-		bool found;
-		size_t index;
-	} str_search_result_t;
+## str_t str_find_first(str_t haystack, str_t needle);
+ Return the **str_t** for the first occurrence of needle in haystack.
+ If the needle is not found, str_find_first() returns an invalid str_t.
+ If the needle is found, the returned str_t will match the contents of needle, only it will reference data within the haystack, and can be used with various strbuf.h functions as a means of specifying the position within the buffer.
 
 Some special cases to consider:
  * If **needle** is valid, and of length 0, it will always be found at the start of the string.
  * If **needle** is invalid, or if **haystack** is invalid, it will not be found.
 	
 &nbsp;
-## str_search_result_t str_find_last(str_t haystack, str_t needle);
- Return the **str_search_result_t** (bool found & index) for the last occurrence of **needle** in **haystack**.
+## str_t str_find_last(str_t haystack, str_t needle);
+ Similar to str_find_first(), but returns the LAST occurrence of **needle** in **haystack**.
 
 Some special cases to consider:
-* If **needle** is valid, and of length 0, it will always be found at the index of the last character in **haystack**+1.
+* If **needle** is valid, and of length 0, it will always be found at the end of **haystack**.
 * If **needle** is invalid, or if **haystack** is invalid, it will not be found.
 
 &nbsp;
 ## str_t str_pop_first_split(str_t* str_ptr, str_t delimiters);
  Return a **str_t** representing the contents of the source string up to, but not including, any of characters in **delimiters**.
- Additionally, the contents of the returned **str_t**, and the delimeter character itself is removed (popped) from the input string.
- If no delimeter is found, the returned string is invalid, and should be tested with str_is_valid().
+ Additionally, the contents of the returned **str_t**, and the delimiter character itself is removed (popped) from the input string.
+ If no delimiter is found, the returned string is invalid, and should be tested with str_is_valid().
 
 Example usage:
 
@@ -254,6 +249,7 @@ The default precision of this function is double, but **str.h** accepts the foll
 * STR_SUPPORT_LONG_DOUBLE - Use long double instead of double.
 
 These can be added to your compiler flags eg. -DSTR_SUPPORT_LONG_DOUBLE
+This feature requires linking against the maths library, so linker options will need -lm, unless you define **STR_NO_FLOAT**
 
 &nbsp;
 # strbuf.h
@@ -277,7 +273,7 @@ These can be added to your compiler flags eg. -DSTR_SUPPORT_LONG_DOUBLE
 &nbsp;
 # Providing an allocator for strbuf_create().
 
- **strbuf_create()** *may* be passed an allocator. If you just want strbuf_create() to use stdlib's malloc and free, then simply add -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB to your compiler flags, and pass a NULL to the allocator parameter of strbuf_create(). If you want to check that stdlib's allocation/resize actually succeeded, you can add -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB which uses regular assert() to check this.
+ **strbuf_create()** *may* be passed an allocator. If you just want strbuf_create() to use stdlib's malloc and free, then simply add -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB to your compiler options, and pass a NULL to the allocator parameter of strbuf_create(). If you want to check that stdlib's allocation/resize actually succeeded, you can also add -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB which uses regular assert() to check this.
 
  The following strbuf_allocator_t type is defined by strbuf.h
 
@@ -310,27 +306,27 @@ The parameters to this function are:
 
 &nbsp;
 # Allocator example
-One for stdlib's realloc is provided under allocator_example/
+One for stdlib's realloc is provided under allocator_example/ Even though stdlib can be used as the default allocator in the case where the user doesn't wish to provide one, it is the simplest one to use for an example.
 
 &nbsp;
 # Buffer re-sizing
-The initial capacity of the buffer will be exactly as provided to strbuf_create(). If an operation needs to extend the buffer, the size will be rounded up by STR_CAPACITY_GROW_STEP. The default value of this is 16, but this can be changed by defining it in a compiler flag ie. -DSTR_CAPACITY_GROW_STEP=32
+The initial capacity of the buffer will be exactly as provided to strbuf_create(). If an operation needs to extend the buffer, the size will be rounded up by STRBUF_CAPACITY_GROW_STEP. The default value of this is 16, but this can be changed by defining it in a compiler flag ie. -DSTRBUF_CAPACITY_GROW_STEP=32
 
 The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which case it will be reduced to the minimum possible.
 
 &nbsp;
 # non-dynamic buffers
 
- A function **strbuf_create_fixed()** is provided for initializing a strbuf_t* from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than is available, this will result in an empty buffer. The capacity will be slightly less than the buffer size, as the memory must also hold a strbuf_t, and due to this the memory provided must also be suitably aligned with __ attribute __ ((aligned))
+ A function **strbuf_create_fixed()** is provided for initializing a strbuf_t* from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than is available, this will result in an empty buffer. The capacity will be slightly less than the buffer size, as the memory must also hold a strbuf_t, and due to this the memory provided must also be suitably aligned with __ attribute __ ((aligned)). If the memory is not aligned, or is insufficient to hold event strbuf_t, then a NULL will be returned.
 
 &nbsp;
 # printf to a strbuf_t
 
- To enable this feature, you must define the symbol STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler flags
+ To enable this feature, you must define the symbol STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler options
 
  **strbuf.h** will then define __str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);__
 
- This uses vsnprintf() from stdio.h internally.
+ This uses vsnprintf() from stdio.h internally, to assign the formatted text output to the buffer provided.
 
 &nbsp;
 # prnf to a strbuf_t
@@ -351,11 +347,11 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 
 &nbsp;
 ## strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);
- Create a new buffer with a fixed capacity from the given memory address. The address must be suitably aligned for a void*.
+ Create a new buffer with a fixed capacity from the given memory address. The address must be suitably aligned for a void*. This can be done in GCC by adding __ attribute __ ((aligned)) to the buffers declaration.
 
  addr_size is the size of the memory available **(not the desired capacity)** and must be > sizeof(strbuf_t)+1.
 
- The resulting buffer capacity will be the given memory size -sizeof(strbuf_t)-1, and can be checked with buf->capacity. If the function fails due to bad alignment or insufficient size, a NULL will be returned
+ The resulting buffer capacity will be the given memory size -sizeof(strbuf_t)-1, and can be checked with buf->capacity. If the function fails due to bad alignment or insufficient size, a NULL will be returned.
 
 Example use:
 
@@ -412,8 +408,16 @@ Example use:
  Prepend str_t to buffer. str_t may be owned by the output buffer itself.
 	
 &nbsp;
-## str_t strbuf_insert(strbuf_t** buf_ptr, int index, str_t str);
- Insert str_t to buffer at index. str_t may be owned by the output buffer itself.
+## str_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str_t str);
+ Insert str_t to buffer at index. str_t may be owned by the output buffer itself. The index accepts python-style negative values to index the end of the string backwards.
+
+&nbsp;
+## str_t strbuf_insert_before(strbuf_t** buf_ptr, str_t dst, str_t src);
+ Insert src into the buffer at the location referenced by dst. dst must reference data contained within the destination buffer.
+
+&nbsp;
+##	str_t strbuf_insert_after(strbuf_t** buf_ptr, str_t dst, str_t src);
+ Insert src after the end of dst in the buffer. dst must reference data contained within the buffer.
 
 
 &nbsp;

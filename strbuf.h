@@ -13,6 +13,9 @@
  -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
  	assert() that the malloc or realloc of the default allocator actually succeeded.
 
+ -DSTRBUF_CAPACITY_GROW_STEP=<size>
+	Defaults to 16. This is the minimum size by which the buffer will be expanded when needed.
+
 */
 #ifndef _STRBUF_H_
 	#define _STRBUF_H_
@@ -33,8 +36,8 @@
 		* expanding the buffer for any reason
 	The buffer size can only ever be shrunk by calling strbuf_shrink(), which shrinks it to the minimum needed.
 	Higher values will reduce calls to the allocator, at the expense of more memory overhead. */
-	#ifndef STR_CAPACITY_GROW_STEP
-		#define STR_CAPACITY_GROW_STEP 16
+	#ifndef STRBUF_CAPACITY_GROW_STEP
+		#define STRBUF_CAPACITY_GROW_STEP 16
 	#endif
 
 //	This is used for counting the number of arguments to the strbuf_cat() macro below.

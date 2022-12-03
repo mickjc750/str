@@ -570,8 +570,8 @@ static void append_char_to_buf(strbuf_t** buf_ptr, char c)
 
 static size_t round_up_capacity(size_t capacity)
 {
-	if(capacity % STR_CAPACITY_GROW_STEP)
-		capacity = (capacity + STR_CAPACITY_GROW_STEP) - (capacity % STR_CAPACITY_GROW_STEP);
+	if(capacity % STRBUF_CAPACITY_GROW_STEP)
+		capacity = (capacity + STRBUF_CAPACITY_GROW_STEP) - (capacity % STRBUF_CAPACITY_GROW_STEP);
 	return capacity;
 }
 
