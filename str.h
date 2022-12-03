@@ -89,13 +89,13 @@
 //	Return a str_t with the end trimmed of all characters present in chars_to_trim
 	str_t str_trim_end(str_t str, str_t chars_to_trim);
 
-/*	Return the search result (bool found & index) for the first occurrence of needle in haystack
-	If needle is valid, and of length 0, it will always be found at the start of the string.
-	If needle is invalid, or if haystack is invalid, it will not be found. */
+/*	Return the str_t for the first occurrence of needle in haystack.
+ 	If the needle is not found, str_find_first() returns an invalid str_t.
+ 	If the needle is found, the returned str_t will match the contents of needle, only it will reference data within the haystack, and can be used with various strbuf.h functions as a means of specifying the position within the buffer.
 	str_t str_find_first(str_t haystack, str_t needle);
 
-/*	Return the search result (bool found & index) for the last occurrence of needle in haystack
-	If needle is valid, and of length 0, it will always be found at the index of the last character in haystack+1.
+/*	Similar to str_find_first(), but returns the LAST occurrence of needle in haystack.
+	If needle is valid, and of length 0, it will always be found at the end of haystack.
 	If needle is invalid, or if haystack is invalid, it will not be found. */
 	str_t str_find_last(str_t haystack, str_t needle);
 
