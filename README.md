@@ -84,6 +84,8 @@ Some operations may return an invalid str_t, in this case .data=NULL and .size==
 * Attempting to split a string using non-existent delimiter with **str_pop_first_split()** or **str_pop_last_split()**
 * Requesting a substring range, which is entirely outside of the range of the input string.
 
+Note that it is valid to have a str_t of length 0. In this case *data should never be de-referenced (as it points to something of size 0, ie non-existent).
+
 &nbsp;
 # Passing a str_t to printf()
  There are two macros defined for this **PRIstr** and **PRIstrarg()**, which make use if printf's dynamic precision to limit the number of characters read.
@@ -270,6 +272,18 @@ This feature requires linking against the maths library, so linker options will 
 		char cstr[];
 	} strbuf_t;
 
+ This type is intended to be declared as a pointer (strbuf_t*), if the buffer is relocated in memory this pointer needs to change, therefore strbuf.h functions take the address of this pointer as an argument. While a pointer to a pointer may be confusing for some, in practice the source doesn't look too intimidating. Example:
+
+	strbuf_t*	mybuffer;
+	mybuffer = strbuf_create(50, NULL);
+	strbuf_assign(&mybuffer, cstr("Hello"));
+
+As mybuffer is a pointer, members of the strbuf_t may be accessed using the arrow operator. Example:
+
+	printf("The buffer contains %s\n", mybuffer->cstr);
+
+
+
 &nbsp;
 # Providing an allocator for strbuf_create().
 
@@ -285,7 +299,7 @@ This feature requires linking against the maths library, so linker options will 
 
 ## Explanation:
 	void* app_data;
- The address of the strbuf_allocator_t is passed to the allocator. If the allocator requires access to some implementation specific data to work (such as in the case of a temporary allocator), then *app_data may be used to pass this.
+ The address of the strbuf_allocator_t is passed to the allocator. If the allocator requires access to some implementation specific data to work (such as in the case of a temporary allocator), then *app_data may provide the address of this.
 
 &nbsp;
 
