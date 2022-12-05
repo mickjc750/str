@@ -50,9 +50,12 @@ str_t cstr(const char* c_str)
 char* str_to_cstr(char* dst, size_t dst_size, str_t str)
 {
 	size_t copy_size;
+	size_t src_size = str.size < 0 ? 0:str.size;
 	if(dst_size && dst)
 	{
-		copy_size = (dst_size-1) < str.size ? (dst_size-1):str.size;
+		if(str.size < 0)
+			str.size = 0;
+		copy_size = (dst_size-1) < src_size ? (dst_size-1):src_size;
 		memcpy(dst, str.data, copy_size);
 		dst[copy_size] = 0;
 	};
@@ -76,7 +79,11 @@ bool str_is_match_nocase(str_t str1, str_t str2)
 
 int str_compare(str_t str1, str_t str2)
 {
-	int result = memcmp(str1.data, str2.data, str1.size < str2.size ? str1.size:str2.size);
+	int compare_size = str1.size < str2.size ? str1.size:str2.size;
+	int result = 0;
+
+	if(compare_size)
+		result = memcmp(str1.data, str2.data, compare_size);
 
 	if(!result && str1.size != str2.size)
 		result = str1.size > str2.size ? +1:-1;

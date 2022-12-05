@@ -73,7 +73,7 @@ str.h defines the following str_t type :
 	typedef struct str_t
 	{
 		const char* data;
-		size_t size;
+		int size;
 	} str_t;
 
 Note that this holds only:
@@ -266,12 +266,14 @@ This feature requires linking against the maths library, so linker options will 
 
 	typedef struct strbuf_t
 	{
-		size_t size;
-		size_t capacity;
+		int size;
+		int capacity;
 		strbuf_allocator_t allocator;
 		char cstr[];
 	} strbuf_t;
 
+ Note that the size and capacity are of type int. This limits the buffer capacity to INT_MAX, which is 2GB for 32bit int's and 32kB for 16bit int's. 
+ 
  This type is intended to be declared as a pointer (strbuf_t*), if the buffer is relocated in memory this pointer needs to change, therefore strbuf.h functions take the address of this pointer as an argument. While a pointer to a pointer may be confusing for some, in practice the source doesn't look too intimidating. Example:
 
 	strbuf_t*	mybuffer;
