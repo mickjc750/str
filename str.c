@@ -18,8 +18,6 @@
 	#define CASE_SENSETIVE		true
 	#define NOT_CASE_SENSETIVE	false
 
-	#define STR_INVALID		((str_t){.data = NULL, .size = 0})	
-
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
@@ -67,6 +65,13 @@ char* str_to_cstr(char* dst, size_t dst_size, str_t str)
 bool str_is_valid(str_t str)
 {
 	return !!str.data;
+}
+
+void str_swap(str_t* a, str_t* b)
+{
+	str_t tmp = *a;
+	*a = *b;
+	*b = tmp;
 }
 
 bool str_is_match(str_t str1, str_t str2)

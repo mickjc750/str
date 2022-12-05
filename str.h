@@ -43,6 +43,9 @@
 //	Can be used instead of cstr, to avoid measuring the length of string literals at runtime
 	#define cstr_SL(sl_arg) ((str_t){.data=(sl_arg), .size=sizeof(sl_arg)-1})
 
+//	Assign to a str_t to make it invalid
+	#define STR_INVALID		((str_t){.data = NULL, .size = 0})	
+
 //********************************************************************************************************
 // Public variables
 //********************************************************************************************************
@@ -61,6 +64,9 @@
 	
 //	Return true if the str_t is valid.
 	bool str_is_valid(str_t str);
+
+//	Swap strings a and b
+	void str_swap(str_t* a, str_t* b);
 
 //	Return true if the strings match
 	bool str_is_match(str_t str1, str_t str2);
