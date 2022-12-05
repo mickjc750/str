@@ -113,8 +113,8 @@ then:
 //	Maintains null termination, so classic c style (null terminated) strings can be accessed with ->cstr
 	typedef struct strbuf_t
 	{
-		size_t size;
-		size_t capacity;
+		int size;
+		int capacity;
 		strbuf_allocator_t allocator;
 		char cstr[];
 	} strbuf_t;

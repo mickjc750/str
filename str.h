@@ -37,7 +37,7 @@
 	typedef struct str_t
 	{
 		const char* data;
-		size_t size;
+		int size;
 	} str_t;
 
 //	Can be used instead of cstr, to avoid measuring the length of string literals at runtime

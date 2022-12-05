@@ -47,6 +47,9 @@ CFLAGS += -Wno-unused-function
 CFLAGS += -Wno-unused-but-set-variable
 CFLAGS += $(CSTANDARD)
 CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
+CFLAGS += -fsanitize=address
+CFLAGS += -Wextra
+CFLAGS += -fsanitize=undefined
 
 # List any extra directories to look for libraries here.
 #     Each directory must be seperated by a space.

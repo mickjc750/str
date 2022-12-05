@@ -2,6 +2,8 @@
 // PRNF Configuration
 //********************************************************************************************************
 
+	#define PRNF_SUPPORT_LONG_LONG
+
 //	If defined, %f and %e will be available
 	#define PRNF_SUPPORT_FLOAT
 

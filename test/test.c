@@ -70,6 +70,8 @@
 
 int main(int argc, const char* argv[])
 {
+	(void)argc;
+	(void)argv;
 	#define INITIAL_BUF_CAPACITY 16
 
 	strbuf_allocator_t strbuf_allocator = {.allocator = allocator};
@@ -396,17 +398,17 @@ int main(int argc, const char* argv[])
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG. CONGRATULATIONS, YOUR TYPEWRITER WORKS!", str1.data, str1.size));
 
-	DBG("Current capacity = %zu - Shrinking buffer", buf->capacity);
+	DBG("Current capacity = %i - Shrinking buffer", buf->capacity);
 	strbuf_shrink(&buf);
-	DBG("Current capacity = %zu\n", buf->capacity);
-	assert(buf->capacity == strlen(buf->cstr));
+	DBG("Current capacity = %i\n", buf->capacity);
+	assert(buf->capacity == (int)strlen(buf->cstr));
 
 	DBG("** Testing strbuf_cat() with a single invalid str **");
 	DBG("strbuf_cat() should always return a valid string");
 	str1.data = NULL;
 	str1.size = 0;
 	str1 = strbuf_cat(&buf, str1);
-	DBG("Size = %zu\n\n\n", str1.size);
+	DBG("Size = %i\n\n\n", str1.size);
 	assert(str1.size == 0);
 	assert(str1.data);
 
@@ -451,7 +453,7 @@ int main(int argc, const char* argv[])
 
 	DBG("Creating strbuf_t from a fixed buffer of %i bytes", STATIC_BUFFER_SIZE);
 	buf = strbuf_create_fixed(static_buf, STATIC_BUFFER_SIZE);
-	DBG("Available capacity is %zu characters (size of strbuf_t = %zu)", buf->capacity, sizeof(strbuf_t));
+	DBG("Available capacity is %i characters (size of strbuf_t = %zu)", buf->capacity, sizeof(strbuf_t));
 	assert(buf->capacity == STATIC_BUFFER_SIZE - sizeof(strbuf_t)-1);
 
 	DBG("Concatenating DDDDDDDDDD EEEEEEEEEE FFFFFFFFFF");
@@ -695,14 +697,15 @@ int main(int argc, const char* argv[])
 
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp(str1.data, "Hello from printf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
-	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+	assert((int)strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
 
 	DBG("** Testing strbuf_append_printf() **\n");
 
 	str1 = strbuf_append_printf(&buf, " Appending one more number %i", 748921);
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp(str1.data, "Hello from printf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597 Appending one more number 748921", str1.size));
-	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+	assert((int)strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+	strbuf_destroy(&buf);
 
 	#endif
 
@@ -715,7 +718,7 @@ int main(int argc, const char* argv[])
 
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp(str1.data, "Hello from prnf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
-	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+	assert((int)strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
 
 	DBG("** Testing strbuf_append_prnf() **\n");
 
@@ -723,7 +726,7 @@ int main(int argc, const char* argv[])
 
 	DBG("** Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp(str1.data, "Hello from prnf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597 Appending one more number 748921", str1.size));
-	assert(strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
+	assert((int)strlen(buf->cstr) == buf->size);	//check the 0 terminator is in place
 	strbuf_destroy(&buf);
 	#endif
 
@@ -731,34 +734,34 @@ int main(int argc, const char* argv[])
 	DBG("** Testing strbuf_assign() source outside of the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("***Hello test***"));
 	assert(!memcmp(str1.data, "***Hello test***", str1.size));
-	assert(strlen(buf->cstr) == buf->size);
+	assert((int)strlen(buf->cstr) == buf->size);
 
 	DBG("** Testing strbuf_assign() source from the destination **\n");
 	strbuf_assign(&buf, str_trim(strbuf_str(&buf), cstr("*")));
 	str1 = strbuf_assign(&buf, cstr("Hello test"));
 	assert(!memcmp(str1.data, "Hello test", str1.size));
-	assert(strlen(buf->cstr) == buf->size);
+	assert((int)strlen(buf->cstr) == buf->size);
 
 	DBG("** Testing strbuf_append(), with source from the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
 	strbuf_shrink(&buf);
 	str1 = strbuf_append(&buf, strbuf_str(&buf));
 	assert(!memcmp(str1.data, "{Hello-testing-some-string}{Hello-testing-some-string}", str1.size));
-	assert(strlen(buf->cstr) == buf->size);
+	assert((int)strlen(buf->cstr) == buf->size);
 
 	DBG("** Testing strbuf_prepend(), with source from the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
 	strbuf_shrink(&buf);
 	str1 = strbuf_prepend(&buf, strbuf_str(&buf));
 	assert(!memcmp(str1.data, "{Hello-testing-some-string}{Hello-testing-some-string}", str1.size));
-	assert(strlen(buf->cstr) == buf->size);
+	assert((int)strlen(buf->cstr) == buf->size);
 
 	DBG("** Testing strbuf_insert_at_index(), with source from the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
 	strbuf_shrink(&buf);
 	str1 = strbuf_insert_at_index(&buf, 6, strbuf_str(&buf));
 	assert(!memcmp(str1.data, "{Hello{Hello-testing-some-string}-testing-some-string}", str1.size));
-	assert(strlen(buf->cstr) == buf->size);
+	assert((int)strlen(buf->cstr) == buf->size);
 
 	DBG("** Testing line parser with a few lines **");
 
@@ -899,6 +902,7 @@ This text has no line ending";
 	assert(buf->cstr);
 	assert(buf->size == 0);
 	assert(buf->capacity == 1000);
+	strbuf_destroy(&buf);
 	#endif
 
 	DBG("\n\n\n*** Everything worked ***\n");
