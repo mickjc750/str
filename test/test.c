@@ -140,7 +140,10 @@ int main(int argc, const char* argv[])
 	str1 = str_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"", PRIstrarg(str1), PRIstrarg(str2));
 	assert(!memcmp("456", str1.data, str1.size));
-	assert(!memcmp("789", str2.data, str2.size));
+	str1 = str_pop_first_split(&str2, cstr("/"));
+	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"", PRIstrarg(str1), PRIstrarg(str2));
+	assert(!memcmp("789", str1.data, str1.size));
+	assert(!str_is_valid(str2));
 
 	str1 = strbuf_str(&buf);
 	DBG("Meanwhile, the buffer remains unchanged! %"PRIstr"\n\n\n", PRIstrarg(str1));
@@ -157,7 +160,10 @@ int main(int argc, const char* argv[])
 	str1 = str_pop_first_split_nocase(&str2, cstr("r"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(!memcmp("456", str1.data, str1.size));
-	assert(!memcmp("789", str2.data, str2.size));
+	str1 = str_pop_first_split_nocase(&str2, cstr("r"));
+	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
+	assert(!memcmp("789", str1.data, str1.size));
+	assert(!str_is_valid(str2));
 
 	DBG("**Testing edge cases for str_pop_first_split()**\n");
 
@@ -186,25 +192,25 @@ int main(int argc, const char* argv[])
 	assert(str1.size == 3);
 	assert(!memcmp("789", str1.data, str1.size));
 	assert(str2.size == 0);
-	assert(str2.data);	//remainder string should always remain valid
+	assert(str2.data);		//remainder string should be valid and length 0, as a delimiter was found
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
 	str1 = str_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
-	assert(str1.size == 0);
-	assert(str1.data == NULL);	//result string should be invalid as there were no delimiters
+	assert(str1.size == 0);		//split string should be the entire source, which is a valid string of length 0
+	assert(str1.data);	
 	assert(str2.size == 0);
-	assert(str2.data);
+	assert(str2.data == NULL); 	//remaining string should be invalid as there were no delimiters found
 
 	strbuf_cat(&buf, cstr("no-delimiters"));
 	str2 = strbuf_str(&buf);
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
 	str1 = str_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n\n\n", PRIstrarg(str1), PRIstrarg(str2));
-	assert(str1.data == NULL);
-	assert(str1.size == 0);
-	assert(str2.data);
-	assert(str2.size == sizeof("no-delimiters")-1);
+	assert(str1.data);
+	assert(str1.size == sizeof("no-delimiters")-1);
+	assert(str2.data == NULL);
+	assert(str2.size == 0);
 
 	DBG("**Testing str_pop_last_split()**\n");
 
@@ -260,9 +266,9 @@ int main(int argc, const char* argv[])
 	str1 = str_pop_last_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n\n\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 0);
-	assert(str1.data == NULL);
+	assert(str1.data);
 	assert(str2.size == 0);
-	assert(str2.data);
+	assert(str2.data == NULL);
 
 	DBG("**Testing str_find_first()**\n");
 

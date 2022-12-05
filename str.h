@@ -60,7 +60,6 @@
 	char* str_to_cstr(char* dst, size_t dst_size, str_t str);
 	
 //	Return true if the str_t is valid.
-// 	A str_t may be invalid if a delimiter is not found when attempting to split a string with str_pop_first_split() or str_pop_last_split()
 	bool str_is_valid(str_t str);
 
 //	Return true if the strings match
@@ -101,7 +100,7 @@
 
 /*	Return a str_t representing the contents of the source string up to, but not including, any of the delimiters.
 	Additionally this text, and the delimeter itself is removed (popped) from the source string.
-	If no delimeter is found, the returned string is invalid, and should be tested with str_is_valid() */
+	If no delimeter is found, the returned string is the entire source string, and the source string becomes invalid */
 	str_t str_pop_first_split(str_t* str_ptr, str_t delimiters);
 
 //	Same as str_pop_first_split, ignoring case on the delimiters
@@ -109,7 +108,7 @@
 
 /*	Return a str_t representing the contents of the source string from (but not including) the last delimiter found.
 	Additionally this text, and the delimeter itself is removed (popped) from the end of the source string.
-	If no delimeter is found, the returned string is invalid, and should be tested with str_is_valid() */
+	If no delimeter is found the returned string is the entire source string, and the source string becomes invalid */
 	str_t str_pop_last_split(str_t* str_ptr, str_t delimiters);
 
 //	Same as str_pop_last_split, ignoring case on the delimiters
