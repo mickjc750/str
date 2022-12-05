@@ -144,33 +144,33 @@ static struct uri_struct parse_uri(str_t uri)
 	};
 
 	result.user = str_pop_first_split(&uri, cstr("@"));
+	if(!str_is_valid(uri))
+		str_swap(&result.user, &uri);
 
 	if(!str_is_valid(str_find_first(uri, cstr(":"))))
 	{
 		tmp = str_pop_first_split(&uri, cstr("/"));
-		if(str_is_valid(tmp))
+		if(str_is_valid(uri))
 		{
 			result.path = uri;
 			result.host = tmp;
 		}
 		else
-			result.host = uri;
+			result.host = tmp;
 	}
 	else
 	{
 		tmp = str_pop_first_split(&uri, cstr(":"));
+		if(!str_is_valid(uri))
+			str_swap(&tmp, &uri);
 		if(uri.size && isdigit(uri.data[0]))
 		{
 			result.host = tmp;
 
 			tmp = str_pop_first_split(&uri, cstr("/"));
-			if(!str_is_valid(tmp))
-				result.port = uri;
-			else
-			{
-				result.port = tmp;
+			result.port = tmp;
+			if(str_is_valid(uri))
 				result.path = uri;
-			};
 		}
 		else
 		{

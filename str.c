@@ -67,6 +67,13 @@ bool str_is_valid(str_t str)
 	return !!str.data;
 }
 
+void str_swap(str_t* a, str_t* b)
+{
+	str_t tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+
 bool str_is_match(str_t str1, str_t str2)
 {
 	return (str1.size == str2.size) && (str1.data == str2.data || !memcmp(str1.data, str2.data, str1.size));
@@ -152,7 +159,7 @@ str_t str_trim(str_t str, str_t chars_to_trim)
 
 str_t str_find_first(str_t haystack, str_t needle)
 {
-	str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result = STR_INVALID;
 
 	const char* remaining_hay = haystack.data;
 	bool found = false;
@@ -177,7 +184,7 @@ str_t str_find_first(str_t haystack, str_t needle)
 
 str_t str_find_last(str_t haystack, str_t needle)
 {
-	str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result = STR_INVALID;
 
 	const char* remaining_hay = &haystack.data[haystack.size - needle.size];
 	bool found = false;
@@ -202,7 +209,7 @@ str_t str_find_last(str_t haystack, str_t needle)
 
 str_t str_pop_first_split(str_t* str_ptr, str_t delimiters)
 {
-	str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result = STR_INVALID;
 	
 	if(str_ptr)
 		result = pop_first_split(str_ptr, delimiters, CASE_SENSETIVE);
@@ -212,7 +219,7 @@ str_t str_pop_first_split(str_t* str_ptr, str_t delimiters)
 
 str_t str_pop_first_split_nocase(str_t* str_ptr, str_t delimiters)
 {
-	str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result = STR_INVALID;
 	
 	if(str_ptr)
 		result = pop_first_split(str_ptr, delimiters, NOT_CASE_SENSETIVE);
@@ -222,7 +229,7 @@ str_t str_pop_first_split_nocase(str_t* str_ptr, str_t delimiters)
 
 str_t str_pop_last_split(str_t* str_ptr, str_t delimiters)
 {
-	str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result = STR_INVALID;
 	
 	if(str_ptr)
 		result = pop_last_split(str_ptr, delimiters, CASE_SENSETIVE);
@@ -232,7 +239,7 @@ str_t str_pop_last_split(str_t* str_ptr, str_t delimiters)
 
 str_t str_pop_last_split_nocase(str_t* str_ptr, str_t delimiters)
 {
-	str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result = STR_INVALID;
 	
 	if(str_ptr)
 		result = pop_last_split(str_ptr, delimiters, NOT_CASE_SENSETIVE);
@@ -242,7 +249,7 @@ str_t str_pop_last_split_nocase(str_t* str_ptr, str_t delimiters)
 
 str_t str_pop_split(str_t* str_ptr, int index)
 {
-	str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result = STR_INVALID;
 
 	if(str_ptr)
 		result = pop_split(str_ptr, index);
@@ -260,7 +267,7 @@ char str_pop_first_char(str_t* str_ptr)
 
 str_t str_pop_line(str_t* str_ptr, char* eol)
 {
-	str_t result = {.data=NULL, .size=0};
+	str_t result = STR_INVALID;
 	str_t src;
 	char e = 0;
 
@@ -275,7 +282,7 @@ str_t str_pop_line(str_t* str_ptr, char* eol)
 
 		result = str_pop_first_split(&src, cstr("\r\n"));
 
-		if(str_is_valid(result))
+		if(str_is_valid(src))	//a line ending was found
 		{
 			e = result.data[result.size];
 			if(e + src.data[0] == '\r'+'\n')
@@ -286,6 +293,11 @@ str_t str_pop_line(str_t* str_ptr, char* eol)
 			if(eol)
 				*eol = e;
 			*str_ptr = src;
+		}
+		else	//a line ending was not found, restore the source, and return an invalid str_t
+		{
+			*str_ptr = result;
+			result = STR_INVALID;
 		};
 	};
 	return result;
@@ -487,7 +499,7 @@ static int memcmp_nocase(const char* a, const char* b, size_t size)
 
 static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_sensetive)
 {
-	str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result;
 	bool found = false;
 	const char* ptr;
 	
@@ -495,7 +507,7 @@ static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_senseti
 
 	if(str_ptr->data && delimiters.data)
 	{
-		// trt to find the delimiter
+		// try to find the delimiter
 		while(ptr != &str_ptr->data[str_ptr->size] && !found)
 		{
 			found = contains_char(delimiters, *ptr, case_sensetive);
@@ -514,6 +526,11 @@ static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_senseti
 		str_ptr->size--;
 		if(str_ptr->size)	//only point to the character after the delimiter if there is one
 			str_ptr->data++;
+	}
+	else
+	{
+		result = *str_ptr;
+		*str_ptr = STR_INVALID;
 	};
 
 	return result;
@@ -521,7 +538,7 @@ static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_senseti
 
 static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetive)
 {
-	str_t result = (str_t){.data = NULL, .size = 0};
+	str_t result;
 	bool found = false;
 	const char* ptr;
 
@@ -546,6 +563,11 @@ static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetiv
 		result.size--;
 		if(result.size)
 			result.data++; //only point to the the character after the delimiter if there is one
+	}
+	else
+	{
+		result = *str_ptr;
+		*str_ptr = STR_INVALID;
 	};
 
 	return result;

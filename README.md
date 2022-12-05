@@ -80,9 +80,7 @@ Note that this holds only:
  * A pointer to the beginning of the string
  * The size (in characters) of the string
 
-Some operations may return an invalid str_t, in this case .data=NULL and .size==0. Operations which can cause an invalid str_t to be returned include:
-* Attempting to split a string using non-existent delimiter with **str_pop_first_split()** or **str_pop_last_split()**
-* Requesting a substring range, which is entirely outside of the range of the input string.
+Some operations may return an invalid str_t, in this case .data=NULL and .size==0. 
 
 Note that it is valid to have a str_t of length 0. In this case *data should never be de-referenced (as it points to something of size 0, ie non-existent).
 
@@ -108,6 +106,10 @@ Note that it is valid to have a str_t of length 0. In this case *data should nev
 &nbsp;
 ## bool str_is_valid(str_t str);
  Return true if the str_t is valid.
+
+&nbsp;
+##	void str_swap(str_t* a, str_t* b);
+ Swap strings a and b.
 
 &nbsp;
 ## bool str_is_match(str_t str1, str_t str2);
@@ -161,7 +163,7 @@ Some special cases to consider:
 ## str_t str_pop_first_split(str_t* str_ptr, str_t delimiters);
  Return a **str_t** representing the contents of the source string up to, but not including, any of characters in **delimiters**.
  Additionally, the contents of the returned **str_t**, and the delimiter character itself is removed (popped) from the input string.
- If no delimiter is found, the returned string is invalid, and should be tested with str_is_valid().
+ If no delimiter is found, the returned string is the entire source string, and the source string becomes invalid.
 
 Example usage:
 
