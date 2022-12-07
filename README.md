@@ -44,7 +44,7 @@ To understand this approach to string handling, and the purpose of each, it help
 
 &nbsp;
 
- Whether or not you pass a **str_t** or a **str_buf_t** to your functions depends on the use case.
+ Whether or not you pass a **str_t** or a **strbuf_t** to your functions depends on the use case.
 
  If you wish to pass a string to a function which frees it, then you need to pass ownership along with it, so in that case a strbuf_t needs to be passed.
 
@@ -459,3 +459,10 @@ Example use:
 ## str_t strbuf_append_vprntf(strbuf_t** buf_ptr, const char* format, va_list va);
 ### These functions are available if you define STRBUF_PROVIDE_PRNF, ideally by adding -DSTRBUF_PROVIDE_PRNF to your compiler options
  These behave like the printf functions, but use an alternative text formatter https://github.com/mickjc750/prnf
+
+&nbsp;
+
+# Contributing
+
+Please raise issues to discuss changes or new features, or comment on existing issues.  
+I'm yet to tag a release, so the API is open to changes. I'm still quite active, and I value others input.
