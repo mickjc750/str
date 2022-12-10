@@ -262,7 +262,7 @@ This feature requires linking against the maths library, so linker options will 
  
  While dynamic memory allocation is very useful, it is not mandatory (with one exception regarding strbuf_cat()). 
 
- All strbuf functions maintain a null terminator at the end of the buffer, and the buffer may be accessed as a regular c string using mybuffer->cstr.
+ All strbuf functions maintain a null terminator at the end of the content, and the content may be accessed as a regular c string using mybuffer->cstr.
 
  str.h defines the following strbuf_t type :
 
