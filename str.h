@@ -1,7 +1,7 @@
 /*/
  The following may be added to compiler options:
 
-	The default precicion for floating point conversions id double.
+	The default precision for floating point conversions id double.
 	If you with to change this the following options are available.
 
 	-DSTR_NO_FLOAT
@@ -30,7 +30,7 @@
 //	These macros can be used with printf for printing str types using dynamic precision.
 //	eg.  printf("name=%"PRIstr"\n", PRIstrarg(myname));
 	#define PRIstr	".*s"
-	#define PRIstrarg(arg)	(int)((arg).size),((arg).data)
+	#define PRIstrarg(arg)	((arg).size),((arg).data)
 
 //	String structure.
 //	This does not own the memory used to hold the string. It references data either in a string buffer, or const chars in the string pool.

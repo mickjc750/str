@@ -622,6 +622,18 @@ int main(int argc, const char* argv[])
 	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
 	assert(str_to_float(str1) != str_to_float(str1));
 
+	str1 = cstr("fred");
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
+	assert(str_to_float(str1) != str_to_float(str1));
+
+	str1 = cstr(".");
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
+	assert(str_to_float(str1) != str_to_float(str1));
+
+	str1 = cstr(".E");
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
+	assert(str_to_float(str1) != str_to_float(str1));
+
 	TEST_STR_TO_FLOAT("%f", 183.4179);
 	TEST_STR_TO_FLOAT("%f", -183.4179);
 	TEST_STR_TO_FLOAT("%e", 1000000);
