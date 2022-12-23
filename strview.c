@@ -6,7 +6,7 @@
 	#endif
 	#include <limits.h>
 	#include <ctype.h>
-	#include "str.h"
+	#include "strview.h"
 
 //********************************************************************************************************
 // Local defines
@@ -22,18 +22,18 @@
 // Private prototypes
 //********************************************************************************************************
 
-	static bool contains_char(str_t str, char c, bool case_sensetive);
+	static bool contains_char(strview_t str, char c, bool case_sensetive);
 
-	static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_sensetive);
-	static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetive);
-	static str_t pop_split(str_t* str_ptr, int index);
+	static strview_t pop_first_split(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
+	static strview_t pop_last_split(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
+	static strview_t pop_split(strview_t* strview_ptr, int index);
 
-	static unsigned long long interpret_hex(str_t str);
-	static unsigned long long interpret_bin(str_t str);
-	static unsigned long long interpret_dec(str_t str);
+	static unsigned long long interpret_hex(strview_t str);
+	static unsigned long long interpret_bin(strview_t str);
+	static unsigned long long interpret_dec(strview_t str);
 
 	#ifndef STR_NO_FLOAT
-	static str_float_t interpret_float(str_t str);
+	static strview_float_t interpret_float(strview_t str);
 	#endif
 
 	static int memcmp_nocase(const char* a, const char* b, size_t size);
@@ -42,12 +42,12 @@
 // Public functions
 //********************************************************************************************************
 
-str_t cstr(const char* c_str)
+strview_t cstr(const char* c_str)
 {
-	return (str_t){.data = c_str, .size = strlen(c_str)};
+	return (strview_t){.data = c_str, .size = strlen(c_str)};
 }
 
-char* str_to_cstr(char* dst, size_t dst_size, str_t str)
+char* strview_to_cstr(char* dst, size_t dst_size, strview_t str)
 {
 	size_t copy_size;
 	size_t src_size = str.size < 0 ? 0:str.size;
@@ -62,29 +62,29 @@ char* str_to_cstr(char* dst, size_t dst_size, str_t str)
 	return dst;
 }
 
-bool str_is_valid(str_t str)
+bool strview_is_valid(strview_t str)
 {
 	return !!str.data;
 }
 
-void str_swap(str_t* a, str_t* b)
+void strview_swap(strview_t* a, strview_t* b)
 {
-	str_t tmp = *a;
+	strview_t tmp = *a;
 	*a = *b;
 	*b = tmp;
 }
 
-bool str_is_match(str_t str1, str_t str2)
+bool strview_is_match(strview_t str1, strview_t str2)
 {
 	return (str1.size == str2.size) && (str1.data == str2.data || !memcmp(str1.data, str2.data, str1.size));
 }
 
-bool str_is_match_nocase(str_t str1, str_t str2)
+bool strview_is_match_nocase(strview_t str1, strview_t str2)
 {
 	return (str1.size == str2.size) && (str1.data == str2.data || !memcmp_nocase(str1.data, str2.data, str1.size));
 }
 
-int str_compare(str_t str1, str_t str2)
+int strview_compare(strview_t str1, strview_t str2)
 {
 	int compare_size = str1.size < str2.size ? str1.size:str2.size;
 	int result = 0;
@@ -98,14 +98,14 @@ int str_compare(str_t str1, str_t str2)
 	return result;
 }
 
-bool str_contains(str_t haystack, str_t needle)
+bool strview_contains(strview_t haystack, strview_t needle)
 {
-	return str_is_valid(str_find_first(haystack, needle));
+	return strview_is_valid(strview_find_first(haystack, needle));
 }
 
-str_t str_sub(str_t str, int begin, int end)
+strview_t strview_sub(strview_t str, int begin, int end)
 {
-	str_t result = (str_t){.size = 0, .data = str.data};
+	strview_t result = (strview_t){.size = 0, .data = str.data};
 
 	if(str.data && str.size)
 	{
@@ -131,7 +131,7 @@ str_t str_sub(str_t str, int begin, int end)
 	return result;
 }
 
-str_t str_trim_start(str_t str, str_t chars_to_trim)
+strview_t strview_trim_start(strview_t str, strview_t chars_to_trim)
 {
 	while(str.size && contains_char(chars_to_trim, *str.data, CASE_SENSETIVE))
 	{
@@ -142,7 +142,7 @@ str_t str_trim_start(str_t str, str_t chars_to_trim)
 	return str;
 }
 
-str_t str_trim_end(str_t str, str_t chars_to_trim)
+strview_t strview_trim_end(strview_t str, strview_t chars_to_trim)
 {
 	while(str.size && contains_char(chars_to_trim, str.data[str.size-1], CASE_SENSETIVE))
 		str.size--;
@@ -150,16 +150,16 @@ str_t str_trim_end(str_t str, str_t chars_to_trim)
 	return str;
 }
 
-str_t str_trim(str_t str, str_t chars_to_trim)
+strview_t strview_trim(strview_t str, strview_t chars_to_trim)
 {
-	str = str_trim_start(str, chars_to_trim);
-	str = str_trim_end(str, chars_to_trim);
+	str = strview_trim_start(str, chars_to_trim);
+	str = strview_trim_end(str, chars_to_trim);
 	return str;
 }
 
-str_t str_find_first(str_t haystack, str_t needle)
+strview_t strview_find_first(strview_t haystack, strview_t needle)
 {
-	str_t result = STR_INVALID;
+	strview_t result = STR_INVALID;
 
 	const char* remaining_hay = haystack.data;
 	bool found = false;
@@ -182,9 +182,9 @@ str_t str_find_first(str_t haystack, str_t needle)
 	return result;
 }
 
-str_t str_find_last(str_t haystack, str_t needle)
+strview_t strview_find_last(strview_t haystack, strview_t needle)
 {
-	str_t result = STR_INVALID;
+	strview_t result = STR_INVALID;
 
 	const char* remaining_hay = &haystack.data[haystack.size - needle.size];
 	bool found = false;
@@ -207,144 +207,144 @@ str_t str_find_last(str_t haystack, str_t needle)
 	return result;
 }
 
-str_t str_pop_first_split(str_t* str_ptr, str_t delimiters)
+strview_t strview_pop_first_split(strview_t* strview_ptr, strview_t delimiters)
 {
-	str_t result = STR_INVALID;
+	strview_t result = STR_INVALID;
 	
-	if(str_ptr)
-		result = pop_first_split(str_ptr, delimiters, CASE_SENSETIVE);
+	if(strview_ptr)
+		result = pop_first_split(strview_ptr, delimiters, CASE_SENSETIVE);
 
 	return result;
 }
 
-str_t str_pop_first_split_nocase(str_t* str_ptr, str_t delimiters)
+strview_t strview_pop_first_split_nocase(strview_t* strview_ptr, strview_t delimiters)
 {
-	str_t result = STR_INVALID;
+	strview_t result = STR_INVALID;
 	
-	if(str_ptr)
-		result = pop_first_split(str_ptr, delimiters, NOT_CASE_SENSETIVE);
+	if(strview_ptr)
+		result = pop_first_split(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
 
 	return result;
 }
 
-str_t str_pop_last_split(str_t* str_ptr, str_t delimiters)
+strview_t strview_pop_last_split(strview_t* strview_ptr, strview_t delimiters)
 {
-	str_t result = STR_INVALID;
+	strview_t result = STR_INVALID;
 	
-	if(str_ptr)
-		result = pop_last_split(str_ptr, delimiters, CASE_SENSETIVE);
+	if(strview_ptr)
+		result = pop_last_split(strview_ptr, delimiters, CASE_SENSETIVE);
 
 	return result;
 }
 
-str_t str_pop_last_split_nocase(str_t* str_ptr, str_t delimiters)
+strview_t strview_pop_last_split_nocase(strview_t* strview_ptr, strview_t delimiters)
 {
-	str_t result = STR_INVALID;
+	strview_t result = STR_INVALID;
 	
-	if(str_ptr)
-		result = pop_last_split(str_ptr, delimiters, NOT_CASE_SENSETIVE);
+	if(strview_ptr)
+		result = pop_last_split(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
 
 	return result;
 }
 
-str_t str_pop_split(str_t* str_ptr, int index)
+strview_t strview_pop_split(strview_t* strview_ptr, int index)
 {
-	str_t result = STR_INVALID;
+	strview_t result = STR_INVALID;
 
-	if(str_ptr)
-		result = pop_split(str_ptr, index);
+	if(strview_ptr)
+		result = pop_split(strview_ptr, index);
 
 	return result;
 }
 
-char str_pop_first_char(str_t* str_ptr)
+char strview_pop_first_char(strview_t* strview_ptr)
 {
 	char result = 0;
-	if(str_ptr && str_ptr->size)
-		result = pop_split(str_ptr, 1).data[0];
+	if(strview_ptr && strview_ptr->size)
+		result = pop_split(strview_ptr, 1).data[0];
 	return result;
 }
 
-str_t str_pop_line(str_t* str_ptr, char* eol)
+strview_t strview_pop_line(strview_t* strview_ptr, char* eol)
 {
-	str_t result = STR_INVALID;
-	str_t src;
+	strview_t result = STR_INVALID;
+	strview_t src;
 	char e = 0;
 
-	if(str_ptr && str_ptr->size)
+	if(strview_ptr && strview_ptr->size)
 	{
-		src = *str_ptr;
+		src = *strview_ptr;
 		if(eol && *eol)
 		{
 			if(*eol + src.data[0] == '\r'+'\n')
-				str_pop_first_char(&src);
+				strview_pop_first_char(&src);
 		};
 
-		result = str_pop_first_split(&src, cstr("\r\n"));
+		result = strview_pop_first_split(&src, cstr("\r\n"));
 
-		if(str_is_valid(src))	//a line ending was found
+		if(strview_is_valid(src))	//a line ending was found
 		{
 			e = result.data[result.size];
 			if(e + src.data[0] == '\r'+'\n')
 			{
-				str_pop_first_char(&src);
+				strview_pop_first_char(&src);
 				e = 0;
 			};
 			if(eol)
 				*eol = e;
-			*str_ptr = src;
+			*strview_ptr = src;
 		}
-		else	//a line ending was not found, restore the source, and return an invalid str_t
+		else	//a line ending was not found, restore the source, and return an invalid strview_t
 		{
-			*str_ptr = result;
+			*strview_ptr = result;
 			result = STR_INVALID;
 		};
 	};
 	return result;
 }
 
-long long str_to_ll(str_t str)
+long long strview_to_ll(strview_t str)
 {
 	unsigned long long magnitude = 0;
 	bool is_neg = false;
 
 	if(str.data)
 	{
-		str = str_trim(str, cstr(" "));
+		str = strview_trim(str, cstr(" "));
 		
 		if(str.size)
 		{
 			if(str.data[0] == '+')
-				str = str_sub(str, 1, INT_MAX);
+				str = strview_sub(str, 1, INT_MAX);
 			else if(str.data[0] == '-')
 			{
 				is_neg = true;
-				str = str_sub(str, 1, INT_MAX);
+				str = strview_sub(str, 1, INT_MAX);
 			};
 		};
 
-		magnitude = str_to_ull(str);
+		magnitude = strview_to_ull(str);
 	};
 
 	return is_neg ? magnitude*-1 : magnitude;
 }
 
-unsigned long long str_to_ull(str_t str)
+unsigned long long strview_to_ull(strview_t str)
 {
 	long long result = 0;
-	str_t base_str;
+	strview_t base_str;
 
 	if(str.data)
 	{
-		str = str_trim(str, cstr(" "));
+		str = strview_trim(str, cstr(" "));
 
-		base_str = str_sub(str, 0, 2);
-		if( str_is_match(base_str, cstr("0x"))
-		||	str_is_match(base_str, cstr("0X")))
-			result = interpret_hex(str_sub(str, 2,INT_MAX));
+		base_str = strview_sub(str, 0, 2);
+		if( strview_is_match(base_str, cstr("0x"))
+		||	strview_is_match(base_str, cstr("0X")))
+			result = interpret_hex(strview_sub(str, 2,INT_MAX));
 
-		else if(str_is_match(base_str, cstr("0b")))
-			result = interpret_bin(str_sub(str, 2,INT_MAX));
+		else if(strview_is_match(base_str, cstr("0b")))
+			result = interpret_bin(strview_sub(str, 2,INT_MAX));
 
 		else
 			result = interpret_dec(str);
@@ -353,25 +353,25 @@ unsigned long long str_to_ull(str_t str)
 	return result;
 }
 
-str_float_t str_to_float(str_t str)
+strview_float_t strview_to_float(strview_t str)
 {
-	str_float_t result = 0;
+	strview_float_t result = 0;
 	bool is_neg = false;
 
-	str = str_trim(str, cstr(" "));
+	str = strview_trim(str, cstr(" "));
 
 	if(!str.size)
 		result = NAN;
-	else if(str_is_match_nocase(str, cstr("nan")))
+	else if(strview_is_match_nocase(str, cstr("nan")))
 		result = NAN;
 	else if(str.data[0] == '+')
-		str = str_sub(str, 1, INT_MAX);
+		str = strview_sub(str, 1, INT_MAX);
 	else if(str.data[0] == '-')
 	{
 		is_neg = true;
-		str = str_sub(str, 1, INT_MAX);
+		str = strview_sub(str, 1, INT_MAX);
 	};
-	if(str_is_match_nocase(str, cstr("inf")))
+	if(strview_is_match_nocase(str, cstr("inf")))
 		result = INFINITY;
 	else if(result == 0)
 		result = interpret_float(str);
@@ -386,7 +386,7 @@ str_float_t str_to_float(str_t str)
 // Private functions
 //********************************************************************************************************
 
-static unsigned long long interpret_hex(str_t str)
+static unsigned long long interpret_hex(strview_t str)
 {
 	unsigned long long result = 0;
 
@@ -397,13 +397,13 @@ static unsigned long long interpret_hex(str_t str)
 			result += 10 + (str.data[0] & 0x4F) - 'A';
 		else
 			result += str.data[0] & 0x0F;
-		str = str_sub(str, 1, INT_MAX);
+		str = strview_sub(str, 1, INT_MAX);
 	};
 
 	return result;
 }
 
-static unsigned long long interpret_bin(str_t str)
+static unsigned long long interpret_bin(strview_t str)
 {
 	unsigned long long result = 0;
 
@@ -411,13 +411,13 @@ static unsigned long long interpret_bin(str_t str)
 	{
 		result <<= 1;
 		result |= str.data[0] == '1';
-		str = str_sub(str, 1, INT_MAX);
+		str = strview_sub(str, 1, INT_MAX);
 	};
 
 	return result;
 }
 
-static unsigned long long interpret_dec(str_t str)
+static unsigned long long interpret_dec(strview_t str)
 {
 	unsigned long long result = 0;
 	
@@ -425,17 +425,17 @@ static unsigned long long interpret_dec(str_t str)
 	{
 		result *= 10;
 		result += str.data[0] & 0x0F;
-		str = str_sub(str, 1, INT_MAX);
+		str = strview_sub(str, 1, INT_MAX);
 	};
 
 	return result;
 }
 
 #ifndef STR_NO_FLOAT
-static str_float_t interpret_float(str_t str)
+static strview_float_t interpret_float(strview_t str)
 {
-	str_float_t result = 0;
-	str_float_t fractional_digit_weight = 1;
+	strview_float_t result = 0;
+	strview_float_t fractional_digit_weight = 1;
 	bool digit_found = false;
 	int exponent;
 
@@ -444,26 +444,26 @@ static str_float_t interpret_float(str_t str)
 	{
 		result *= 10;
 		result += str.data[0] & 0x0F;
-		str = str_sub(str, 1, INT_MAX);
+		str = strview_sub(str, 1, INT_MAX);
 	};
 
 	if(str.size && str.data[0]=='.')
 	{
-		str = str_sub(str, 1, INT_MAX);
+		str = strview_sub(str, 1, INT_MAX);
 
 		digit_found |= str.size && isdigit(str.data[0]);
 		while(str.size && isdigit(str.data[0]))
 		{
 			fractional_digit_weight /= 10.0;
 			result += (str.data[0] & 0x0F) * fractional_digit_weight;
-			str = str_sub(str, 1, INT_MAX);
+			str = strview_sub(str, 1, INT_MAX);
 		};
 	};
 
 	if(str.size && toupper(str.data[0])=='E')
 	{
-		str = str_sub(str, 1, INT_MAX);
-		exponent = (int)str_to_ll(str);
+		str = strview_sub(str, 1, INT_MAX);
+		exponent = (int)strview_to_ll(str);
 		#ifdef STR_SUPPORT_FLOAT
 			result *= powf(10, exponent);
 		#elif defined STR_SUPPORT_LONG_DOUBLE
@@ -477,7 +477,7 @@ static str_float_t interpret_float(str_t str)
 }
 #endif
 
-static bool contains_char(str_t str, char c, bool case_sensetive)
+static bool contains_char(strview_t str, char c, bool case_sensetive)
 {
 	bool found = false;
 	const char* ptr = str.data;
@@ -504,18 +504,18 @@ static int memcmp_nocase(const char* a, const char* b, size_t size)
 	return result;
 }
 
-static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_sensetive)
+static strview_t pop_first_split(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
 {
-	str_t result;
+	strview_t result;
 	bool found = false;
 	const char* ptr;
 	
-	ptr = str_ptr->data;
+	ptr = strview_ptr->data;
 
-	if(str_ptr->data && delimiters.data)
+	if(strview_ptr->data && delimiters.data)
 	{
 		// try to find the delimiter
-		while(ptr != &str_ptr->data[str_ptr->size] && !found)
+		while(ptr != &strview_ptr->data[strview_ptr->size] && !found)
 		{
 			found = contains_char(delimiters, *ptr, case_sensetive);
 			ptr += !found;
@@ -524,36 +524,36 @@ static str_t pop_first_split(str_t* str_ptr, str_t delimiters, bool case_senseti
 
 	if(found)
 	{
-		result.data = str_ptr->data;
-		result.size = ptr - str_ptr->data;
-		str_ptr->data = ptr;
-		str_ptr->size -= result.size;
+		result.data = strview_ptr->data;
+		result.size = ptr - strview_ptr->data;
+		strview_ptr->data = ptr;
+		strview_ptr->size -= result.size;
 
 		// at this stage, the remainder still includes the delimiter
-		str_ptr->size--;
-		if(str_ptr->size)	//only point to the character after the delimiter if there is one
-			str_ptr->data++;
+		strview_ptr->size--;
+		if(strview_ptr->size)	//only point to the character after the delimiter if there is one
+			strview_ptr->data++;
 	}
 	else
 	{
-		result = *str_ptr;
-		*str_ptr = STR_INVALID;
+		result = *strview_ptr;
+		*strview_ptr = STR_INVALID;
 	};
 
 	return result;
 }
 
-static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetive)
+static strview_t pop_last_split(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
 {
-	str_t result;
+	strview_t result;
 	bool found = false;
 	const char* ptr;
 
-	if(str_ptr->data && str_ptr->size && delimiters.data)
+	if(strview_ptr->data && strview_ptr->size && delimiters.data)
 	{
 		// starting from the last character, try to find the delimiter backwards
-		ptr = &str_ptr->data[str_ptr->size-1];
-		while(ptr != str_ptr->data-1 && !found)
+		ptr = &strview_ptr->data[strview_ptr->size-1];
+		while(ptr != strview_ptr->data-1 && !found)
 		{
 			found = contains_char(delimiters, *ptr, case_sensetive);
 			ptr -= !found;
@@ -563,8 +563,8 @@ static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetiv
 	if(found)
 	{
 		result.data = ptr;
-		result.size = &str_ptr->data[str_ptr->size] - ptr;
-		str_ptr->size -= result.size;
+		result.size = &strview_ptr->data[strview_ptr->size] - ptr;
+		strview_ptr->size -= result.size;
 
 		// at this stage, the result still starts with the delimiter
 		result.size--;
@@ -573,26 +573,26 @@ static str_t pop_last_split(str_t* str_ptr, str_t delimiters, bool case_sensetiv
 	}
 	else
 	{
-		result = *str_ptr;
-		*str_ptr = STR_INVALID;
+		result = *strview_ptr;
+		*strview_ptr = STR_INVALID;
 	};
 
 	return result;
 }
 
-static str_t pop_split(str_t* str_ptr, int index)
+static strview_t pop_split(strview_t* strview_ptr, int index)
 {
-	str_t result = (str_t){0};
-	str_t remainder = *str_ptr;
+	strview_t result = (strview_t){0};
+	strview_t remainder = *strview_ptr;
 	bool neg = index < 0;
 
 	if(neg)
-		index = str_ptr->size + index;
+		index = strview_ptr->size + index;
 		
 	if(index < 0)
 		index = 0;
-	if(index > str_ptr->size)
-		index = str_ptr->size;
+	if(index > strview_ptr->size)
+		index = strview_ptr->size;
 
 	result.data = remainder.data;
 	result.size = index;
@@ -600,10 +600,10 @@ static str_t pop_split(str_t* str_ptr, int index)
 	remainder.size -= index;
 
 	if(!neg)
-		*str_ptr = remainder;
+		*strview_ptr = remainder;
 	else
 	{
-		*str_ptr = result;
+		*strview_ptr = result;
 		result = remainder;
 	};
 

@@ -25,7 +25,7 @@
 	#include <stdarg.h>
 	#include <string.h>
 
-	#include "str.h"
+	#include "strview.h"
 
 //********************************************************************************************************
 // Public defines
@@ -134,66 +134,66 @@ then:
 	If the function fails due to bad alignment or insufficent size, a NULL will be returned */
 	strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);
 
-/*	Concatenate one or more str_t and assign the result to the buffer.
+/*	Concatenate one or more strview_t and assign the result to the buffer.
 	Ideally should be used from the macro strbuf_cat() which performs the argument counting for you.
-	Returns a str_t of the buffer contents.
-	The returned str_t is always valid, even if the none of the arguments are valid */
-	str_t _strbuf_cat(strbuf_t** buf_ptr, int n_args, ...);
+	Returns a strview_t of the buffer contents.
+	The returned strview_t is always valid, even if the none of the arguments are valid */
+	strview_t _strbuf_cat(strbuf_t** buf_ptr, int n_args, ...);
 
 //	The non-variadic version of _strbuf_cat
-	str_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
+	strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
 
 //	Append a single character to the buffer
-	str_t strbuf_append_char(strbuf_t** buf_ptr, char c);
+	strview_t strbuf_append_char(strbuf_t** buf_ptr, char c);
 
-//	Return str_t of buffer contents
-	str_t strbuf_str(strbuf_t** buf_ptr);
+//	Return strview_t of buffer contents
+	strview_t strbuf_str(strbuf_t** buf_ptr);
 
 //	Shrink buffer to the minimum size required to hold it's contents
-	str_t strbuf_shrink(strbuf_t** buf_ptr);
+	strview_t strbuf_shrink(strbuf_t** buf_ptr);
 
 //	Free memory allcoated to hold the buffer and it's contents
 	void strbuf_destroy(strbuf_t** buf_ptr);
 
 /*
 	For the below assign/append/prepend/insert functions:
-		str_t may be sourced from destination buffer contents,
+		strview_t may be sourced from destination buffer contents,
 		even for static buffers, and even if the operation relocates or splits the source string.
 		eg, you can insert "fred" into the middle of itself to get "frfreded"
 */
 
-//	Assign str_t to buffer 
-	str_t strbuf_assign(strbuf_t** buf_ptr, str_t str);
+//	Assign strview_t to buffer 
+	strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str);
 
-//	Append str_t to buffer, str_t 
-	str_t strbuf_append(strbuf_t** buf_ptr, str_t str);
+//	Append strview_t to buffer, strview_t 
+	strview_t strbuf_append(strbuf_t** buf_ptr, strview_t str);
 
-//	Prepend str_t to buffer, str_t 
-	str_t strbuf_prepend(strbuf_t** buf_ptr, str_t str);
+//	Prepend strview_t to buffer, strview_t 
+	strview_t strbuf_prepend(strbuf_t** buf_ptr, strview_t str);
 
-//	Insert str_t to buffer, str_t 
-	str_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str_t str);
+//	Insert strview_t to buffer, strview_t 
+	strview_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, strview_t str);
 
 //	Insert src at the starting location of dst in the buffer. dst must reference data contained within the buffer.
-	str_t strbuf_insert_before(strbuf_t** buf_ptr, str_t dst, str_t src);
+	strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, strview_t src);
 
 //	Insert src after the end of dst in the buffer. dst must reference data contained within the buffer.
-	str_t strbuf_insert_after(strbuf_t** buf_ptr, str_t dst, str_t src);
+	strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, strview_t src);
 
 // 	Provide formatted printing to a strbuf_t (uses vsnprintf() from stdio.h)
 #ifdef STRBUF_PROVIDE_PRINTF
-	str_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);
-	str_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
-	str_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...);
-	str_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
+	strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);
+	strview_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
+	strview_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...);
+	strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);
 #endif
 
 // 	Provide formatted printing to a strbuf_t using the alternative text formatter prnf.h (https://github.com/mickjc750/prnf)
 #ifdef STRBUF_PROVIDE_PRNF
-	str_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...);
-	str_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);
-	str_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...);
-	str_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);
+	strview_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...);
+	strview_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);
+	strview_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...);
+	strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);
 #endif
 
 #endif
