@@ -104,27 +104,27 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
  Write a strview_t out to a null terminated char* buffer. The buffer and space available (including the terminator) must be provided by the caller.
 
 &nbsp;
-## bool str_is_valid(strview_t str);
+## bool strview_is_valid(strview_t str);
  Return true if the strview_t is valid.
 
 &nbsp;
-##	void str_swap(strview_t* a, strview_t* b);
+##	void strview_swap(strview_t* a, strview_t* b);
  Swap strings a and b.
 
 &nbsp;
-## bool str_is_match(strview_t str1, strview_t str2);
+## bool strview_is_match(strview_t str1, strview_t str2);
  Return true if the strings match. Also returns true if BOTH strings are invalid.
 
 &nbsp;
-## bool str_is_match_nocase(strview_t str1, strview_t str2);
- Same as **str_is_match()** ignoring case.
+## bool strview_is_match_nocase(strview_t str1, strview_t str2);
+ Same as **strview_is_match()** ignoring case.
 
 &nbsp;
-## int str_compare(strview_t str1, strview_t str2);
- A replacement for strcmp(). Used for alphabetizing strings. May also be used instead of **str_is_match()**, although keep in mind that it will return 0 if it compares an invalid string to a valid string of length 0. (Where **str_is_match()** would return false if only one string is invalid.)
+## int strview_compare(strview_t str1, strview_t str2);
+ A replacement for strcmp(). Used for alphabetizing strings. May also be used instead of **strview_is_match()**, although keep in mind that it will return 0 if it compares an invalid string to a valid string of length 0. (Where **strview_is_match()** would return false if only one string is invalid.)
 
 &nbsp;
-## strview_t str_sub(strview_t str, int begin, int end);
+## strview_t strview_sub(strview_t str, int begin, int end);
  Return the sub string indexed by **begin** to **end**, where **end** is non-inclusive.
  Negative values may be used, and will index from the end of the string backwards.
  The indexes are clipped to the strings length, so INT_MAX may be safely used to index the end of the string. If the requested range is entirely outside of the input string, then an invalid **strview_t** is returned.
@@ -142,9 +142,9 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
  Return a strview_t with the end trimmed of all characters present in **chars_to_trim**.
 
 &nbsp;
-## strview_t str_find_first(strview_t haystack, strview_t needle);
+## strview_t strview_find_first(strview_t haystack, strview_t needle);
  Return the **strview_t** for the first occurrence of needle in haystack.
- If the needle is not found, str_find_first() returns an invalid strview_t.
+ If the needle is not found, strview_find_first() returns an invalid strview_t.
  If the needle is found, the returned strview_t will match the contents of needle, only it will reference data within the haystack, and can be used with various strbuf.h functions as a means of specifying the position within the buffer.
 
 Some special cases to consider:
@@ -152,15 +152,15 @@ Some special cases to consider:
  * If **needle** is invalid, or if **haystack** is invalid, it will not be found.
 	
 &nbsp;
-## strview_t str_find_last(strview_t haystack, strview_t needle);
- Similar to str_find_first(), but returns the LAST occurrence of **needle** in **haystack**.
+## strview_t strview_find_last(strview_t haystack, strview_t needle);
+ Similar to strview_find_first(), but returns the LAST occurrence of **needle** in **haystack**.
 
 Some special cases to consider:
 * If **needle** is valid, and of length 0, it will always be found at the end of **haystack**.
 * If **needle** is invalid, or if **haystack** is invalid, it will not be found.
 
 &nbsp;
-## strview_t str_pop_first_split(strview_t* strview_ptr, strview_t delimiters);
+## strview_t strview_pop_first_split(strview_t* strview_ptr, strview_t delimiters);
  Return a **strview_t** representing the contents of the source string up to, but not including, any of characters in **delimiters**.
  Additionally, the contents of the returned **strview_t**, and the delimiter character itself is removed (popped) from the input string.
  If no delimiter is found, the returned string is the entire source string, and the source string becomes invalid.
@@ -168,24 +168,24 @@ Some special cases to consider:
 Example usage:
 
     strview_t date = cstr("2022/10/03");
-    strview_t year  = str_pop_first_split(&date, cstr("/"));
-    strview_t month = str_pop_first_split(&date, cstr("/"));
-    strview_t day   = str_pop_first_split(&date, cstr("/"));
+    strview_t year  = strview_pop_first_split(&date, cstr("/"));
+    strview_t month = strview_pop_first_split(&date, cstr("/"));
+    strview_t day   = strview_pop_first_split(&date, cstr("/"));
 
 &nbsp;
-## strview_t str_pop_last_split(strview_t* strview_ptr, strview_t delimiters);
- Same as **str_pop_first_split()** but searches from the end of the string backwards.
+## strview_t strview_pop_last_split(strview_t* strview_ptr, strview_t delimiters);
+ Same as **strview_pop_first_split()** but searches from the end of the string backwards.
 
 &nbsp;
-## strview_t str_pop_first_split_nocase(strview_t* strview_ptr, strview_t delimiters);
-Same as **str_pop_first_split()** but ignores the case of the delimiters
+## strview_t strview_pop_first_split_nocase(strview_t* strview_ptr, strview_t delimiters);
+Same as **strview_pop_first_split()** but ignores the case of the delimiters
 
 &nbsp;
-## strview_t str_pop_last_split_nocase(strview_t* strview_ptr, strview_t delimiters);
-Same as **str_pop_last_split()** but ignores the case of the delimiters
+## strview_t strview_pop_last_split_nocase(strview_t* strview_ptr, strview_t delimiters);
+Same as **strview_pop_last_split()** but ignores the case of the delimiters
 
 &nbsp;
-## strview_t str_pop_split(strview_t* strview_ptr, int index);
+## strview_t strview_pop_split(strview_t* strview_ptr, int index);
 Split a strview_t at a specified index n.
 * For n >= 0
  Return a strview_t representing the first n characters of the source string.
@@ -198,16 +198,16 @@ Split a strview_t at a specified index n.
 If the index is outside of the range of the source string, then an invalid strview_t is returned and the source is unmodified
 
 &nbsp;
-## char str_pop_first_char(strview_t* strview_ptr);
+## char strview_pop_first_char(strview_t* strview_ptr);
 Return the first char of str, and remove it from the str.
 Returns 0 if there are no characters in str.
  If str is known to contain at least one character, it is the equivalent of:
 
-	str_pop_split(&str, 1).data[0]
-Only it avoids dereferencing a NULL pointer in the case where str_pop_split() would return an invalid str due to the str being empty.
+	strview_pop_split(&str, 1).data[0]
+Only it avoids dereferencing a NULL pointer in the case where strview_pop_split() would return an invalid str due to the str being empty.
 
 &nbsp;
-## strview_t str_pop_line(strview_t* strview_ptr, char* eol);
+## strview_t strview_pop_line(strview_t* strview_ptr, char* eol);
 Returns a strview_t representing the first line within the source string, not including the eol terminator.
 The returned line and the terminator are removed (popped) from the source string.
 If a line terminator is not found, an invalid strview_t is returned and the source string is unmodified.
