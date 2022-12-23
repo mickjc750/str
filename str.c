@@ -357,25 +357,29 @@ str_float_t str_to_float(str_t str)
 {
 	str_float_t result = 0;
 	bool is_neg = false;
-	if(str_is_valid(str))
-	{
-		str = str_trim(str, cstr(" "));
 
-		if(str_is_match_nocase(str, cstr("nan")))
-			result = NAN;
-		else if(str.data[0] == '+')
-			str = str_sub(str, 1, INT_MAX);
-		else if(str.data[0] == '-')
-		{
-			is_neg = true;
-			str = str_sub(str, 1, INT_MAX);
-		};
-		if(str_is_match_nocase(str, cstr("inf")))
-			result = INFINITY;
-		else if(!result)
-			result = interpret_float(str);
+	str = str_trim(str, cstr(" "));
+
+	if(!str.size)
+		result = NAN;
+	else if(str_is_match_nocase(str, cstr("nan")))
+		result = NAN;
+	else if(str.data[0] == '+')
+		str = str_sub(str, 1, INT_MAX);
+	else if(str.data[0] == '-')
+	{
+		is_neg = true;
+		str = str_sub(str, 1, INT_MAX);
 	};
-	return is_neg ? result*-1.0:result;
+	if(str_is_match_nocase(str, cstr("inf")))
+		result = INFINITY;
+	else if(result == 0)
+		result = interpret_float(str);
+
+	if((result == result) && is_neg)
+		result *= -1;
+
+	return result;
 }
 
 //********************************************************************************************************
@@ -432,8 +436,10 @@ static str_float_t interpret_float(str_t str)
 {
 	str_float_t result = 0;
 	str_float_t fractional_digit_weight = 1;
+	bool digit_found = false;
 	int exponent;
 
+	digit_found |= str.size && isdigit(str.data[0]);
 	while(str.size && isdigit(str.data[0]))
 	{
 		result *= 10;
@@ -445,6 +451,7 @@ static str_float_t interpret_float(str_t str)
 	{
 		str = str_sub(str, 1, INT_MAX);
 
+		digit_found |= str.size && isdigit(str.data[0]);
 		while(str.size && isdigit(str.data[0]))
 		{
 			fractional_digit_weight /= 10.0;
@@ -466,7 +473,7 @@ static str_float_t interpret_float(str_t str)
 		#endif
 	};
 
-	return result;
+	return digit_found ? result:NAN;
 }
 #endif
 
