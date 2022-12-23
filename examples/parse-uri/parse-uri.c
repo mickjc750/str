@@ -1,6 +1,6 @@
 /*
 
-str_t demo to extract scheme (http/ftp/etc..), host, user, path and port from the following URI formats:
+strview_t demo to extract scheme (http/ftp/etc..), host, user, path and port from the following URI formats:
 The function which does this is less than 50 lines, requires no buffers, and does not modify the given uri.
 
 scheme:
@@ -39,7 +39,7 @@ user@host:<port>/path/path
 	#include <string.h>
 	#include <ctype.h>
 
-	#include "../../str.h"
+	#include "../../strview.h"
 
 //********************************************************************************************************
 // Configurable defines
@@ -51,11 +51,11 @@ user@host:<port>/path/path
 
 	struct uri_struct
 	{
-		str_t scheme;
-		str_t host;
-		str_t path;
-		str_t user;
-		str_t port;
+		strview_t scheme;
+		strview_t host;
+		strview_t path;
+		strview_t user;
+		strview_t port;
 	};
 
 //********************************************************************************************************
@@ -102,7 +102,7 @@ user@host:<port>/path/path
 // Private prototypes
 //********************************************************************************************************
 
-	static struct uri_struct parse_uri(str_t uri);
+	static struct uri_struct parse_uri(strview_t uri);
 	static void show_uri(struct uri_struct uri);
 
 //********************************************************************************************************
@@ -132,25 +132,25 @@ int main(int argc, const char* argv[])
 // Private functions
 //********************************************************************************************************
 
-static struct uri_struct parse_uri(str_t uri)
+static struct uri_struct parse_uri(strview_t uri)
 {
 	struct uri_struct result = {0};
-	str_t tmp;
+	strview_t tmp;
 
-	if(str_is_valid(str_find_first(uri, cstr("://"))))
+	if(strview_is_valid(strview_find_first(uri, cstr("://"))))
 	{
-		result.scheme = str_pop_first_split(&uri, cstr(":"));
-		uri = str_sub(uri, 2, INT_MAX);
+		result.scheme = strview_pop_first_split(&uri, cstr(":"));
+		uri = strview_sub(uri, 2, INT_MAX);
 	};
 
-	result.user = str_pop_first_split(&uri, cstr("@"));
-	if(!str_is_valid(uri))
-		str_swap(&result.user, &uri);
+	result.user = strview_pop_first_split(&uri, cstr("@"));
+	if(!strview_is_valid(uri))
+		strview_swap(&result.user, &uri);
 
-	if(!str_is_valid(str_find_first(uri, cstr(":"))))
+	if(!strview_is_valid(strview_find_first(uri, cstr(":"))))
 	{
-		tmp = str_pop_first_split(&uri, cstr("/"));
-		if(str_is_valid(uri))
+		tmp = strview_pop_first_split(&uri, cstr("/"));
+		if(strview_is_valid(uri))
 		{
 			result.path = uri;
 			result.host = tmp;
@@ -160,16 +160,16 @@ static struct uri_struct parse_uri(str_t uri)
 	}
 	else
 	{
-		tmp = str_pop_first_split(&uri, cstr(":"));
-		if(!str_is_valid(uri))
-			str_swap(&tmp, &uri);
+		tmp = strview_pop_first_split(&uri, cstr(":"));
+		if(!strview_is_valid(uri))
+			strview_swap(&tmp, &uri);
 		if(uri.size && isdigit(uri.data[0]))
 		{
 			result.host = tmp;
 
-			tmp = str_pop_first_split(&uri, cstr("/"));
+			tmp = strview_pop_first_split(&uri, cstr("/"));
 			result.port = tmp;
-			if(str_is_valid(uri))
+			if(strview_is_valid(uri))
 				result.path = uri;
 		}
 		else
@@ -184,15 +184,15 @@ static struct uri_struct parse_uri(str_t uri)
 
 static void show_uri(struct uri_struct uri)
 {
-	if(str_is_valid(uri.scheme))
+	if(strview_is_valid(uri.scheme))
 		printf("scheme = \"%"PRIstr"\"\n", PRIstrarg(uri.scheme));
-	if(str_is_valid(uri.host))
+	if(strview_is_valid(uri.host))
 		printf("host   = \"%"PRIstr"\"\n", PRIstrarg(uri.host));
-	if(str_is_valid(uri.path))
+	if(strview_is_valid(uri.path))
 		printf("path   = \"%"PRIstr"\"\n", PRIstrarg(uri.path));
-	if(str_is_valid(uri.user))
+	if(strview_is_valid(uri.user))
 		printf("user   = \"%"PRIstr"\"\n", PRIstrarg(uri.user));
-	if(str_is_valid(uri.port))
+	if(strview_is_valid(uri.port))
 		printf("port   = \"%"PRIstr"\"\n", PRIstrarg(uri.port));
 	printf("\n");
 }

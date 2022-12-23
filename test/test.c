@@ -9,7 +9,7 @@
 	#include <math.h>
 
 	#include "strbuf.h"
-	#include "str.h"
+	#include "strview.h"
 
 //********************************************************************************************************
 // Configurable defines
@@ -25,9 +25,9 @@
 
 	#define TEST_STR_TO_FLOAT(fmt, arg)															\
 	do{																							\
-		str_t str = cstr(#arg);																	\
+		strview_t str = cstr(#arg);																	\
 		double desired = arg;																	\
-		double result = str_to_float(str);														\
+		double result = strview_to_float(str);														\
 		DBG("\"%"PRIstr"\" returns "fmt, PRIstrarg(str), result);								\
 		assert(desired-fabs(desired*.001) < result && result < desired+fabs(desired*.001));		\
 	}while(0)
@@ -36,11 +36,11 @@
 	#define TEST_LINE_POP(arg1)								\
 	do{														\
 		str2.data = NULL; str2.size = 0;					\
-		while(!str_is_valid(str2))							\
+		while(!strview_is_valid(str2))							\
 		{													\
 			strbuf_append_char(&buf, *chrptr++);			\
 			str1 = strbuf_str(&buf);						\
-			str2 = str_pop_line(&str1, &eol);				\
+			str2 = strview_pop_line(&str1, &eol);				\
 		};													\
 		DBG("[%"PRIstr"]", PRIstrarg(str2));				\
 		assert(!memcmp(str2.data, arg1, str1.size));		\
@@ -76,7 +76,7 @@ int main(int argc, const char* argv[])
 
 	strbuf_allocator_t strbuf_allocator = {.allocator = allocator};
 	strbuf_t* buf;
-	str_t str1, str2, search_result;
+	strview_t str1, str2, search_result;
 	const char* chrptr;
 	unsigned long long tmpull;
 	long long tmpll;
@@ -109,69 +109,69 @@ int main(int argc, const char* argv[])
 
 	DBG("Extracting BBBBBBBBBB from center of string");
 	str1 = strbuf_str(&buf);
-	str1 = str_sub(str1, 17, 27);
+	str1 = strview_sub(str1, 17, 27);
 	DBG("Result = %"PRIstr"\n", PRIstrarg(str1));
 	assert(str1.size == 10);
 	assert(!memcmp("BBBBBBBBBB", str1.data, str1.size));
 
 	DBG("Extracting BEFORE from start of string");
 	str1 = strbuf_str(&buf);
-	str1 = str_sub(str1, 0, 6);
+	str1 = strview_sub(str1, 0, 6);
 	DBG("Result = %"PRIstr"\n", PRIstrarg(str1));
 	assert(str1.size == 6);
 	assert(!memcmp("BEFORE", str1.data, str1.size));
 
 	DBG("Extracting AFTER from end of string");
 	str1 = strbuf_str(&buf);
-	str1 = str_sub(str1, -5, INT_MAX);
+	str1 = strview_sub(str1, -5, INT_MAX);
 	DBG("Result = %"PRIstr"\n\n\n", PRIstrarg(str1));
 	assert(str1.size == 5);
 	assert(!memcmp(str1.data, "AFTER", str1.size));
 
-	DBG("**Testing str_pop_first_split()**\n");
+	DBG("**Testing strview_pop_first_split()**\n");
 
 	strbuf_cat(&buf, cstr("123/456/789"));
 	str2 = strbuf_str(&buf);
 	DBG("Splitting %"PRIstr, PRIstrarg(str2));
 	
-	str1 = str_pop_first_split(&str2, cstr("/"));
+	str1 = strview_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"", PRIstrarg(str1), PRIstrarg(str2));
 	assert(!memcmp("123", str1.data, str1.size));
-	str1 = str_pop_first_split(&str2, cstr("/"));
+	str1 = strview_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"", PRIstrarg(str1), PRIstrarg(str2));
 	assert(!memcmp("456", str1.data, str1.size));
-	str1 = str_pop_first_split(&str2, cstr("/"));
+	str1 = strview_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"", PRIstrarg(str1), PRIstrarg(str2));
 	assert(!memcmp("789", str1.data, str1.size));
-	assert(!str_is_valid(str2));
+	assert(!strview_is_valid(str2));
 
 	str1 = strbuf_str(&buf);
 	DBG("Meanwhile, the buffer remains unchanged! %"PRIstr"\n\n\n", PRIstrarg(str1));
 
-	DBG("**Testing str_pop_first_split_nocase()**\n");
+	DBG("**Testing strview_pop_first_split_nocase()**\n");
 
 	strbuf_cat(&buf, cstr("123r456R789"));
 	str2 = strbuf_str(&buf);
 	DBG("Splitting %"PRIstr, PRIstrarg(str2));
 	
-	str1 = str_pop_first_split_nocase(&str2, cstr("r"));
+	str1 = strview_pop_first_split_nocase(&str2, cstr("r"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"", PRIstrarg(str1), PRIstrarg(str2));
 	assert(!memcmp("123", str1.data, str1.size));
-	str1 = str_pop_first_split_nocase(&str2, cstr("r"));
+	str1 = strview_pop_first_split_nocase(&str2, cstr("r"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(!memcmp("456", str1.data, str1.size));
-	str1 = str_pop_first_split_nocase(&str2, cstr("r"));
+	str1 = strview_pop_first_split_nocase(&str2, cstr("r"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(!memcmp("789", str1.data, str1.size));
-	assert(!str_is_valid(str2));
+	assert(!strview_is_valid(str2));
 
-	DBG("**Testing edge cases for str_pop_first_split()**\n");
+	DBG("**Testing edge cases for strview_pop_first_split()**\n");
 
 	strbuf_cat(&buf, cstr("/456/789/"));
 	str2 = strbuf_str(&buf);
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
-	str1 = str_pop_first_split(&str2, cstr("/"));
+	str1 = strview_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 0);
 	assert(str1.data);
@@ -179,7 +179,7 @@ int main(int argc, const char* argv[])
 	assert(!memcmp("456/789/", str2.data, str2.size));
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
-	str1 = str_pop_first_split(&str2, cstr("/"));
+	str1 = strview_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 3);
 	assert(!memcmp("456", str1.data, str1.size));
@@ -187,7 +187,7 @@ int main(int argc, const char* argv[])
 	assert(!memcmp("789/", str2.data, str2.size));
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
-	str1 = str_pop_first_split(&str2, cstr("/"));
+	str1 = strview_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 3);
 	assert(!memcmp("789", str1.data, str1.size));
@@ -195,7 +195,7 @@ int main(int argc, const char* argv[])
 	assert(str2.data);		//remainder string should be valid and length 0, as a delimiter was found
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
-	str1 = str_pop_first_split(&str2, cstr("/"));
+	str1 = strview_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 0);		//split string should be the entire source, which is a valid string of length 0
 	assert(str1.data);	
@@ -205,27 +205,27 @@ int main(int argc, const char* argv[])
 	strbuf_cat(&buf, cstr("no-delimiters"));
 	str2 = strbuf_str(&buf);
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
-	str1 = str_pop_first_split(&str2, cstr("/"));
+	str1 = strview_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n\n\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.data);
 	assert(str1.size == sizeof("no-delimiters")-1);
 	assert(str2.data == NULL);
 	assert(str2.size == 0);
 
-	DBG("**Testing str_pop_last_split()**\n");
+	DBG("**Testing strview_pop_last_split()**\n");
 
 	strbuf_cat(&buf, cstr("123/456/789"));
 	str2 = strbuf_str(&buf);
 	DBG("Splitting %"PRIstr, PRIstrarg(str2));
 	
-	str1 = str_pop_last_split(&str2, cstr("/"));
+	str1 = strview_pop_last_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 3);
 	assert(!memcmp("789", str1.data, str1.size));
 	assert(str2.size == 7);
 	assert(!memcmp("123/456", str2.data, str2.size));
 
-	str1 = str_pop_last_split(&str2, cstr("/"));
+	str1 = strview_pop_last_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n\n\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 3);
 	assert(!memcmp("456", str1.data, str1.size));
@@ -233,13 +233,13 @@ int main(int argc, const char* argv[])
 	assert(!memcmp("123", str2.data, str2.size));
 
 
-	DBG("**Testing edge cases for str_pop_last_split()**\n");
+	DBG("**Testing edge cases for strview_pop_last_split()**\n");
 
 	strbuf_cat(&buf, cstr("/456/789/"));
 	str2 = strbuf_str(&buf);
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
-	str1 = str_pop_last_split(&str2, cstr("/"));
+	str1 = strview_pop_last_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 0);
 	assert(str1.data);
@@ -247,7 +247,7 @@ int main(int argc, const char* argv[])
 	assert(!memcmp("/456/789", str2.data, str2.size));
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
-	str1 = str_pop_last_split(&str2, cstr("/"));
+	str1 = strview_pop_last_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 3);
 	assert(!memcmp("789", str1.data, str1.size));
@@ -255,7 +255,7 @@ int main(int argc, const char* argv[])
 	assert(!memcmp("/456", str2.data, str2.size));
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
-	str1 = str_pop_last_split(&str2, cstr("/"));
+	str1 = strview_pop_last_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 3);
 	assert(!memcmp("456", str1.data, str1.size));
@@ -263,134 +263,134 @@ int main(int argc, const char* argv[])
 	assert(str2.data);
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
-	str1 = str_pop_last_split(&str2, cstr("/"));
+	str1 = strview_pop_last_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n\n\n", PRIstrarg(str1), PRIstrarg(str2));
 	assert(str1.size == 0);
 	assert(str1.data);
 	assert(str2.size == 0);
 	assert(str2.data == NULL);
 
-	DBG("**Testing str_find_first()**\n");
+	DBG("**Testing strview_find_first()**\n");
 
 	str1 = cstr("needle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_first(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_first(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 0);
 
 	str1 = cstr("needleneedle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_first(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_first(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 0);
 
 	str1 = cstr("needlneedle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_first(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_first(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 5);
 	
 	str1 = cstr("haystack");
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_first(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_first(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu (a valid needle of length 0 should be found)\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 0);
 
 	str2.data = NULL;
 	DBG("Looking for (invalid) in \"%"PRIstr"\"", PRIstrarg(str1));
-	search_result = str_find_first(str1, str2);
-	assert(!str_is_valid(search_result));
+	search_result = strview_find_first(str1, str2);
+	assert(!strview_is_valid(search_result));
 	DBG("Not Found (a needle which is an invalid string should not be found)\n");
 
 	str1.data = NULL;
 	str1.size = 0;
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in (invalid)", PRIstrarg(str2));
-	search_result = str_find_first(str1, str2);
-	assert(!str_is_valid(search_result));
+	search_result = strview_find_first(str1, str2);
+	assert(!strview_is_valid(search_result));
 	DBG("Not Found (a needle in an invalid haystack should not be found)\n");
 
 
 	str1 = cstr("");
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_first(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_first(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu (a valid needle of length 0 should be found in a valid haystack of length 0)\n\n\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 0);
 
 
 
-	DBG("**Testing str_find_last()**\n");
+	DBG("**Testing strview_find_last()**\n");
 
 	str1 = cstr("needle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_last(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_last(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 0);
 
 	str1 = cstr("needleneedle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_last(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_last(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 6);
 
 	str1 = cstr("needlneedle");
 	str2 = cstr("needle");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_last(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_last(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 5);
 	
 	str1 = cstr("haystack");
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_last(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_last(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu (a valid needle of length 0 should be found at the index of the last char+1)\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 8);
 
 	str2.data = NULL;
 	DBG("Looking for (invalid) in \"%"PRIstr"\"",  PRIstrarg(str1));
-	search_result = str_find_last(str1, str2);
-	assert(!str_is_valid(search_result));
+	search_result = strview_find_last(str1, str2);
+	assert(!strview_is_valid(search_result));
 	DBG("Not Found (a needle which is an invalid string should not be found)\n");
 
 	str1.data = NULL;
 	str1.size = 0;
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in (invalid)", PRIstrarg(str2));
-	search_result = str_find_first(str1, str2);
-	assert(!str_is_valid(search_result));
+	search_result = strview_find_first(str1, str2);
+	assert(!strview_is_valid(search_result));
 	DBG("Not Found (a needle in an invalid haystack should not be found)\n");
 
 	str1 = cstr("");
 	str2 = cstr("");
 	DBG("Looking for \"%"PRIstr"\" in \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	search_result = str_find_first(str1, str2);
-	assert(str_is_valid(search_result));
+	search_result = strview_find_first(str1, str2);
+	assert(strview_is_valid(search_result));
 	DBG("Found at index %zu (a valid needle of length 0 should be found at the index of the last char+1)\n\n\n", (search_result.data - str1.data));
 	assert((search_result.data - str1.data) == 0);
 
-	DBG("** Testing str_is_valid() **");
+	DBG("** Testing strview_is_valid() **");
 	str1.data = NULL;
-	assert(!str_is_valid(str1));
+	assert(!strview_is_valid(str1));
 	str1 = cstr("valid");
-	assert(str_is_valid(str1));
-	DBG("str_is_valid() works\n\n");
+	assert(strview_is_valid(str1));
+	DBG("strview_is_valid() works\n\n");
 
 	DBG("** Testing strbuf_append_char() **");
 	strbuf_cat(&buf, cstr(""));
@@ -418,31 +418,31 @@ int main(int argc, const char* argv[])
 	assert(str1.size == 0);
 	assert(str1.data);
 
-	DBG("** Testing str_is_match() **");
+	DBG("** Testing strview_is_match() **");
 	strbuf_cat(&buf, cstr("Hello"));
-	assert(str_is_match(strbuf_str(&buf), cstr("Hello")));
+	assert(strview_is_match(strbuf_str(&buf), cstr("Hello")));
 	str1 = cstr_SL("Test");
 	str2 = cstr("Test");
-	assert(str_is_match(str1, str2));
+	assert(strview_is_match(str1, str2));
 	DBG("OK\n\n\n");
 
-	DBG("** Testing str_is_match_nocase() **");
-	assert(str_is_match_nocase(cstr("hEllO"), cstr("Hello")));
-	assert(!str_is_match_nocase(cstr("hEllO"), cstr("Hell")));
+	DBG("** Testing strview_is_match_nocase() **");
+	assert(strview_is_match_nocase(cstr("hEllO"), cstr("Hello")));
+	assert(!strview_is_match_nocase(cstr("hEllO"), cstr("Hell")));
 	DBG("OK\n\n\n");
 
-	DBG("** Testing str_trim() **");
+	DBG("** Testing strview_trim() **");
 	str1 = cstr("/.;/hello;./;.");
 	str2 = cstr("./;");
 	DBG("Trimming \"%"PRIstr"\" from \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	str1 = str_trim(str1, str2);
+	str1 = strview_trim(str1, str2);
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("hello", str1.data, str1.size));
 
 	str1 = cstr(" 123");
 	str2 = cstr(" ");
 	DBG("Trimming \"%"PRIstr"\" from \"%"PRIstr"\"", PRIstrarg(str2), PRIstrarg(str1));
-	str1 = str_trim(str1, str2);
+	str1 = strview_trim(str1, str2);
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("123", str1.data, str1.size));
 
@@ -451,7 +451,7 @@ int main(int argc, const char* argv[])
 	assert(buf == NULL);
 
 	DBG("** Testing with a fixed capacity buffer (non-dynamic) from a given memory address");
-	DBG("** This can be done, but if strbuf_cat() is passed a str_t referencing data within the target buffer, it will fail and return an empty buffer.");
+	DBG("** This can be done, but if strbuf_cat() is passed a strview_t referencing data within the target buffer, it will fail and return an empty buffer.");
 	DBG("** This is because it will be unable to allocate a temporary buffer to build the output\n");
 
 	assert(!strbuf_create_fixed(static_buf+3, STATIC_BUFFER_SIZE));	//fail due to badly aligned address
@@ -484,7 +484,7 @@ int main(int argc, const char* argv[])
 
 	DBG("Trying to pass data from the destination buffer into strbuf_cat() without a dynamic buffer (should fail and return empty buffer)");
 	str1 = strbuf_str(&buf);
-	str1 = str_sub(str1, 5, 10);
+	str1 = strview_sub(str1, 5, 10);
 	strbuf_cat(&buf, cstr("never "), str1, cstr(" seen"));
 	DBG("Result = %s\n", buf->cstr);
 	assert(buf->size == 0);
@@ -503,136 +503,136 @@ int main(int argc, const char* argv[])
 	assert(buf == NULL);
 
 
-	DBG("** Testing various edge cases of str_to_cstr() **\n");
+	DBG("** Testing various edge cases of strview_to_cstr() **\n");
 	static_buf[0] = 0x7F;
 
-	str_to_cstr(static_buf, 0, cstr_SL("string"));
+	strview_to_cstr(static_buf, 0, cstr_SL("string"));
 	assert(static_buf[0] == 0x7F);
 
-	str_to_cstr(static_buf, 1, cstr_SL("string"));
+	strview_to_cstr(static_buf, 1, cstr_SL("string"));
 	assert(static_buf[0] == 0);
 
-	str_to_cstr(static_buf, 4, cstr_SL("string"));
+	strview_to_cstr(static_buf, 4, cstr_SL("string"));
 	assert(!memcmp(static_buf, "str", 4));
 
-	str_to_cstr(static_buf, 4, cstr_SL("str"));
+	strview_to_cstr(static_buf, 4, cstr_SL("str"));
 	assert(!memcmp(static_buf, "str", 4));
 
-	str_to_cstr(static_buf, 100, cstr_SL("string"));
+	strview_to_cstr(static_buf, 100, cstr_SL("string"));
 	assert(!memcmp(static_buf, "string", sizeof("string")));
 
 	DBG("** OK **\n\n\n");
 
-	DBG("** Testing edge cases for str_sub() **\n");
+	DBG("** Testing edge cases for strview_sub() **\n");
 
-	str1 = str_sub(cstr("X"), 0, 0);	//return a valid string of length 0 within the buffer space
-	assert(str_is_valid(str1));
+	str1 = strview_sub(cstr("X"), 0, 0);	//return a valid string of length 0 within the buffer space
+	assert(strview_is_valid(str1));
 	assert(str1.size == 0);
 	assert(str1.data[0] == 'X');
 
-	str1 = str_sub(cstr("X"), -1, -1);	//return a valid string of length 0 within the buffer space
-	assert(str_is_valid(str1));
+	str1 = strview_sub(cstr("X"), -1, -1);	//return a valid string of length 0 within the buffer space
+	assert(strview_is_valid(str1));
 	assert(str1.size == 0);
 	assert(str1.data[0] == 'X');
 
-	str1 = str_sub(cstr("X"), 0, -1);	//return a valid string of length 0 within the buffer space
-	assert(str_is_valid(str1));
+	str1 = strview_sub(cstr("X"), 0, -1);	//return a valid string of length 0 within the buffer space
+	assert(strview_is_valid(str1));
 	assert(str1.size == 0);
 	assert(str1.data[0] == 'X');
 
-	str1 = str_sub(cstr("X"), -1, 0);	//return a valid string of length 0 within the buffer space
-	assert(str_is_valid(str1));
+	str1 = strview_sub(cstr("X"), -1, 0);	//return a valid string of length 0 within the buffer space
+	assert(strview_is_valid(str1));
 	assert(str1.size == 0);
 	assert(str1.data[0] == 'X');
 
-	str1 = str_sub(cstr("X"), 1, 0);	//return an invalid string if end is before beginning
-	assert(!str_is_valid(str1));
+	str1 = strview_sub(cstr("X"), 1, 0);	//return an invalid string if end is before beginning
+	assert(!strview_is_valid(str1));
 	assert(str1.size == 0);
 
-	str1 = str_sub(cstr("X"), 1, -1);	//return an invalid string if end is before beginning
-	assert(!str_is_valid(str1));
+	str1 = strview_sub(cstr("X"), 1, -1);	//return an invalid string if end is before beginning
+	assert(!strview_is_valid(str1));
 	assert(str1.size == 0);
 
-	str1 = str_sub(cstr(""), 0, 0);		//return a valid string of length 0
-	assert(str_is_valid(str1));
+	str1 = strview_sub(cstr(""), 0, 0);		//return a valid string of length 0
+	assert(strview_is_valid(str1));
 	assert(str1.size == 0);
 
-	str1 = str_sub(cstr(""), -1, -1);		//return a valid string of length 0
-	assert(str_is_valid(str1));
+	str1 = strview_sub(cstr(""), -1, -1);		//return a valid string of length 0
+	assert(strview_is_valid(str1));
 	assert(str1.size == 0);
 
-	str1 = str_sub(cstr(""), -1, 0);		//return a valid string of length 0
-	assert(str_is_valid(str1));
+	str1 = strview_sub(cstr(""), -1, 0);		//return a valid string of length 0
+	assert(strview_is_valid(str1));
 	assert(str1.size == 0);
 
-	str1 = str_sub(cstr(""), 0, -1);		//return a valid string of length 0
-	assert(str_is_valid(str1));
+	str1 = strview_sub(cstr(""), 0, -1);		//return a valid string of length 0
+	assert(strview_is_valid(str1));
 	assert(str1.size == 0);
 
 	DBG("** OK **\n\n\n");
 
 	DBG("** Testing number conversions **\n");
 
-	tmpll = str_to_ll(cstr("  -289765138"));
+	tmpll = strview_to_ll(cstr("  -289765138"));
 	assert(tmpll == -289765138);
 
-	tmpll = str_to_ll(cstr("-289765138  "));
+	tmpll = strview_to_ll(cstr("-289765138  "));
 	assert(tmpll == -289765138);
 
-	tmpll = str_to_ll(cstr("  289765138"));
+	tmpll = strview_to_ll(cstr("  289765138"));
 	assert(tmpll == 289765138);
 
-	tmpll = str_to_ll(cstr("289765138  "));
+	tmpll = strview_to_ll(cstr("289765138  "));
 	assert(tmpll == 289765138);
 
-	tmpull = str_to_ull(cstr("0xFf715cC  "));
+	tmpull = strview_to_ull(cstr("0xFf715cC  "));
 	assert(tmpull == 0xFF715CC);
 
-	tmpull = str_to_ull(cstr("  0XFf715cC"));
+	tmpull = strview_to_ull(cstr("  0XFf715cC"));
 	assert(tmpull == 0xFF715CC);
 
-	tmpull = str_to_ull(cstr("0b110011010111"));
+	tmpull = strview_to_ull(cstr("0b110011010111"));
 	assert(tmpull == 0b110011010111);
 
 	DBG("** OK **\n\n\n");
 
 	DBG("** Testing string_compare() **\n");
-	assert(str_compare(cstr("abd"), cstr("abc")) > 0);
-	assert(str_compare(cstr("aba"), cstr("abd")) < 0);
-	assert(str_compare(cstr("abc"), cstr("abc")) == 0);
-	assert(str_compare(cstr("abca"), cstr("abc")) > 0);
-	assert(str_compare(cstr("abc"), cstr("abca")) < 0);
+	assert(strview_compare(cstr("abd"), cstr("abc")) > 0);
+	assert(strview_compare(cstr("aba"), cstr("abd")) < 0);
+	assert(strview_compare(cstr("abc"), cstr("abc")) == 0);
+	assert(strview_compare(cstr("abca"), cstr("abc")) > 0);
+	assert(strview_compare(cstr("abc"), cstr("abca")) < 0);
 	str1.data = NULL;
 	str1.size = 0;
-	assert(!str_compare(cstr(""), str1));	//an empty string == an invalid string for str_compare();
+	assert(!strview_compare(cstr(""), str1));	//an empty string == an invalid string for strview_compare();
 
 	DBG("** OK **\n\n\n");
 
-	DBG("** Testing str_to_float() **\n");
+	DBG("** Testing strview_to_float() **\n");
 
 	str1 = cstr("inf");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
-	assert(str_to_float(str1) == INFINITY);
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
+	assert(strview_to_float(str1) == INFINITY);
 
 	str1 = cstr("-inf");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
-	assert(str_to_float(str1) == -INFINITY);
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
+	assert(strview_to_float(str1) == -INFINITY);
 
 	str1 = cstr("nan");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
-	assert(str_to_float(str1) != str_to_float(str1));
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
+	assert(strview_to_float(str1) != strview_to_float(str1));
 
 	str1 = cstr("fred");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
-	assert(str_to_float(str1) != str_to_float(str1));
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
+	assert(strview_to_float(str1) != strview_to_float(str1));
 
 	str1 = cstr(".");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
-	assert(str_to_float(str1) != str_to_float(str1));
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
+	assert(strview_to_float(str1) != strview_to_float(str1));
 
 	str1 = cstr(".E");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), str_to_float(str1));
-	assert(str_to_float(str1) != str_to_float(str1));
+	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
+	assert(strview_to_float(str1) != strview_to_float(str1));
 
 	TEST_STR_TO_FLOAT("%f", 183.4179);
 	TEST_STR_TO_FLOAT("%f", -183.4179);
@@ -644,66 +644,66 @@ int main(int argc, const char* argv[])
 	TEST_STR_TO_FLOAT("%.9f", 39E-8);
 
 	DBG("\n\n");
-	DBG("** Testing str_pop_split() **\n");
+	DBG("** Testing strview_pop_split() **\n");
 	str1 = cstr("123");
-	str2 = str_pop_split(&str1, 1);
+	str2 = strview_pop_split(&str1, 1);
 	assert(str1.size == 2);
 	assert(str2.size == 1);
-	assert(str_is_valid(str1));
-	assert(str_is_valid(str2));
+	assert(strview_is_valid(str1));
+	assert(strview_is_valid(str2));
 	assert(!memcmp(str1.data, "23", str1.size));
 	assert(!memcmp(str2.data, "1", str2.size));
 
 	str1 = cstr("123");
-	str2 = str_pop_split(&str1, -1);
+	str2 = strview_pop_split(&str1, -1);
 	assert(str1.size == 2);
 	assert(str2.size == 1);
-	assert(str_is_valid(str1));
-	assert(str_is_valid(str2));
+	assert(strview_is_valid(str1));
+	assert(strview_is_valid(str2));
 	assert(!memcmp(str1.data, "12", str1.size));
 	assert(!memcmp(str2.data, "3", str2.size));
 
 	str1 = cstr("123");
-	str2 = str_pop_split(&str1, 0);
+	str2 = strview_pop_split(&str1, 0);
 	assert(str1.size == 3);
 	assert(str2.size == 0);
-	assert(str_is_valid(str1));
-	assert(str_is_valid(str2));
+	assert(strview_is_valid(str1));
+	assert(strview_is_valid(str2));
 	assert(!memcmp(str1.data, "123", str1.size));
 	assert(!memcmp(str2.data, "", str2.size));
 
 	str1 = cstr("123");
-	str2 = str_pop_split(&str1, -3);
+	str2 = strview_pop_split(&str1, -3);
 	assert(str1.size == 0);
 	assert(str2.size == 3);
-	assert(str_is_valid(str1));
-	assert(str_is_valid(str2));
+	assert(strview_is_valid(str1));
+	assert(strview_is_valid(str2));
 	assert(!memcmp(str1.data, "", str1.size));
 	assert(!memcmp(str2.data, "123", str2.size));
 
 	str1 = cstr("123");
-	str2 = str_pop_split(&str1, 3);
+	str2 = strview_pop_split(&str1, 3);
 	assert(str1.size == 0);
 	assert(str2.size == 3);
-	assert(str_is_valid(str1));
-	assert(str_is_valid(str2));
+	assert(strview_is_valid(str1));
+	assert(strview_is_valid(str2));
 	assert(!memcmp(str1.data, "", str1.size));
 	assert(!memcmp(str2.data, "123", str2.size));
 
 	str1 = cstr("123");
-	str2 = str_pop_split(&str1, 4);	//over range, pops ALL
+	str2 = strview_pop_split(&str1, 4);	//over range, pops ALL
 	assert(str1.size == 0);
 	assert(str2.size == 3);
-	assert(str_is_valid(str1));
-	assert(str_is_valid(str2));
+	assert(strview_is_valid(str1));
+	assert(strview_is_valid(str2));
 	assert(!memcmp(str2.data, "123", str2.size));
 
 	str1 = cstr("123");
-	str2 = str_pop_split(&str1, -4);	//out of range, pops all
+	str2 = strview_pop_split(&str1, -4);	//out of range, pops all
 	assert(str1.size == 0);
 	assert(str2.size == 3);
-	assert(str_is_valid(str1));
-	assert(str_is_valid(str2));
+	assert(strview_is_valid(str1));
+	assert(strview_is_valid(str2));
 	assert(!memcmp(str2.data, "123", str2.size));
 
 	#ifdef STRBUF_PROVIDE_PRINTF
@@ -755,7 +755,7 @@ int main(int argc, const char* argv[])
 	assert((int)strlen(buf->cstr) == buf->size);
 
 	DBG("** Testing strbuf_assign() source from the destination **\n");
-	strbuf_assign(&buf, str_trim(strbuf_str(&buf), cstr("*")));
+	strbuf_assign(&buf, strview_trim(strbuf_str(&buf), cstr("*")));
 	str1 = strbuf_assign(&buf, cstr("Hello test"));
 	assert(!memcmp(str1.data, "Hello test", str1.size));
 	assert((int)strlen(buf->cstr) == buf->size);
@@ -810,31 +810,31 @@ LF line followed by an empty LFCR line\n\
 This text has no line ending";
 
 	str2 = cstr(sometext);
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "First line CRLF", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "Second line CR", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "Third line LF", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CRLF line followed by an empty CR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CRLF line followed by an empty LF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CRLF line followed by an empty LFCR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LFCR line followed by an empty CR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LFCR line followed by an empty LF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LFCR line followed by an empty CRLF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CR line followed by an empty CRLF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "CR line followed by an empty LFCR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LF line followed by an empty CRLF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "LF line followed by an empty LFCR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
-	str1 = str_pop_line(&str2, NULL); assert(str_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "First line CRLF", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "Second line CR", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "Third line LF", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "CRLF line followed by an empty CR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "CRLF line followed by an empty LF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "CRLF line followed by an empty LFCR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "LFCR line followed by an empty CR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "LFCR line followed by an empty LF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "LFCR line followed by an empty CRLF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "CR line followed by an empty CRLF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "CR line followed by an empty LFCR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "LF line followed by an empty CRLF line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "LF line followed by an empty LFCR line", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
+	str1 = strview_pop_line(&str2, NULL); assert(strview_is_valid(str1)); assert(!memcmp(str1.data, "", str1.size));DBG("[%"PRIstr"]", PRIstrarg(str1));
 
-	str1 = str_pop_line(&str2, NULL); assert(!str_is_valid(str1)); assert(!memcmp(str2.data, "This text has no line ending", str1.size));
+	str1 = strview_pop_line(&str2, NULL); assert(!strview_is_valid(str1)); assert(!memcmp(str2.data, "This text has no line ending", str1.size));
 
 	DBG("\n\n** Testing line parser by appending chars to a buffer 1 at a time **");
 
@@ -869,44 +869,44 @@ This text has no line ending";
 	DBG("\n\n** Testing strbuf_insert_before() **");
 
 	strbuf_assign(&buf, cstr("Hello"));
-	str1 = str_find_last(strbuf_str(&buf), cstr(""));
+	str1 = strview_find_last(strbuf_str(&buf), cstr(""));
 	strbuf_insert_before(&buf, str1, cstr("-test"));
 	assert(!memcmp(buf->cstr, "Hello-test", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = str_find_last(strbuf_str(&buf), cstr("ll"));
+	str1 = strview_find_last(strbuf_str(&buf), cstr("ll"));
 	strbuf_insert_before(&buf, str1, cstr("..."));
 	assert(!memcmp(buf->cstr, "Hello Me...llow", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = str_find_first(strbuf_str(&buf), cstr("ll"));
+	str1 = strview_find_first(strbuf_str(&buf), cstr("ll"));
 	strbuf_insert_before(&buf, str1, cstr("---"));
 	assert(!memcmp(buf->cstr, "He---llo Mellow", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = str_find_first(strbuf_str(&buf), cstr(""));
+	str1 = strview_find_first(strbuf_str(&buf), cstr(""));
 	strbuf_insert_before(&buf, str1, cstr("***"));
 	assert(!memcmp(buf->cstr, "***Hello Mellow", buf->size));
 
 	DBG("\n\n** Testing strbuf_insert_after() **");
 
 	strbuf_assign(&buf, cstr("Hello"));
-	str1 = str_find_last(strbuf_str(&buf), cstr(""));
+	str1 = strview_find_last(strbuf_str(&buf), cstr(""));
 	strbuf_insert_after(&buf, str1, cstr("-test"));
 	assert(!memcmp(buf->cstr, "Hello-test", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = str_find_last(strbuf_str(&buf), cstr("ll"));
+	str1 = strview_find_last(strbuf_str(&buf), cstr("ll"));
 	strbuf_insert_after(&buf, str1, cstr("..."));
 	assert(!memcmp(buf->cstr, "Hello Mell...ow", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = str_find_first(strbuf_str(&buf), cstr("ll"));
+	str1 = strview_find_first(strbuf_str(&buf), cstr("ll"));
 	strbuf_insert_after(&buf, str1, cstr("---"));
 	assert(!memcmp(buf->cstr, "Hell---o Mellow", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = str_find_first(strbuf_str(&buf), cstr(""));
+	str1 = strview_find_first(strbuf_str(&buf), cstr(""));
 	strbuf_insert_after(&buf, str1, cstr("***"));
 	assert(!memcmp(buf->cstr, "***Hello Mellow", buf->size));
 
