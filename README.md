@@ -56,7 +56,7 @@ To understand this approach to string handling, and the purpose of each, it help
 
 &nbsp;
 ## Usage
- Copy the source files __strview.h__/__str.c__ and optionally __strbuf.h__/__strbuf.c__ into your project.
+ Copy the source files __strview.h__/__strview.c__ and optionally __strbuf.h__/__strbuf.c__ into your project.
  Add any desired options (described below) to your compiler flags (eg. -DSTRBUF_PROVIDE_PRINTF).
  str.c requires linking against the maths library for interpreting float values. So either add -lm to your linker options, or -DSTR_NO_FLOAT to your compiler options if you don't need float conversion.
  A list and explanation of options is included at the top of each header file for convenient copy & pasting.
