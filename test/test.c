@@ -76,7 +76,7 @@ int main(int argc, const char* argv[])
 
 	strbuf_allocator_t strbuf_allocator = {.allocator = allocator};
 	strbuf_t* buf;
-	strview_t str1, str2, search_result;
+	strview_t str1, str2, str3, search_result;
 	const char* chrptr;
 	unsigned long long tmpull;
 	long long tmpll;
@@ -923,10 +923,104 @@ This text has no line ending";
 	strbuf_destroy(&buf);
 	#endif
 
+	DBG("\n\n** Testing strview_pop_left() **");
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_first(str1, cstr("testing"));
+	str3 = strview_pop_left(&str1, str2);
+	assert(strview_is_match(str3, cstr("Hello-")));
+	assert(strview_is_match(str1, cstr("testing-123")));
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_first(str1, cstr(""));
+	str3 = strview_pop_left(&str1, str2);
+	assert(strview_is_valid(str3)); assert(str3.size == 0);
+	assert(strview_is_match(str1, cstr("Hello-testing-123")));
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_last(str1, cstr(""));
+	str3 = strview_pop_left(&str1, str2);
+	assert(strview_is_valid(str1)); assert(str1.size == 0);
+	assert(strview_is_match(str3, cstr("Hello-testing-123")));
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_first(str1, cstr(""));
+	str2.data--;
+	str3 = strview_pop_left(&str1, str2);
+	assert(!strview_is_valid(str3));
+	assert(strview_is_match(str1, cstr("Hello-testing-123")));
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_last(str1, cstr(""));
+	str2.data++;
+	str3 = strview_pop_left(&str1, str2);
+	assert(!strview_is_valid(str3));
+	assert(strview_is_match(str1, cstr("Hello-testing-123")));
+
+
+	DBG("\n\n** Testing strview_pop_right() **");
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_first(str1, cstr("testing"));
+	str3 = strview_pop_right(&str1, str2);
+	assert(strview_is_match(str3, cstr("-123")));
+	assert(strview_is_match(str1, cstr("Hello-testing")));
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_first(str1, cstr(""));
+	str3 = strview_pop_right(&str1, str2);
+	assert(strview_is_valid(str1)); assert(str1.size == 0);
+	assert(strview_is_match(str3, cstr("Hello-testing-123")));
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_last(str1, cstr(""));
+	str3 = strview_pop_right(&str1, str2);
+	assert(strview_is_valid(str3)); assert(str3.size == 0);
+	assert(strview_is_match(str1, cstr("Hello-testing-123")));
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_first(str1, cstr(""));
+	str2.data--;
+	str3 = strview_pop_right(&str1, str2);
+	assert(!strview_is_valid(str3));
+	assert(strview_is_match(str1, cstr("Hello-testing-123")));
+
+	str1 = cstr("Hello-testing-123");
+	str2 = strview_find_last(str1, cstr(""));
+	str2.data++;
+	str3 = strview_pop_right(&str1, str2);
+	assert(!strview_is_valid(str3));
+	assert(strview_is_match(str1, cstr("Hello-testing-123")));
+
+
 	DBG("\n\n\n*** Everything worked ***\n");
 
 	return 0;
 }
+
+
+/*	Split a strview_t at a position specified by pos
+
+	If pos references characters within *strview_ptr, return a strview_t representing all characters to the left of pos.
+	If pos references the upper limit of *strview_ptr, the entire *strview_ptr is returned.
+	If pos references the start of *strview_ptr, a valid strview_t of length 0 is returned.
+
+	The returned characters are removed (popped) from *strview_ptr
+
+	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
+*/
+	strview_t strview_pop_left(strview_t* strview_ptr, strview_t pos);
+
+/*	Split a strview_t at a position specified by pos
+
+	If pos references characters within *strview_ptr, return a strview_t representing all characters to the right of pos.
+	If the upper limit of pos matches the upper limit of *strview_ptr, a valid strview_t of length 0 is returned.
+
+	The returned characters are removed (popped) from *strview_ptr
+
+	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
+*/
+	strview_t strview_pop_right(strview_t* strview_ptr, strview_t pos);
 
 
 //********************************************************************************************************
