@@ -382,6 +382,38 @@ strview_float_t strview_to_float(strview_t str)
 	return result;
 }
 
+strview_t strview_pop_left(strview_t* strview_ptr, strview_t pos)
+{
+	strview_t result = STR_INVALID;
+	if(strview_ptr && strview_is_valid(*strview_ptr) && strview_is_valid(pos))
+	{
+		if(strview_ptr->data <= pos.data && pos.data <= &strview_ptr->data[strview_ptr->size])
+			result = pop_split(strview_ptr, (int)(pos.data - strview_ptr->data));
+	};
+	return result;
+}
+
+strview_t strview_pop_right(strview_t* strview_ptr, strview_t pos)
+{
+	strview_t result = STR_INVALID;
+	strview_t src;
+	const char* split_point;
+
+	if(strview_ptr && strview_is_valid(*strview_ptr) && strview_is_valid(pos))
+	{
+		src = *strview_ptr;
+		split_point = &pos.data[pos.size];
+		if(src.data <= split_point && split_point <= &src.data[src.size])
+		{
+			result = pop_split(&src, (int)(split_point - src.data));
+			strview_swap(&result, &src);
+		};
+		*strview_ptr = src;
+	};
+
+	return result;
+}
+
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************
@@ -582,7 +614,7 @@ static strview_t pop_last_split(strview_t* strview_ptr, strview_t delimiters, bo
 
 static strview_t pop_split(strview_t* strview_ptr, int index)
 {
-	strview_t result = (strview_t){0};
+	strview_t result = STR_INVALID;
 	strview_t remainder = *strview_ptr;
 	bool neg = index < 0;
 

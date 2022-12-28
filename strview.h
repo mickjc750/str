@@ -133,6 +133,29 @@
 */
 	strview_t strview_pop_split(strview_t* strview_ptr, int index);
 
+/*	Split a strview_t at a position specified by pos
+
+	If pos references characters within *strview_ptr, return a strview_t representing all characters to the left of pos.
+	If pos references the upper limit of *strview_ptr, the entire *strview_ptr is returned.
+	If pos references the start of *strview_ptr, a valid strview_t of length 0 is returned.
+
+	The returned characters are removed (popped) from *strview_ptr
+
+	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
+*/
+	strview_t strview_pop_left(strview_t* strview_ptr, strview_t pos);
+
+/*	Split a strview_t at a position specified by pos
+
+	If pos references characters within *strview_ptr, return a strview_t representing all characters to the right of pos.
+	If the upper limit of pos matches the upper limit of *strview_ptr, a valid strview_t of length 0 is returned.
+
+	The returned characters are removed (popped) from *strview_ptr
+
+	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
+*/
+	strview_t strview_pop_right(strview_t* strview_ptr, strview_t pos);
+
 /*	Return the first char of str, and remove it from the str.
 	Returns 0 if there are no characters in str.
 	If str is known to contain at least one character, it is the equivalent of:
