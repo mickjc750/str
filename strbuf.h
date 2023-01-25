@@ -180,6 +180,9 @@ then:
 //	Insert src after the end of dst in the buffer. dst must reference data contained within the buffer.
 	strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, strview_t src);
 
+//	Strip buffer contents of all character in strview_t
+	strview_t strbuf_strip(strbuf_t** buf_ptr, strview_t stripchars);
+
 // 	Provide formatted printing to a strbuf_t (uses vsnprintf() from stdio.h)
 #ifdef STRBUF_PROVIDE_PRINTF
 	strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);

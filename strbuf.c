@@ -46,6 +46,7 @@
 	static bool buf_is_dynamic(strbuf_t* buf);
 	static void empty_buf(strbuf_t* buf);
 	static bool add_will_overflow_int(int a, int b);
+	static bool view_contains_char(strview_t view, char c);
 
 #ifdef STRBUF_PROVIDE_PRNF
 	static void char_handler_for_prnf(void* dst, char c);
@@ -408,6 +409,34 @@ strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, strview_t src)
 	return strview_of_buf(*buf_ptr);
 }
 
+strview_t strbuf_strip(strbuf_t** buf_ptr, strview_t stripchars)
+{
+	strbuf_t* buf;
+	char* ptr;
+	int count;
+
+	if(buf_ptr && *buf_ptr && strview_is_valid(stripchars))
+	{
+		buf = *buf_ptr;
+		count = buf->size;
+		ptr = buf->cstr;
+		while(count)
+		{
+			if(view_contains_char(stripchars, *ptr))
+			{
+				memmove(ptr, ptr+1, count);
+				buf->size--;
+			}
+			else
+				ptr++;
+			count--;
+		};
+		*buf_ptr = buf;
+	};
+
+	return strview_of_buf(*buf_ptr);
+}
+
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************
@@ -648,6 +677,23 @@ static bool add_will_overflow_int(int a, int b)
 	int c = a;
 	c += b;
 	return ((a < 0) == (b < 0) && (a < 0) != (c < 0));
+}
+
+static bool view_contains_char(strview_t view, char c)
+{
+	bool retval = false;
+
+	if(strview_is_valid(view))
+	{
+		while(!retval && view.size)
+		{
+			retval |= (*view.data == c);
+			view.data++;
+			view.size--;
+		};
+	};
+
+	return retval;
 }
 
 #ifdef STRBUF_PROVIDE_PRNF
