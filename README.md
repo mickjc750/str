@@ -400,6 +400,10 @@ Example use:
  Append a single character to the buffer.
 
 &nbsp;
+## strview_t strbuf_strip(strbuf_t** buf_ptr, strview_t stripchars);
+ Strip buffer contents of all characters in strview_t.
+
+&nbsp;
 ## strview_t strbuf_str(strbuf_t** buf_ptr);
  Return strview_t of buffer contents.
 
