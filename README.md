@@ -404,7 +404,7 @@ Example use:
  Strip buffer contents of all characters in strview_t.
 
 &nbsp;
-## strview_t strbuf_str(strbuf_t** buf_ptr);
+## strview_t strbuf_view(strbuf_t** buf_ptr);
  Return strview_t of buffer contents.
 
 &nbsp;
@@ -419,7 +419,7 @@ Example use:
 ## strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str);
  Assign strview_t to buffer. strview_t may be owned by the output buffer itself.
  This allows a buffers contents to be cropped or trimmed using the strview.h functions.
- Example to trim whitespace:	strbuf_assign(&buf, strview_trim(strbuf_str(&buf), cstr(" ")));
+ Example to trim whitespace:	strbuf_assign(&buf, strview_trim(strbuf_view(&buf), cstr(" ")));
 
 &nbsp;
 ## strview_t strbuf_append(strbuf_t** buf_ptr, strview_t str);

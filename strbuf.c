@@ -205,7 +205,7 @@ strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list 
 		else
 			empty_buf(buf);
 
-		str = strbuf_str(&buf);
+		str = strbuf_view(&buf);
 		*buf_ptr = buf;
 		va_end(vb);
 	};
@@ -242,7 +242,7 @@ strview_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
 		if(char_count > buf->size)
 			empty_buf(buf);
 
-		str = strbuf_str(&buf);
+		str = strbuf_view(&buf);
 		*buf_ptr = buf;
 	};
 	return str;
@@ -276,7 +276,7 @@ strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va
 		if(char_count > buf->size || char_count < 0)
 			empty_buf(buf);
 
-		str = strbuf_str(&buf);
+		str = strbuf_view(&buf);
 		*buf_ptr = buf;
 	};
 	return str;
@@ -284,7 +284,7 @@ strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va
 
 #endif
 
-strview_t strbuf_str(strbuf_t** buf_ptr)
+strview_t strbuf_view(strbuf_t** buf_ptr)
 {
 	strview_t str = {0};
 	if(buf_ptr && *buf_ptr)

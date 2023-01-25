@@ -48,7 +48,7 @@ int main(int argc, const char* argv[])
 	strbuf_append(&buf, cstr("heap. "));
 
 	// This can only be done with dynamic allocation, as it creates a temporary buffer
-	strbuf_cat(&buf, cstr("Let's say this twice {"), strbuf_str(&buf), strbuf_str(&buf), cstr("}"));
+	strbuf_cat(&buf, cstr("Let's say this twice {"), strbuf_view(&buf), strbuf_view(&buf), cstr("}"));
 
 	DBG("%s", buf->cstr);
 

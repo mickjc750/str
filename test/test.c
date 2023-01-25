@@ -39,7 +39,7 @@
 		while(!strview_is_valid(str2))							\
 		{													\
 			strbuf_append_char(&buf, *chrptr++);			\
-			str1 = strbuf_str(&buf);						\
+			str1 = strbuf_view(&buf);						\
 			str2 = strview_pop_line(&str1, &eol);				\
 		};													\
 		DBG("[%"PRIstr"]", PRIstrarg(str2));				\
@@ -98,31 +98,31 @@ int main(int argc, const char* argv[])
 	assert(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC"));
 
 	DBG("Appending -AFTER to existing buffer");
-	strbuf_cat(&buf, strbuf_str(&buf), cstr("-AFTER"));
+	strbuf_cat(&buf, strbuf_view(&buf), cstr("-AFTER"));
 	DBG("Result = %s\n", buf->cstr);
 	assert(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	DBG("Prepending BEFORE- to existing buffer");
-	strbuf_cat(&buf, cstr("BEFORE-"), strbuf_str(&buf));
+	strbuf_cat(&buf, cstr("BEFORE-"), strbuf_view(&buf));
 	DBG("Result = %s\n", buf->cstr);
 	assert(!strcmp(buf->cstr, "BEFORE-AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	DBG("Extracting BBBBBBBBBB from center of string");
-	str1 = strbuf_str(&buf);
+	str1 = strbuf_view(&buf);
 	str1 = strview_sub(str1, 17, 27);
 	DBG("Result = %"PRIstr"\n", PRIstrarg(str1));
 	assert(str1.size == 10);
 	assert(!memcmp("BBBBBBBBBB", str1.data, str1.size));
 
 	DBG("Extracting BEFORE from start of string");
-	str1 = strbuf_str(&buf);
+	str1 = strbuf_view(&buf);
 	str1 = strview_sub(str1, 0, 6);
 	DBG("Result = %"PRIstr"\n", PRIstrarg(str1));
 	assert(str1.size == 6);
 	assert(!memcmp("BEFORE", str1.data, str1.size));
 
 	DBG("Extracting AFTER from end of string");
-	str1 = strbuf_str(&buf);
+	str1 = strbuf_view(&buf);
 	str1 = strview_sub(str1, -5, INT_MAX);
 	DBG("Result = %"PRIstr"\n\n\n", PRIstrarg(str1));
 	assert(str1.size == 5);
@@ -131,7 +131,7 @@ int main(int argc, const char* argv[])
 	DBG("**Testing strview_pop_first_split()**\n");
 
 	strbuf_cat(&buf, cstr("123/456/789"));
-	str2 = strbuf_str(&buf);
+	str2 = strbuf_view(&buf);
 	DBG("Splitting %"PRIstr, PRIstrarg(str2));
 	
 	str1 = strview_pop_first_split(&str2, cstr("/"));
@@ -145,13 +145,13 @@ int main(int argc, const char* argv[])
 	assert(!memcmp("789", str1.data, str1.size));
 	assert(!strview_is_valid(str2));
 
-	str1 = strbuf_str(&buf);
+	str1 = strbuf_view(&buf);
 	DBG("Meanwhile, the buffer remains unchanged! %"PRIstr"\n\n\n", PRIstrarg(str1));
 
 	DBG("**Testing strview_pop_first_split_nocase()**\n");
 
 	strbuf_cat(&buf, cstr("123r456R789"));
-	str2 = strbuf_str(&buf);
+	str2 = strbuf_view(&buf);
 	DBG("Splitting %"PRIstr, PRIstrarg(str2));
 	
 	str1 = strview_pop_first_split_nocase(&str2, cstr("r"));
@@ -168,7 +168,7 @@ int main(int argc, const char* argv[])
 	DBG("**Testing edge cases for strview_pop_first_split()**\n");
 
 	strbuf_cat(&buf, cstr("/456/789/"));
-	str2 = strbuf_str(&buf);
+	str2 = strbuf_view(&buf);
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
 	str1 = strview_pop_first_split(&str2, cstr("/"));
@@ -203,7 +203,7 @@ int main(int argc, const char* argv[])
 	assert(str2.data == NULL); 	//remaining string should be invalid as there were no delimiters found
 
 	strbuf_cat(&buf, cstr("no-delimiters"));
-	str2 = strbuf_str(&buf);
+	str2 = strbuf_view(&buf);
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
 	str1 = strview_pop_first_split(&str2, cstr("/"));
 	DBG("result = \"%"PRIstr"\" remaining = \"%"PRIstr"\"\n\n\n", PRIstrarg(str1), PRIstrarg(str2));
@@ -215,7 +215,7 @@ int main(int argc, const char* argv[])
 	DBG("**Testing strview_pop_last_split()**\n");
 
 	strbuf_cat(&buf, cstr("123/456/789"));
-	str2 = strbuf_str(&buf);
+	str2 = strbuf_view(&buf);
 	DBG("Splitting %"PRIstr, PRIstrarg(str2));
 	
 	str1 = strview_pop_last_split(&str2, cstr("/"));
@@ -236,7 +236,7 @@ int main(int argc, const char* argv[])
 	DBG("**Testing edge cases for strview_pop_last_split()**\n");
 
 	strbuf_cat(&buf, cstr("/456/789/"));
-	str2 = strbuf_str(&buf);
+	str2 = strbuf_view(&buf);
 
 	DBG("Splitting \"%"PRIstr"\"", PRIstrarg(str2));
 	str1 = strview_pop_last_split(&str2, cstr("/"));
@@ -400,7 +400,7 @@ int main(int argc, const char* argv[])
 	while(*chrptr)
 		strbuf_append_char(&buf, *chrptr++);
 
-	str1 = strbuf_str(&buf);
+	str1 = strbuf_view(&buf);
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("THE QUICK BROWN FOX JUMPED OVER THE LAZY DOG. CONGRATULATIONS, YOUR TYPEWRITER WORKS!", str1.data, str1.size));
 
@@ -420,7 +420,7 @@ int main(int argc, const char* argv[])
 
 	DBG("** Testing strview_is_match() **");
 	strbuf_cat(&buf, cstr("Hello"));
-	assert(strview_is_match(strbuf_str(&buf), cstr("Hello")));
+	assert(strview_is_match(strbuf_view(&buf), cstr("Hello")));
 	str1 = cstr_SL("Test");
 	str2 = cstr("Test");
 	assert(strview_is_match(str1, str2));
@@ -478,12 +478,12 @@ int main(int argc, const char* argv[])
 	while(*chrptr)
 		strbuf_append_char(&buf, *chrptr++);
 
-	str1 = strbuf_str(&buf);
+	str1 = strbuf_view(&buf);
 	DBG("Result = \"%"PRIstr"\"\n", PRIstrarg(str1));
 	assert(!memcmp("Once upon a time there was a very smelly camel that poked it's tongue out and puffed it up.", str1.data, str1.size));
 
 	DBG("Trying to pass data from the destination buffer into strbuf_cat() without a dynamic buffer (should fail and return empty buffer)");
-	str1 = strbuf_str(&buf);
+	str1 = strbuf_view(&buf);
 	str1 = strview_sub(str1, 5, 10);
 	strbuf_cat(&buf, cstr("never "), str1, cstr(" seen"));
 	DBG("Result = %s\n", buf->cstr);
@@ -755,7 +755,7 @@ int main(int argc, const char* argv[])
 	assert((int)strlen(buf->cstr) == buf->size);
 
 	DBG("** Testing strbuf_assign() source from the destination **\n");
-	strbuf_assign(&buf, strview_trim(strbuf_str(&buf), cstr("*")));
+	strbuf_assign(&buf, strview_trim(strbuf_view(&buf), cstr("*")));
 	str1 = strbuf_assign(&buf, cstr("Hello test"));
 	assert(!memcmp(str1.data, "Hello test", str1.size));
 	assert((int)strlen(buf->cstr) == buf->size);
@@ -763,21 +763,21 @@ int main(int argc, const char* argv[])
 	DBG("** Testing strbuf_append(), with source from the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
 	strbuf_shrink(&buf);
-	str1 = strbuf_append(&buf, strbuf_str(&buf));
+	str1 = strbuf_append(&buf, strbuf_view(&buf));
 	assert(!memcmp(str1.data, "{Hello-testing-some-string}{Hello-testing-some-string}", str1.size));
 	assert((int)strlen(buf->cstr) == buf->size);
 
 	DBG("** Testing strbuf_prepend(), with source from the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
 	strbuf_shrink(&buf);
-	str1 = strbuf_prepend(&buf, strbuf_str(&buf));
+	str1 = strbuf_prepend(&buf, strbuf_view(&buf));
 	assert(!memcmp(str1.data, "{Hello-testing-some-string}{Hello-testing-some-string}", str1.size));
 	assert((int)strlen(buf->cstr) == buf->size);
 
 	DBG("** Testing strbuf_insert_at_index(), with source from the destination **\n");
 	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
 	strbuf_shrink(&buf);
-	str1 = strbuf_insert_at_index(&buf, 6, strbuf_str(&buf));
+	str1 = strbuf_insert_at_index(&buf, 6, strbuf_view(&buf));
 	assert(!memcmp(str1.data, "{Hello{Hello-testing-some-string}-testing-some-string}", str1.size));
 	assert((int)strlen(buf->cstr) == buf->size);
 
@@ -869,44 +869,44 @@ This text has no line ending";
 	DBG("\n\n** Testing strbuf_insert_before() **");
 
 	strbuf_assign(&buf, cstr("Hello"));
-	str1 = strview_find_last(strbuf_str(&buf), cstr(""));
+	str1 = strview_find_last(strbuf_view(&buf), cstr(""));
 	strbuf_insert_before(&buf, str1, cstr("-test"));
 	assert(!memcmp(buf->cstr, "Hello-test", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = strview_find_last(strbuf_str(&buf), cstr("ll"));
+	str1 = strview_find_last(strbuf_view(&buf), cstr("ll"));
 	strbuf_insert_before(&buf, str1, cstr("..."));
 	assert(!memcmp(buf->cstr, "Hello Me...llow", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = strview_find_first(strbuf_str(&buf), cstr("ll"));
+	str1 = strview_find_first(strbuf_view(&buf), cstr("ll"));
 	strbuf_insert_before(&buf, str1, cstr("---"));
 	assert(!memcmp(buf->cstr, "He---llo Mellow", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = strview_find_first(strbuf_str(&buf), cstr(""));
+	str1 = strview_find_first(strbuf_view(&buf), cstr(""));
 	strbuf_insert_before(&buf, str1, cstr("***"));
 	assert(!memcmp(buf->cstr, "***Hello Mellow", buf->size));
 
 	DBG("\n\n** Testing strbuf_insert_after() **");
 
 	strbuf_assign(&buf, cstr("Hello"));
-	str1 = strview_find_last(strbuf_str(&buf), cstr(""));
+	str1 = strview_find_last(strbuf_view(&buf), cstr(""));
 	strbuf_insert_after(&buf, str1, cstr("-test"));
 	assert(!memcmp(buf->cstr, "Hello-test", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = strview_find_last(strbuf_str(&buf), cstr("ll"));
+	str1 = strview_find_last(strbuf_view(&buf), cstr("ll"));
 	strbuf_insert_after(&buf, str1, cstr("..."));
 	assert(!memcmp(buf->cstr, "Hello Mell...ow", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = strview_find_first(strbuf_str(&buf), cstr("ll"));
+	str1 = strview_find_first(strbuf_view(&buf), cstr("ll"));
 	strbuf_insert_after(&buf, str1, cstr("---"));
 	assert(!memcmp(buf->cstr, "Hell---o Mellow", buf->size));
 
 	strbuf_assign(&buf, cstr("Hello Mellow"));
-	str1 = strview_find_first(strbuf_str(&buf), cstr(""));
+	str1 = strview_find_first(strbuf_view(&buf), cstr(""));
 	strbuf_insert_after(&buf, str1, cstr("***"));
 	assert(!memcmp(buf->cstr, "***Hello Mellow", buf->size));
 

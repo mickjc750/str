@@ -80,7 +80,7 @@
 	The buffers contents itself may be used as an argument, in this case a temporary buffer will be allcoated to build the output.
 	This facilitates appending, prepending, or even inserting by using str_sub().
 	A string representing the result is returned. The string returned is always valid providing buf_ptr is not NULL.
-	Example to append to a buffer:  strbuf_cat(&mybuffer, strbuf_str(&mybuffer), str_to_append) */
+	Example to append to a buffer:  strbuf_cat(&mybuffer, strbuf_view(&mybuffer), str_to_append) */
 	#define strbuf_cat(buf_ptr, ...) _strbuf_cat(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 
 
@@ -147,7 +147,7 @@ then:
 	strview_t strbuf_append_char(strbuf_t** buf_ptr, char c);
 
 //	Return strview_t of buffer contents
-	strview_t strbuf_str(strbuf_t** buf_ptr);
+	strview_t strbuf_view(strbuf_t** buf_ptr);
 
 //	Shrink buffer to the minimum size required to hold it's contents
 	strview_t strbuf_shrink(strbuf_t** buf_ptr);
