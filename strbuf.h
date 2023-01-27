@@ -152,6 +152,11 @@ then:
 //	Shrink buffer to the minimum size required to hold it's contents
 	strview_t strbuf_shrink(strbuf_t** buf_ptr);
 
+/*	Grow the capacity of the buffer to be at minimum the size specified.
+	If the operation fails, due to the buffer being static, an invalid strview_t is returned.
+	Otherwise a strview_t of the existing buffer *contents* (which may be smaller or greater than min_size) is returned. */
+	strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size);
+
 //	Free memory allcoated to hold the buffer and it's contents
 	void strbuf_destroy(strbuf_t** buf_ptr);
 
@@ -167,6 +172,20 @@ then:
 
 //	Append strview_t to buffer, strview_t 
 	strview_t strbuf_append(strbuf_t** buf_ptr, strview_t str);
+
+/*	Use a custom fetch function to append data to a buffer
+	The fetch function must have the following signature and behaviour:
+	int fetch(void* dst, void* dst_size, void* fetcher_vars);
+	Where:
+		dst is the address to write data
+		dst_size is the maximum number of bytes to write, this will be passed the amount of free space in the buffer (which may be 0)
+		fetch_vars points to application specific data needed by the fetch function (usually a struct)
+		Return value must be the number of bytes fetched, which may be 0 to dst_size (inclusive).
+
+	If you wish to fetch more bytes than the available space in the buffer, use strbuf_grow() first
+	If the return value of the fetch indicates bad behaviour (<0 or >dst_size) then the buffer is emptied and an invalid strview_t is returned.
+	The application may assert(strview_is_valid(strbuf_view(&buf))); to catch erroneous fetch behaviour */
+	strview_t strbuf_append_using(strbuf_t** buf_ptr, int (*strbuf_fetcher)(void* dst, void* dst_size, void* fetcher_vars), void* fetch_vars);
 
 //	Prepend strview_t to buffer, strview_t 
 	strview_t strbuf_prepend(strbuf_t** buf_ptr, strview_t str);

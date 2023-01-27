@@ -159,7 +159,7 @@ strview_t strview_trim(strview_t str, strview_t chars_to_trim)
 
 strview_t strview_find_first(strview_t haystack, strview_t needle)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 
 	const char* remaining_hay = haystack.data;
 	bool found = false;
@@ -184,7 +184,7 @@ strview_t strview_find_first(strview_t haystack, strview_t needle)
 
 strview_t strview_find_last(strview_t haystack, strview_t needle)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 
 	const char* remaining_hay = &haystack.data[haystack.size - needle.size];
 	bool found = false;
@@ -209,7 +209,7 @@ strview_t strview_find_last(strview_t haystack, strview_t needle)
 
 strview_t strview_pop_first_split(strview_t* strview_ptr, strview_t delimiters)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
 		result = pop_first_split(strview_ptr, delimiters, CASE_SENSETIVE);
@@ -219,7 +219,7 @@ strview_t strview_pop_first_split(strview_t* strview_ptr, strview_t delimiters)
 
 strview_t strview_pop_first_split_nocase(strview_t* strview_ptr, strview_t delimiters)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
 		result = pop_first_split(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
@@ -229,7 +229,7 @@ strview_t strview_pop_first_split_nocase(strview_t* strview_ptr, strview_t delim
 
 strview_t strview_pop_last_split(strview_t* strview_ptr, strview_t delimiters)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
 		result = pop_last_split(strview_ptr, delimiters, CASE_SENSETIVE);
@@ -239,7 +239,7 @@ strview_t strview_pop_last_split(strview_t* strview_ptr, strview_t delimiters)
 
 strview_t strview_pop_last_split_nocase(strview_t* strview_ptr, strview_t delimiters)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
 		result = pop_last_split(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
@@ -249,7 +249,7 @@ strview_t strview_pop_last_split_nocase(strview_t* strview_ptr, strview_t delimi
 
 strview_t strview_pop_split(strview_t* strview_ptr, int index)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 
 	if(strview_ptr)
 		result = pop_split(strview_ptr, index);
@@ -267,7 +267,7 @@ char strview_pop_first_char(strview_t* strview_ptr)
 
 strview_t strview_pop_line(strview_t* strview_ptr, char* eol)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 	strview_t src;
 	char e = 0;
 
@@ -297,7 +297,7 @@ strview_t strview_pop_line(strview_t* strview_ptr, char* eol)
 		else	//a line ending was not found, restore the source, and return an invalid strview_t
 		{
 			*strview_ptr = result;
-			result = STR_INVALID;
+			result = STRVIEW_INVALID;
 		};
 	};
 	return result;
@@ -384,7 +384,7 @@ strview_float_t strview_to_float(strview_t str)
 
 strview_t strview_pop_left(strview_t* strview_ptr, strview_t pos)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 	if(strview_ptr && strview_is_valid(*strview_ptr) && strview_is_valid(pos))
 	{
 		if(strview_ptr->data <= pos.data && pos.data <= &strview_ptr->data[strview_ptr->size])
@@ -395,7 +395,7 @@ strview_t strview_pop_left(strview_t* strview_ptr, strview_t pos)
 
 strview_t strview_pop_right(strview_t* strview_ptr, strview_t pos)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 	strview_t src;
 	const char* split_point;
 
@@ -569,7 +569,7 @@ static strview_t pop_first_split(strview_t* strview_ptr, strview_t delimiters, b
 	else
 	{
 		result = *strview_ptr;
-		*strview_ptr = STR_INVALID;
+		*strview_ptr = STRVIEW_INVALID;
 	};
 
 	return result;
@@ -606,7 +606,7 @@ static strview_t pop_last_split(strview_t* strview_ptr, strview_t delimiters, bo
 	else
 	{
 		result = *strview_ptr;
-		*strview_ptr = STR_INVALID;
+		*strview_ptr = STRVIEW_INVALID;
 	};
 
 	return result;
@@ -614,7 +614,7 @@ static strview_t pop_last_split(strview_t* strview_ptr, strview_t delimiters, bo
 
 static strview_t pop_split(strview_t* strview_ptr, int index)
 {
-	strview_t result = STR_INVALID;
+	strview_t result = STRVIEW_INVALID;
 	strview_t remainder = *strview_ptr;
 	bool neg = index < 0;
 

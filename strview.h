@@ -44,7 +44,7 @@
 	#define cstr_SL(sl_arg) ((strview_t){.data=(sl_arg), .size=sizeof(sl_arg)-1})
 
 //	Assign to a strview_t to make it invalid
-	#define STR_INVALID		((strview_t){.data = NULL, .size = 0})	
+	#define STRVIEW_INVALID		((strview_t){.data = NULL, .size = 0})	
 
 //********************************************************************************************************
 // Public variables
