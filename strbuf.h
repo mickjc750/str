@@ -183,8 +183,7 @@ then:
 		Return value must be the number of bytes fetched, which may be 0 to dst_size (inclusive).
 
 	If you wish to fetch more bytes than the available space in the buffer, use strbuf_grow() first
-	If the return value of the fetch indicates bad behaviour (<0 or >dst_size) then the buffer is emptied and an invalid strview_t is returned.
-	The application may assert(strview_is_valid(strbuf_view(&buf))); to catch erroneous fetch behaviour */
+	If the return value of the fetch indicates bad behaviour (<0 or >dst_size) then the buffer is emptied and an invalid strview_t is returned.*/
 	strview_t strbuf_append_using(strbuf_t** buf_ptr, int (*strbuf_fetcher)(void* dst, void* dst_size, void* fetcher_vars), void* fetch_vars);
 
 //	Prepend strview_t to buffer, strview_t 
