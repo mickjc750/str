@@ -392,7 +392,7 @@ strview_t strbuf_append_using(strbuf_t** buf_ptr, int (*strbuf_fetcher)(void* ds
 		bytes_appended = strbuf_fetcher(&buf->cstr[buf->size], available_space, fetch_vars);
 		fetch_fault = bytes_appended < 0 || bytes_appended > available_space;
 		if(fetch_fault)
-			empty_buf(&buf);
+			empty_buf(buf);
 		else
 			buf->cstr[buf->size] = 0;
 		*buf_ptr = buf;
