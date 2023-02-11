@@ -24,9 +24,9 @@
 
 	static bool contains_char(strview_t str, char c, bool case_sensetive);
 
-	static strview_t pop_first_split(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
-	static strview_t pop_last_split(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
-	static strview_t pop_split(strview_t* strview_ptr, int index);
+	static strview_t split_first_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
+	static strview_t split_last_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
+	static strview_t split_index(strview_t* strview_ptr, int index);
 
 	static unsigned long long interpret_hex(strview_t str);
 	static unsigned long long interpret_bin(strview_t str);
@@ -212,7 +212,7 @@ strview_t strview_split_first_delimeter(strview_t* strview_ptr, strview_t delimi
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = pop_first_split(strview_ptr, delimiters, CASE_SENSETIVE);
+		result = split_first_delimeter(strview_ptr, delimiters, CASE_SENSETIVE);
 
 	return result;
 }
@@ -222,7 +222,7 @@ strview_t strview_split_first_delimiter_nocase(strview_t* strview_ptr, strview_t
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = pop_first_split(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
+		result = split_first_delimeter(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
 
 	return result;
 }
@@ -232,7 +232,7 @@ strview_t strview_split_last_delimeter(strview_t* strview_ptr, strview_t delimit
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = pop_last_split(strview_ptr, delimiters, CASE_SENSETIVE);
+		result = split_last_delimeter(strview_ptr, delimiters, CASE_SENSETIVE);
 
 	return result;
 }
@@ -242,7 +242,7 @@ strview_t strview_split_last_delimeter_nocase(strview_t* strview_ptr, strview_t 
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = pop_last_split(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
+		result = split_last_delimeter(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
 
 	return result;
 }
@@ -252,7 +252,7 @@ strview_t strview_split_index(strview_t* strview_ptr, int index)
 	strview_t result = STRVIEW_INVALID;
 
 	if(strview_ptr)
-		result = pop_split(strview_ptr, index);
+		result = split_index(strview_ptr, index);
 
 	return result;
 }
@@ -261,7 +261,7 @@ char strview_pop_first_char(strview_t* strview_ptr)
 {
 	char result = 0;
 	if(strview_ptr && strview_ptr->size)
-		result = pop_split(strview_ptr, 1).data[0];
+		result = split_index(strview_ptr, 1).data[0];
 	return result;
 }
 
@@ -388,7 +388,7 @@ strview_t strview_split_left_of_view(strview_t* strview_ptr, strview_t pos)
 	if(strview_ptr && strview_is_valid(*strview_ptr) && strview_is_valid(pos))
 	{
 		if(strview_ptr->data <= pos.data && pos.data <= &strview_ptr->data[strview_ptr->size])
-			result = pop_split(strview_ptr, (int)(pos.data - strview_ptr->data));
+			result = split_index(strview_ptr, (int)(pos.data - strview_ptr->data));
 	};
 	return result;
 }
@@ -405,7 +405,7 @@ strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos)
 		split_point = &pos.data[pos.size];
 		if(src.data <= split_point && split_point <= &src.data[src.size])
 		{
-			result = pop_split(&src, (int)(split_point - src.data));
+			result = split_index(&src, (int)(split_point - src.data));
 			strview_swap(&result, &src);
 		};
 		*strview_ptr = src;
@@ -536,7 +536,7 @@ static int memcmp_nocase(const char* a, const char* b, size_t size)
 	return result;
 }
 
-static strview_t pop_first_split(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
+static strview_t split_first_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
 {
 	strview_t result;
 	bool found = false;
@@ -575,7 +575,7 @@ static strview_t pop_first_split(strview_t* strview_ptr, strview_t delimiters, b
 	return result;
 }
 
-static strview_t pop_last_split(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
+static strview_t split_last_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
 {
 	strview_t result;
 	bool found = false;
@@ -612,7 +612,7 @@ static strview_t pop_last_split(strview_t* strview_ptr, strview_t delimiters, bo
 	return result;
 }
 
-static strview_t pop_split(strview_t* strview_ptr, int index)
+static strview_t split_index(strview_t* strview_ptr, int index)
 {
 	strview_t result = STRVIEW_INVALID;
 	strview_t remainder = *strview_ptr;
