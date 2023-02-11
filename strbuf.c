@@ -605,7 +605,7 @@ static void insert_strview_into_buf(strbuf_t** buf_ptr, int index, strview_t str
 			if(src_in_dst)
 			{
 				if(move_src > str.data)
-					strview_part_left_behind = strview_pop_split(&strview_part_shifted, move_src - str.data);
+					strview_part_left_behind = strview_split_index(&strview_part_shifted, move_src - str.data);
 				strview_part_shifted.data += move_dst-move_src;
 			};
 		};

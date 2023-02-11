@@ -107,18 +107,18 @@
 /*	Return a strview_t representing the contents of the source string up to, but not including, any of the delimiters.
 	Additionally this text, and the delimeter itself is removed (popped) from the source string.
 	If no delimeter is found, the returned string is the entire source string, and the source string becomes invalid */
-	strview_t strview_pop_first_split(strview_t* strview_ptr, strview_t delimiters);
+	strview_t strview_split_first_delimeter(strview_t* strview_ptr, strview_t delimiters);
 
-//	Same as strview_pop_first_split, ignoring case on the delimiters
-	strview_t strview_pop_first_split_nocase(strview_t* strview_ptr, strview_t delimiters);
+//	Same as strview_split_first_delimeter, ignoring case on the delimiters
+	strview_t strview_split_first_delimiter_nocase(strview_t* strview_ptr, strview_t delimiters);
 
 /*	Return a strview_t representing the contents of the source string from (but not including) the last delimiter found.
 	Additionally this text, and the delimeter itself is removed (popped) from the end of the source string.
 	If no delimeter is found the returned string is the entire source string, and the source string becomes invalid */
-	strview_t strview_pop_last_split(strview_t* strview_ptr, strview_t delimiters);
+	strview_t strview_split_last_delimeter(strview_t* strview_ptr, strview_t delimiters);
 
-//	Same as strview_pop_last_split, ignoring case on the delimiters
-	strview_t strview_pop_last_split_nocase(strview_t* strview_ptr, strview_t delimiters);
+//	Same as strview_split_last_delimeter, ignoring case on the delimiters
+	strview_t strview_split_last_delimeter_nocase(strview_t* strview_ptr, strview_t delimiters);
 
 /*	Split a strview_t at a specified index n.
 	For n >= 0
@@ -131,7 +131,7 @@
 		Additionally the last -n characters are removed (popped) from the end of the source string.
 		If -n is greater than the size of the source string ALL characters will be popped.
 */
-	strview_t strview_pop_split(strview_t* strview_ptr, int index);
+	strview_t strview_split_index(strview_t* strview_ptr, int index);
 
 /*	Split a strview_t at a position specified by pos
 
@@ -143,7 +143,7 @@
 
 	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
 */
-	strview_t strview_pop_left(strview_t* strview_ptr, strview_t pos);
+	strview_t strview_split_left_of_view(strview_t* strview_ptr, strview_t pos);
 
 /*	Split a strview_t at a position specified by pos
 
@@ -154,13 +154,13 @@
 
 	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
 */
-	strview_t strview_pop_right(strview_t* strview_ptr, strview_t pos);
+	strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos);
 
 /*	Return the first char of str, and remove it from the str.
 	Returns 0 if there are no characters in str.
 	If str is known to contain at least one character, it is the equivalent of:
-		strview_pop_split(&str, 1).data[0]
-	Only it avoids dereferencing a NULL pointer in the case where strview_pop_split() returns an invalid str.
+		strview_split_index(&str, 1).data[0]
+	Only it avoids dereferencing a NULL pointer in the case where strview_split_index() returns an invalid str.
 */
 	char strview_pop_first_char(strview_t* strview_ptr);
 
@@ -179,7 +179,7 @@
 		This variable stores the state of the eol discriminator, regarding if a future CR or LF needs to be ignored.
 		It's initial value should be 0.
 */
-	strview_t strview_pop_line(strview_t* strview_ptr, char* eol);
+	strview_t strview_split_line(strview_t* strview_ptr, char* eol);
 
 
 //	Convert number to long long

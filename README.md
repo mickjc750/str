@@ -160,7 +160,7 @@ Some special cases to consider:
 * If **needle** is invalid, or if **haystack** is invalid, it will not be found.
 
 &nbsp;
-## strview_t strview_pop_first_split(strview_t* strview_ptr, strview_t delimiters);
+## strview_t strview_split_first_delimeter(strview_t* strview_ptr, strview_t delimiters);
  Return a **strview_t** representing the contents of the source string up to, but not including, any of characters in **delimiters**.
  Additionally, the contents of the returned **strview_t**, and the delimiter character itself is removed (popped) from the input string.
  If no delimiter is found, the returned string is the entire source string, and the source string becomes invalid.
@@ -168,24 +168,24 @@ Some special cases to consider:
 Example usage:
 
     strview_t date = cstr("2022/10/03");
-    strview_t year  = strview_pop_first_split(&date, cstr("/"));
-    strview_t month = strview_pop_first_split(&date, cstr("/"));
-    strview_t day   = strview_pop_first_split(&date, cstr("/"));
+    strview_t year  = strview_split_first_delimeter(&date, cstr("/"));
+    strview_t month = strview_split_first_delimeter(&date, cstr("/"));
+    strview_t day   = strview_split_first_delimeter(&date, cstr("/"));
 
 &nbsp;
-## strview_t strview_pop_last_split(strview_t* strview_ptr, strview_t delimiters);
- Same as **strview_pop_first_split()** but searches from the end of the string backwards.
+## strview_t strview_split_last_delimeter(strview_t* strview_ptr, strview_t delimiters);
+ Same as **strview_split_first_delimeter()** but searches from the end of the string backwards.
 
 &nbsp;
-## strview_t strview_pop_first_split_nocase(strview_t* strview_ptr, strview_t delimiters);
-Same as **strview_pop_first_split()** but ignores the case of the delimiters
+## strview_t strview_split_first_delimiter_nocase(strview_t* strview_ptr, strview_t delimiters);
+Same as **strview_split_first_delimeter()** but ignores the case of the delimiters
 
 &nbsp;
-## strview_t strview_pop_last_split_nocase(strview_t* strview_ptr, strview_t delimiters);
-Same as **strview_pop_last_split()** but ignores the case of the delimiters
+## strview_t strview_split_last_delimeter_nocase(strview_t* strview_ptr, strview_t delimiters);
+Same as **strview_split_last_delimeter()** but ignores the case of the delimiters
 
 &nbsp;
-## strview_t strview_pop_split(strview_t* strview_ptr, int index);
+## strview_t strview_split_index(strview_t* strview_ptr, int index);
 Split a strview_t at a specified index n.
 * For n >= 0
  Return a strview_t representing the first n characters of the source string.
@@ -203,11 +203,11 @@ Return the first char of str, and remove it from the str.
 Returns 0 if there are no characters in str.
  If str is known to contain at least one character, it is the equivalent of:
 
-	strview_pop_split(&str, 1).data[0]
-Only it avoids dereferencing a NULL pointer in the case where strview_pop_split() would return an invalid str due to the str being empty.
+	strview_split_index(&str, 1).data[0]
+Only it avoids dereferencing a NULL pointer in the case where strview_split_index() would return an invalid str due to the str being empty.
 
 &nbsp;
-## strview_t strview_pop_line(strview_t* strview_ptr, char* eol);
+## strview_t strview_split_line(strview_t* strview_ptr, char* eol);
 Returns a strview_t representing the first line within the source string, not including the eol terminator.
 The returned line and the terminator are removed (popped) from the source string.
 If a line terminator is not found, an invalid strview_t is returned and the source string is unmodified.

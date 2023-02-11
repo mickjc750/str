@@ -207,7 +207,7 @@ strview_t strview_find_last(strview_t haystack, strview_t needle)
 	return result;
 }
 
-strview_t strview_pop_first_split(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_first_delimeter(strview_t* strview_ptr, strview_t delimiters)
 {
 	strview_t result = STRVIEW_INVALID;
 	
@@ -217,7 +217,7 @@ strview_t strview_pop_first_split(strview_t* strview_ptr, strview_t delimiters)
 	return result;
 }
 
-strview_t strview_pop_first_split_nocase(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_first_delimiter_nocase(strview_t* strview_ptr, strview_t delimiters)
 {
 	strview_t result = STRVIEW_INVALID;
 	
@@ -227,7 +227,7 @@ strview_t strview_pop_first_split_nocase(strview_t* strview_ptr, strview_t delim
 	return result;
 }
 
-strview_t strview_pop_last_split(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_last_delimeter(strview_t* strview_ptr, strview_t delimiters)
 {
 	strview_t result = STRVIEW_INVALID;
 	
@@ -237,7 +237,7 @@ strview_t strview_pop_last_split(strview_t* strview_ptr, strview_t delimiters)
 	return result;
 }
 
-strview_t strview_pop_last_split_nocase(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_last_delimeter_nocase(strview_t* strview_ptr, strview_t delimiters)
 {
 	strview_t result = STRVIEW_INVALID;
 	
@@ -247,7 +247,7 @@ strview_t strview_pop_last_split_nocase(strview_t* strview_ptr, strview_t delimi
 	return result;
 }
 
-strview_t strview_pop_split(strview_t* strview_ptr, int index)
+strview_t strview_split_index(strview_t* strview_ptr, int index)
 {
 	strview_t result = STRVIEW_INVALID;
 
@@ -265,7 +265,7 @@ char strview_pop_first_char(strview_t* strview_ptr)
 	return result;
 }
 
-strview_t strview_pop_line(strview_t* strview_ptr, char* eol)
+strview_t strview_split_line(strview_t* strview_ptr, char* eol)
 {
 	strview_t result = STRVIEW_INVALID;
 	strview_t src;
@@ -280,7 +280,7 @@ strview_t strview_pop_line(strview_t* strview_ptr, char* eol)
 				strview_pop_first_char(&src);
 		};
 
-		result = strview_pop_first_split(&src, cstr("\r\n"));
+		result = strview_split_first_delimeter(&src, cstr("\r\n"));
 
 		if(strview_is_valid(src))	//a line ending was found
 		{
@@ -382,7 +382,7 @@ strview_float_t strview_to_float(strview_t str)
 	return result;
 }
 
-strview_t strview_pop_left(strview_t* strview_ptr, strview_t pos)
+strview_t strview_split_left_of_view(strview_t* strview_ptr, strview_t pos)
 {
 	strview_t result = STRVIEW_INVALID;
 	if(strview_ptr && strview_is_valid(*strview_ptr) && strview_is_valid(pos))
@@ -393,7 +393,7 @@ strview_t strview_pop_left(strview_t* strview_ptr, strview_t pos)
 	return result;
 }
 
-strview_t strview_pop_right(strview_t* strview_ptr, strview_t pos)
+strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos)
 {
 	strview_t result = STRVIEW_INVALID;
 	strview_t src;
