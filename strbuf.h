@@ -175,7 +175,7 @@ then:
 
 /*	Use a custom fetch function to append data to a buffer
 	The fetch function must have the following signature and behaviour:
-	int fetch(void* dst, void* dst_size, void* fetcher_vars);
+	int fetch(void* dst, int dst_size, void* fetcher_vars);
 	Where:
 		dst is the address to write data
 		dst_size is the maximum number of bytes to write, this will be passed the amount of free space in the buffer (which may be 0)
