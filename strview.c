@@ -18,6 +18,8 @@
 	#define CASE_SENSETIVE		true
 	#define NOT_CASE_SENSETIVE	false
 
+	#define BASE_PREFIX_LEN	2
+
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
@@ -28,9 +30,20 @@
 	static strview_t split_last_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
 	static strview_t split_index(strview_t* strview_ptr, int index);
 
-	static unsigned long long interpret_hex(strview_t str);
-	static unsigned long long interpret_bin(strview_t str);
-	static unsigned long long interpret_dec(strview_t str);
+	static int consume_signed(long long* dst, strview_t* src, int options, long long limit_min, long long limit_max);
+	static int consume_unsigned(unsigned long long* dst, strview_t* src, int options, unsigned long long limit_max);
+
+	void consume_base_prefix(int* base, strview_t* src, int options);
+	static int consume_digits(unsigned long long* dst, strview_t *src, int base);
+	static int consume_decimal_digits(unsigned long long* dst, strview_t* str);
+	static int consume_hex_digits(unsigned long long* dst, strview_t* str);
+	static int consume_bin_digits(unsigned long long* dst, strview_t* str);
+
+	static bool upper_nibble_ull_is_zero(unsigned long long i);
+	static bool upper_bit_ull_is_zero(unsigned long long i);
+
+	static int xdigit_value(char c);
+	static bool isbdigit(char c);
 
 	#ifndef STR_NO_FLOAT
 	static strview_float_t interpret_float(strview_t str);
@@ -303,54 +316,110 @@ strview_t strview_split_line(strview_t* strview_ptr, char* eol)
 	return result;
 }
 
-long long strview_to_ll(strview_t str)
+int strview_consume_uchar(unsigned char* dst, strview_t* src, int options)
 {
-	unsigned long long magnitude = 0;
-	bool is_neg = false;
+	int err;
+	unsigned long long val;
 
-	if(str.data)
-	{
-		str = strview_trim(str, cstr(" "));
-		
-		if(str.size)
-		{
-			if(str.data[0] == '+')
-				str = strview_sub(str, 1, INT_MAX);
-			else if(str.data[0] == '-')
-			{
-				is_neg = true;
-				str = strview_sub(str, 1, INT_MAX);
-			};
-		};
+	err = consume_unsigned(&val, src, options, UCHAR_MAX);
+	if(!err && dst)
+		*dst = (unsigned char)val;
 
-		magnitude = strview_to_ull(str);
-	};
-
-	return is_neg ? magnitude*-1 : magnitude;
+	return err;
 }
 
-unsigned long long strview_to_ull(strview_t str)
+int strview_consume_ushort(unsigned short* dst, strview_t* src, int options)
 {
-	long long result = 0;
-	strview_t base_str;
+	int err;
+	unsigned long long val;
 
-	if(str.data)
-	{
-		str = strview_trim(str, cstr(" "));
+	err = consume_unsigned(&val, src, options, USHRT_MAX);
+	if(!err && dst)
+		*dst = (unsigned short)val;
 
-		base_str = strview_sub(str, 0, 2);
-		if( strview_is_match(base_str, cstr("0x"))
-		||	strview_is_match(base_str, cstr("0X")))
-			result = interpret_hex(strview_sub(str, 2,INT_MAX));
+	return err;
+}
 
-		else if(strview_is_match(base_str, cstr("0b")))
-			result = interpret_bin(strview_sub(str, 2,INT_MAX));
+int strview_consume_uint(unsigned int* dst, strview_t* src, int options)
+{
+	int err;
+	unsigned long long val;
 
-		else
-			result = interpret_dec(str);
-	};
+	err = consume_unsigned(&val, src, options, UINT_MAX);
+	if(!err && dst)
+		*dst = (unsigned int)val;
 
-	return result;
+	return err;
+}
+
+int strview_consume_ulong(unsigned long* dst, strview_t* src, int options)
+{
+	int err;
+	unsigned long long val;
+
+	err = consume_unsigned(&val, src, options, ULONG_MAX);
+	if(!err && dst)
+		*dst = (unsigned long)val;
+
+	return err;
+}
+
+int strview_consume_ullong(unsigned long long* dst, strview_t* src, int options)
+{
+	return consume_unsigned(dst, src, options, ULLONG_MAX);
+}
+
+int strview_consume_char(char* dst, strview_t* src, int options)
+{
+	int err;
+	long long val;
+
+	err = consume_signed(&val, src, options, CHAR_MIN, CHAR_MAX);
+	if(!err && dst)
+		*dst = (char)val;
+
+	return err;
+}
+
+int strview_consume_short(short* dst, strview_t* src, int options)
+{
+	int err;
+	long long val;
+
+	err = consume_signed(&val, src, options, SHRT_MIN, SHRT_MAX);
+	if(!err && dst)
+		*dst = (short)val;
+
+	return err;
+}
+
+int strview_consume_int(int* dst, strview_t* src, int options)
+{
+	int err;
+	long long val;
+
+	err = consume_signed(&val, src, options, INT_MIN, INT_MAX);
+	if(!err && dst)
+		*dst = (int)val;
+
+	return err;
+}
+
+int strview_consume_long(long* dst, strview_t* src, int options)
+{
+	int err;
+	long long val;
+
+	err = consume_signed(&val, src, options, LONG_MIN, LONG_MAX);
+	if(!err && dst)
+		*dst = (long)val;
+
+	return err;
+}
+
+int strview_consume_llong(long long* dst, strview_t* src, int options)
+{
+	return consume_signed(dst, src, options, LLONG_MIN, LLONG_MAX);
 }
 
 strview_float_t strview_to_float(strview_t str)
@@ -418,49 +487,282 @@ strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos)
 // Private functions
 //********************************************************************************************************
 
-static unsigned long long interpret_hex(strview_t str)
+static int consume_signed(long long* dst, strview_t* src, int options, long long limit_min, long long limit_max)
 {
-	unsigned long long result = 0;
+	int err = 0;
+	bool is_neg = false;
+	strview_t num = STRVIEW_INVALID;
+	strview_t base_prefix;
+	strview_t view;
+	int base = 10;
+	unsigned long long val_ull;
+	unsigned long long val_ll;
+	char c;
 
-	while(str.size && isxdigit(str.data[0]))
+	if(options & STR_BASE_BIN)
+		base = 2;
+	else if(options & STR_BASE_HEX)
+		base = 16;
+
+	if(src)
+		num = *src;
+
+	if(!strview_is_valid(num))
+		err = EINVAL;
+
+	//consume whitespace
+	if(!err && !(options & STR_NOSPACE))
+		num = strview_trim_start(num, cstr(" "));
+
+	//consume sign
+	if(!err && !(options & STR_NOSIGN))
 	{
-		result <<= 4;
-		if(isalpha(str.data[0]))
-			result += 10 + (str.data[0] & 0x4F) - 'A';
+		if(num.data[0] == '-')
+		{
+			is_neg = true;
+			strview_pop_first_char(&num);
+		}
+		else if(num.data[0] == '+')
+			strview_pop_first_char(&num);
+	};
+
+	//consume base prefix and digits
+	if(!err)
+	{
+		consume_base_prefix(&base, &num, options);
+		err = consume_digits(&val_ull, &num, base);
+	};
+
+	//check if over range for signed ll before applying sign
+	if(!err)
+	{
+		if(val_ull > (unsigned long long)LLONG_MAX)
+			err = ERANGE;
+		else if(is_neg)
+			val_ll = val_ull * -1;
 		else
-			result += str.data[0] & 0x0F;
-		str = strview_sub(str, 1, INT_MAX);
+			val_ll = val_ull;
 	};
+
+	//check if within range of destination type
+	if(!err && !(limit_min <= val_ll && val_ll <= limit_max))
+		err = ERANGE;
+
+	//provide output
+	if(!err)
+	{
+		if(dst)
+			*dst = val_ll;
+		if(src)
+			*src = num;
+	};		
+
+	return err;
+}
+
+static int consume_unsigned(unsigned long long* dst, strview_t* src, int options, unsigned long long limit_max)
+{
+	int err = 0;
+	strview_t num = STRVIEW_INVALID;
+	strview_t base_prefix;
+	strview_t view;
+	int base = 10;
+	unsigned long long val_ull;
+	char c;
+
+	if(options & STR_BASE_BIN)
+		base = 2;
+	else if(options & STR_BASE_HEX)
+		base = 16;
+
+	if(src)
+		num = *src;
+
+	if(!strview_is_valid(num))
+		err = EINVAL;
+
+	//consume whitespace
+	if(!err && !(options & STR_NOSPACE))
+		num = strview_trim_start(num, cstr(" "));
+
+	//consume base prefix and digits
+	if(!err)
+	{
+		consume_base_prefix(&base, &num, options);
+		err = consume_digits(&val_ull, &num, base);
+	};
+
+	//check if within range of destination type
+	if(!err && val_ull > limit_max)
+		err = ERANGE;
+
+	//provide output
+	if(!err)
+	{
+		if(dst)
+			*dst = val_ull;
+		if(src)
+			*src = num;
+	};		
+
+	return err;
+}
+
+static void consume_base_prefix(int* base, strview_t* src, int options)
+{
+	strview_t base_prefix = strview_sub(*src, 0, BASE_PREFIX_LEN);
+
+	if(!(options & STR_NOBX))
+	{
+		if(!(options & STR_BASE_HEX) && strview_is_match_nocase(base_prefix, cstr("0b")))
+		{
+			*src = strview_sub(*src, BASE_PREFIX_LEN, INT_MAX);
+			base = 2;
+		}
+		else if(!(options & STR_BASE_BIN) && strview_is_match_nocase(base_prefix, cstr("0x")))
+		{
+			*src = strview_sub(*src, BASE_PREFIX_LEN, INT_MAX);
+			base = 16;
+		};
+	};
+}
+
+static int consume_digits(unsigned long long* dst, strview_t *src, int base)
+{
+	int err;
+	if(base == 10)
+		err = consume_decimal_digits(dst, src);
+	else if(base == 16)
+		err = consume_hex_digits(dst, src);
+	else
+		err = consume_bin_digits(dst, src);
+	return err;
+}
+
+static int consume_decimal_digits(unsigned long long* dst, strview_t* str)
+{
+	#define UI_LIMIT 	((unsigned int)(UINT_MAX/10-9))
+	#define UL_LIMIT 	((unsigned long)(ULONG_MAX/10-9))
+	#define ULL_LIMIT 	((unsigned long long)(ULLONG_MAX/10-9))
+
+	int err;
+	unsigned int res_ui = 0;
+	unsigned long res_ul;
+	unsigned long long res_ull;
+
+	if(str->size && isdigit(str->data[0]))
+		err = 0;
+	else
+		err = EINVAL;
+
+	if(!err)
+	{
+		*str = strview_trim_start(*str, cstr("0"));
+		while(str->size && isdigit(str->data[0]) && res_ui < UI_LIMIT)
+		{
+			res_ui *= 10;
+			res_ui += strview_pop_first_char(str) & 0x0F;
+		};
+		res_ul = res_ui;
+		while(str->size && isdigit(str->data[0]) && res_ul < UL_LIMIT)
+		{
+			res_ul *= 10;
+			res_ul += strview_pop_first_char(str) & 0x0F;
+		};
+		res_ull = res_ul;
+		while(str->size && isdigit(str->data[0]) && res_ull < ULL_LIMIT)
+		{
+			res_ull *= 10;
+			res_ull += strview_pop_first_char(str) & 0x0F;
+		};
+		if(str->size && isdigit(str->data[0]))
+			err = ERANGE;
+	};
+
+	if(!err && dst)
+		*dst = res_ull;
+
+	#undef UI_LIMIT
+	#undef UL_LIMIT
+	#undef ULL_LIMIT
+	return err;
+}
+
+static int consume_hex_digits(unsigned long long* dst, strview_t* str)
+{
+	unsigned long long result = 0;
+	int err;
+
+	if(str->size && isxdigit(str->data[0]))
+		err = 0;
+	else
+		err = EINVAL;
+
+	if(!err)
+	{
+		while(str->size && isxdigit(str->data[0]))
+		{
+			if(!upper_nibble_ull_is_zero(result))
+				err = ERANGE;
+			result <<= 4;
+			result += xdigit_value(strview_pop_first_char(str));
+		};
+	};
+
+	if(!err && dst)
+		*dst = result;
+
+	return err;
+}
+
+static int consume_bin_digits(unsigned long long* dst, strview_t* str)
+{
+	unsigned long long result = 0;
+	int err;
+
+	if(str->size && isbdigit(str->data[0]))
+		err = 0;
+	else
+		err = EINVAL;
+
+	if(!err)
+	{
+		while(str->size && isbdigit(str->data[0]))
+		{
+			if(!upper_bit_ull_is_zero(result))
+				err = ERANGE;
+			result <<= 1;
+			result |= strview_pop_first_char(str) & 1;
+		};
+	};
+
+	if(!err && dst)
+		*dst = result;
 
 	return result;
 }
 
-static unsigned long long interpret_bin(strview_t str)
+static bool upper_nibble_ull_is_zero(unsigned long long i)
 {
-	unsigned long long result = 0;
-
-	while(str.size && (str.data[0]=='0' || str.data[0]=='1'))
-	{
-		result <<= 1;
-		result |= str.data[0] == '1';
-		str = strview_sub(str, 1, INT_MAX);
-	};
-
-	return result;
+	return !(i & (0x0Full << (sizeof(unsigned long long)*8-4)));
 }
 
-static unsigned long long interpret_dec(strview_t str)
+static bool upper_bit_ull_is_zero(unsigned long long i)
 {
-	unsigned long long result = 0;
-	
-	while(str.size && isdigit(str.data[0]))
-	{
-		result *= 10;
-		result += str.data[0] & 0x0F;
-		str = strview_sub(str, 1, INT_MAX);
-	};
+	return !(i & (0x01ull << (sizeof(unsigned long long)*8-1)));
+}
 
-	return result;
+static int xdigit_value(char c)
+{
+	c &= 0x5F;
+	if(c & 0x40)
+		c += 9;
+	return c & 0x0F;
+}
+
+static bool isbdigit(char c)
+{
+	return (c & 0x7E) == 0x30;
 }
 
 #ifndef STR_NO_FLOAT
