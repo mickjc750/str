@@ -1,18 +1,4 @@
 /*/
- The following may be added to compiler options:
-
-	The default precision for floating point conversions id double.
-	If you with to change this the following options are available.
-
-	-DSTR_NO_FLOAT
-		Don't provide floating point conversions. str.c will not need linking against the math library (-lm)
-	
-	-DSTR_SUPPORT_LONG_DOUBLE
-		Convert floating point values with long double precision.
-
-	-DSTR_SUPPORT_FLOAT
-		Convert floating point values with float precision.
-
 */
 
 #ifndef _STRVIEW_H_
@@ -45,11 +31,14 @@
 //	Do not accept leading whitespace
 	#define STR_NOSPACE		(1<<4)
 
+//	Do not accept exponent for floating point types
+	#define STR_NOEXP		(1<<5)
+
 //	Accept and evaluate trailing Si prefix
-//	#define STR_SI			(1<<5)	todo
+//	#define STR_SI			(1<<6)	todo
 
 //	Accept and evaluate trailing binary Si prefix
-//	#define STR_SIB			(1<<6)	todo
+//	#define STR_SIB			(1<<7)	todo
 
 
 //	These macros can be used with printf for printing str types using dynamic precision.
@@ -69,7 +58,7 @@
 	#define cstr_SL(sl_arg) ((strview_t){.data=(sl_arg), .size=sizeof(sl_arg)-1})
 
 //	Assign to a strview_t to make it invalid
-	#define STRVIEW_INVALID		((strview_t){.data = NULL, .size = 0})	
+	#define STRVIEW_INVALID		((strview_t){.data = NULL, .size = 0})
 
 //	Generic macro for calling integer conversions based on the variable type
 	#define strview_consume_value(dst, src, opt) _Generic((dst),\
@@ -82,7 +71,9 @@
 		short*:					strview_consume_short((dst), (src), (opt))\
 		int*:					strview_consume_int((dst), (src), (opt))\
 		long*:					strview_consume_long((dst), (src), (opt))\
-		long long*:				strview_consume_llong((dst), (src), (opt)))
+		long long*:				strview_consume_llong((dst), (src), (opt))\
+		float*:					strview_consume_float((dst), (src), (opt))\
+		)
 
 //********************************************************************************************************
 // Public variables
@@ -107,6 +98,7 @@
 	int strview_consume_int(int* dst, strview_t* src, int options);
 	int strview_consume_long(long* dst, strview_t* src, int options);
 	int strview_consume_llong(long long* dst, strview_t* src, int options);
+	int strview_consume_float(float* dst, strview_t* src, int options);
 
 //	Return a strview_t from a null terminated const char string.
 //	If the argument is a string literal, cstr_SL() may be used instead, to prevent traversing the string literal to measure it's length
@@ -234,22 +226,6 @@
 		It's initial value should be 0.
 */
 	strview_t strview_split_line(strview_t* strview_ptr, char* eol);
-
-
-/*	Convert number to float
-	By default strview_to_float() works with and returns double
-	To support long double define STR_SUPPORT_LONG_DOUBLE
-	Or, to not supprt float conversions at all, define STR_NO_FLOAT*/
-	#ifndef STR_NO_FLOAT
-		#ifdef STR_SUPPORT_LONG_DOUBLE
-			typedef long double strview_float_t;
-		#elif defined STR_SUPPORT_FLOAT
-			typedef float strview_float_t;
-		#else
-			typedef double strview_float_t;
-		#endif
-		strview_float_t strview_to_float(strview_t str);
-	#endif
 
 
 #endif

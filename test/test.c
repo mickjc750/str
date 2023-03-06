@@ -14,7 +14,7 @@
 //********************************************************************************************************
 // Configurable defines
 //********************************************************************************************************
-
+ 
 	#define STATIC_BUFFER_SIZE	200
 
 //********************************************************************************************************
@@ -22,15 +22,6 @@
 //********************************************************************************************************
 
 	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
-
-	#define TEST_STR_TO_FLOAT(fmt, arg)															\
-	do{																							\
-		strview_t str = cstr(#arg);																	\
-		double desired = arg;																	\
-		double result = strview_to_float(str);														\
-		DBG("\"%"PRIstr"\" returns "fmt, PRIstrarg(str), result);								\
-		assert(desired-fabs(desired*.001) < result && result < desired+fabs(desired*.001));		\
-	}while(0)
 
 
 	#define TEST_LINE_POP(arg1)								\
@@ -78,8 +69,6 @@ int main(int argc, const char* argv[])
 	strbuf_t* buf;
 	strview_t str1, str2, str3, search_result;
 	const char* chrptr;
-	unsigned long long tmpull;
-	long long tmpll;
 
 	printf("\n\n");
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
@@ -571,31 +560,6 @@ int main(int argc, const char* argv[])
 
 	DBG("** OK **\n\n\n");
 
-	DBG("** Testing number conversions **\n");
-
-	tmpll = strview_to_ll(cstr("  -289765138"));
-	assert(tmpll == -289765138);
-
-	tmpll = strview_to_ll(cstr("-289765138  "));
-	assert(tmpll == -289765138);
-
-	tmpll = strview_to_ll(cstr("  289765138"));
-	assert(tmpll == 289765138);
-
-	tmpll = strview_to_ll(cstr("289765138  "));
-	assert(tmpll == 289765138);
-
-	tmpull = strview_to_ull(cstr("0xFf715cC  "));
-	assert(tmpull == 0xFF715CC);
-
-	tmpull = strview_to_ull(cstr("  0XFf715cC"));
-	assert(tmpull == 0xFF715CC);
-
-	tmpull = strview_to_ull(cstr("0b110011010111"));
-	assert(tmpull == 0b110011010111);
-
-	DBG("** OK **\n\n\n");
-
 	DBG("** Testing string_compare() **\n");
 	assert(strview_compare(cstr("abd"), cstr("abc")) > 0);
 	assert(strview_compare(cstr("aba"), cstr("abd")) < 0);
@@ -607,41 +571,6 @@ int main(int argc, const char* argv[])
 	assert(!strview_compare(cstr(""), str1));	//an empty string == an invalid string for strview_compare();
 
 	DBG("** OK **\n\n\n");
-
-	DBG("** Testing strview_to_float() **\n");
-
-	str1 = cstr("inf");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
-	assert(strview_to_float(str1) == INFINITY);
-
-	str1 = cstr("-inf");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
-	assert(strview_to_float(str1) == -INFINITY);
-
-	str1 = cstr("nan");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
-	assert(strview_to_float(str1) != strview_to_float(str1));
-
-	str1 = cstr("fred");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
-	assert(strview_to_float(str1) != strview_to_float(str1));
-
-	str1 = cstr(".");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
-	assert(strview_to_float(str1) != strview_to_float(str1));
-
-	str1 = cstr(".E");
-	DBG("\"%"PRIstr"\" returns %f", PRIstrarg(str1), strview_to_float(str1));
-	assert(strview_to_float(str1) != strview_to_float(str1));
-
-	TEST_STR_TO_FLOAT("%f", 183.4179);
-	TEST_STR_TO_FLOAT("%f", -183.4179);
-	TEST_STR_TO_FLOAT("%e", 1000000);
-	TEST_STR_TO_FLOAT("%e", 148.913E-23);
-	TEST_STR_TO_FLOAT("%f", .002);
-	TEST_STR_TO_FLOAT("%f", -.002);
-	TEST_STR_TO_FLOAT("%.9f", .100000002);
-	TEST_STR_TO_FLOAT("%.9f", 39E-8);
 
 	DBG("\n\n");
 	DBG("** Testing strview_split_index() **\n");
@@ -997,30 +926,6 @@ This text has no line ending";
 
 	return 0;
 }
-
-
-/*	Split a strview_t at a position specified by pos
-
-	If pos references characters within *strview_ptr, return a strview_t representing all characters to the left of pos.
-	If pos references the upper limit of *strview_ptr, the entire *strview_ptr is returned.
-	If pos references the start of *strview_ptr, a valid strview_t of length 0 is returned.
-
-	The returned characters are removed (popped) from *strview_ptr
-
-	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
-*/
-	strview_t strview_split_left_of_view(strview_t* strview_ptr, strview_t pos);
-
-/*	Split a strview_t at a position specified by pos
-
-	If pos references characters within *strview_ptr, return a strview_t representing all characters to the right of pos.
-	If the upper limit of pos matches the upper limit of *strview_ptr, a valid strview_t of length 0 is returned.
-
-	The returned characters are removed (popped) from *strview_ptr
-
-	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
-*/
-	strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos);
 
 
 //********************************************************************************************************

@@ -33,7 +33,7 @@
 	static int consume_signed(long long* dst, strview_t* src, int options, long long limit_min, long long limit_max);
 	static int consume_unsigned(unsigned long long* dst, strview_t* src, int options, unsigned long long limit_max);
 
-	void consume_base_prefix(int* base, strview_t* src, int options);
+	static void consume_base_prefix(int* base, strview_t* src, int options);
 	static int consume_digits(unsigned long long* dst, strview_t *src, int base);
 	static int consume_decimal_digits(unsigned long long* dst, strview_t* str);
 	static int consume_hex_digits(unsigned long long* dst, strview_t* str);
@@ -44,10 +44,6 @@
 
 	static int xdigit_value(char c);
 	static bool isbdigit(char c);
-
-	#ifndef STR_NO_FLOAT
-	static strview_float_t interpret_float(strview_t str);
-	#endif
 
 	static int memcmp_nocase(const char* a, const char* b, size_t size);
 
@@ -422,35 +418,6 @@ int strview_consume_llong(long long* dst, strview_t* src, int options)
 	return consume_signed(dst, src, options, LLONG_MIN, LLONG_MAX);
 }
 
-strview_float_t strview_to_float(strview_t str)
-{
-	strview_float_t result = 0;
-	bool is_neg = false;
-
-	str = strview_trim(str, cstr(" "));
-
-	if(!str.size)
-		result = NAN;
-	else if(strview_is_match_nocase(str, cstr("nan")))
-		result = NAN;
-	else if(str.data[0] == '+')
-		str = strview_sub(str, 1, INT_MAX);
-	else if(str.data[0] == '-')
-	{
-		is_neg = true;
-		str = strview_sub(str, 1, INT_MAX);
-	};
-	if(strview_is_match_nocase(str, cstr("inf")))
-		result = INFINITY;
-	else if(result == 0)
-		result = interpret_float(str);
-
-	if((result == result) && is_neg)
-		result *= -1;
-
-	return result;
-}
-
 strview_t strview_split_left_of_view(strview_t* strview_ptr, strview_t pos)
 {
 	strview_t result = STRVIEW_INVALID;
@@ -487,17 +454,142 @@ strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos)
 // Private functions
 //********************************************************************************************************
 
+static int consume_float(float* dst, strview_t* src, int options)
+{
+	int err = 0;
+	strview_t num = STRVIEW_INVALID;
+	strview_t exp_view;
+	strview_t fractional_view;
+	strview_t post_fractional_view;
+	bool is_neg = false;
+	bool is_special = false;
+	float value;
+	unsigned long long integral_val;
+	unsigned long long fractional_val;
+	int exp_value;
+	bool got_integral = false;
+	bool got_fractional = false;
+	int fractional_exponent;
+	bool got_exponent = false;
+
+	if(src)
+		num = *src;
+
+	if(!strview_is_valid(num))
+		err = EINVAL;
+
+	//consume whitespace
+	if(!err && !(options & STR_NOSPACE))
+		num = strview_trim_start(num, cstr(" "));
+
+	//consume sign
+	if(!err && !(options & STR_NOSIGN))
+	{
+		if(num.data[0] == '-')
+		{
+			is_neg = true;
+			strview_pop_first_char(&num);
+		}
+		else if(num.data[0] == '+')
+			strview_pop_first_char(&num);
+	};
+
+	//consume special cases inf and nan
+	if(!err)
+	{
+		if(strview_is_match_nocase(num, cstr("inf")))
+		{
+			value = INFINITY;
+			num = strview_sub(num, 3, INT_MAX);
+			is_special = true;
+		}
+		else if(strview_is_match_nocase(num, cstr("nan")))
+		{
+			value = NAN;
+			num = strview_sub(num, 3, INT_MAX);
+			is_special = true;
+		};
+	};
+
+	//consume integral digits
+	if(!err && !is_special)
+	{
+		err = consume_digits(&integral_val, &num, 10);
+		got_integral = (err == 0);
+		if(err == EINVAL)
+			err = 0;	// It is valid not to have integral digits  (number can start with .)
+		// else if the integral digits cannot be represented by an unsigned long long, fail with ERANGE
+	};
+
+	//get fractional digits
+	if(!err && !is_special)
+	{
+		if(num.size && num.data[0]=='.')
+		{
+			strview_pop_first_char(&num);
+			post_fractional_view = strview_trim_start(num, cstr("0123456789"));
+			fractional_view = num;
+			fractional_view = strview_split_left_of_view(&fractional_view, post_fractional_view);
+			fractional_view = strview_trim_end(fractional_view, cstr("0"));
+			err = consume_digits(&fractional_val, &fractional_view, 10);
+			got_fractional = (err == 0);
+			if(err == EINVAL)
+				err = 0;	// It is valid not to have fractional digits (FP number can end with . eg. "123.")
+			if(got_fractional)
+			{
+				fractional_exponent = fractional_view.size * -1;
+				num = post_fractional_view;
+			};
+		};
+		if(!err && !got_integral && !got_fractional)
+			err = EINVAL;
+	};
+
+	//get exponent
+	if(!err && !is_special && !(options & STR_NOEXP) && num.size && toupper(num.data[0])=='E')
+	{
+		exp_view = strview_sub(num, 1, INT_MAX);
+		err = strview_consume_int(&exp_value, &exp_view, STR_NOSPACE | STR_NOBX);
+		got_exponent = (err == 0);
+		if(got_exponent)
+			num = exp_view;
+		else if(err == EINVAL)
+			err = 0;	// an invalid exponent (non-numeric) simply means we don't consume the exponent.
+	};
+
+	// calculate/determine output value
+	if(!err && !is_special)
+	{
+		value = 0.0;
+		if(got_integral)
+			value += (float)integral_val;
+		if(got_fractional)
+			value += (float)fractional_val * powf(10, fractional_exponent);
+		if(got_exponent)
+			value *= powf(10, exp_value);
+		if(value == INFINITY)
+			err = ERANGE;
+	};
+
+	if(!err && dst)
+	{
+		if(value != value)
+			*dst = NAN;
+		else
+			*dst = is_neg ? -value:value;
+	};
+
+	return err;
+}
+
 static int consume_signed(long long* dst, strview_t* src, int options, long long limit_min, long long limit_max)
 {
 	int err = 0;
 	bool is_neg = false;
 	strview_t num = STRVIEW_INVALID;
-	strview_t base_prefix;
-	strview_t view;
 	int base = 10;
 	unsigned long long val_ull;
-	unsigned long long val_ll;
-	char c;
+	long long val_ll;
 
 	if(options & STR_BASE_BIN)
 		base = 2;
@@ -564,11 +656,8 @@ static int consume_unsigned(unsigned long long* dst, strview_t* src, int options
 {
 	int err = 0;
 	strview_t num = STRVIEW_INVALID;
-	strview_t base_prefix;
-	strview_t view;
 	int base = 10;
 	unsigned long long val_ull;
-	char c;
 
 	if(options & STR_BASE_BIN)
 		base = 2;
@@ -617,12 +706,12 @@ static void consume_base_prefix(int* base, strview_t* src, int options)
 		if(!(options & STR_BASE_HEX) && strview_is_match_nocase(base_prefix, cstr("0b")))
 		{
 			*src = strview_sub(*src, BASE_PREFIX_LEN, INT_MAX);
-			base = 2;
+			*base = 2;
 		}
 		else if(!(options & STR_BASE_BIN) && strview_is_match_nocase(base_prefix, cstr("0x")))
 		{
 			*src = strview_sub(*src, BASE_PREFIX_LEN, INT_MAX);
-			base = 16;
+			*base = 16;
 		};
 	};
 }
@@ -764,52 +853,6 @@ static bool isbdigit(char c)
 {
 	return (c & 0x7E) == 0x30;
 }
-
-#ifndef STR_NO_FLOAT
-static strview_float_t interpret_float(strview_t str)
-{
-	strview_float_t result = 0;
-	strview_float_t fractional_digit_weight = 1;
-	bool digit_found = false;
-	int exponent;
-
-	digit_found |= str.size && isdigit(str.data[0]);
-	while(str.size && isdigit(str.data[0]))
-	{
-		result *= 10;
-		result += str.data[0] & 0x0F;
-		str = strview_sub(str, 1, INT_MAX);
-	};
-
-	if(str.size && str.data[0]=='.')
-	{
-		str = strview_sub(str, 1, INT_MAX);
-
-		digit_found |= str.size && isdigit(str.data[0]);
-		while(str.size && isdigit(str.data[0]))
-		{
-			fractional_digit_weight /= 10.0;
-			result += (str.data[0] & 0x0F) * fractional_digit_weight;
-			str = strview_sub(str, 1, INT_MAX);
-		};
-	};
-
-	if(str.size && toupper(str.data[0])=='E')
-	{
-		str = strview_sub(str, 1, INT_MAX);
-		exponent = (int)strview_to_ll(str);
-		#ifdef STR_SUPPORT_FLOAT
-			result *= powf(10, exponent);
-		#elif defined STR_SUPPORT_LONG_DOUBLE
-			result *= powl(10, exponent);
-		#else
-			result *= pow(10, exponent);
-		#endif
-	};
-
-	return digit_found ? result:NAN;
-}
-#endif
 
 static bool contains_char(strview_t str, char c, bool case_sensetive)
 {
