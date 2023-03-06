@@ -18,6 +18,24 @@
 	#define CASE_SENSETIVE		true
 	#define NOT_CASE_SENSETIVE	false
 
+	#define BASE_PREFIX_LEN	2
+
+	typedef struct float_components_t
+	{
+		int options;
+		strview_t num;
+		bool is_neg;
+		bool is_special;
+		float special_value;
+		bool got_integral;
+		bool got_fractional;
+		bool got_exponent;
+		int fractional_exponent;
+		unsigned long long fractional_value;
+		unsigned long long integral_value;
+		int exp_value;
+	} float_components_t;
+
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
@@ -28,13 +46,26 @@
 	static strview_t split_last_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
 	static strview_t split_index(strview_t* strview_ptr, int index);
 
-	static unsigned long long interpret_hex(strview_t str);
-	static unsigned long long interpret_bin(strview_t str);
-	static unsigned long long interpret_dec(strview_t str);
+	static int consume_signed(long long* dst, strview_t* src, int options, long long limit_min, long long limit_max);
+	static int consume_unsigned(unsigned long long* dst, strview_t* src, int options, unsigned long long limit_max);
 
-	#ifndef STR_NO_FLOAT
-	static strview_float_t interpret_float(strview_t str);
-	#endif
+	static bool consume_sign(strview_t* num);
+	static void consume_base_prefix(int* base, strview_t* src, int options);
+	static int consume_digits(unsigned long long* dst, strview_t *src, int base);
+	static int consume_decimal_digits(unsigned long long* dst, strview_t* str);
+	static int consume_hex_digits(unsigned long long* dst, strview_t* str);
+	static int consume_bin_digits(unsigned long long* dst, strview_t* str);
+
+	static int process_float_components(float_components_t* fc);
+	static float consume_float_special(float_components_t* fc);
+	static int consume_fractional_digits(float_components_t* fc);
+	static int consume_exponent(float_components_t* fc);
+	
+	static bool upper_nibble_ull_is_zero(unsigned long long i);
+	static bool upper_bit_ull_is_zero(unsigned long long i);
+
+	static int xdigit_value(char c);
+	static bool isbdigit(char c);
 
 	static int memcmp_nocase(const char* a, const char* b, size_t size);
 
@@ -303,83 +334,110 @@ strview_t strview_split_line(strview_t* strview_ptr, char* eol)
 	return result;
 }
 
-long long strview_to_ll(strview_t str)
+int strview_consume_uchar(unsigned char* dst, strview_t* src, int options)
 {
-	unsigned long long magnitude = 0;
-	bool is_neg = false;
+	int err;
+	unsigned long long val;
 
-	if(str.data)
-	{
-		str = strview_trim(str, cstr(" "));
-		
-		if(str.size)
-		{
-			if(str.data[0] == '+')
-				str = strview_sub(str, 1, INT_MAX);
-			else if(str.data[0] == '-')
-			{
-				is_neg = true;
-				str = strview_sub(str, 1, INT_MAX);
-			};
-		};
+	err = consume_unsigned(&val, src, options, UCHAR_MAX);
+	if(!err && dst)
+		*dst = (unsigned char)val;
 
-		magnitude = strview_to_ull(str);
-	};
-
-	return is_neg ? magnitude*-1 : magnitude;
+	return err;
 }
 
-unsigned long long strview_to_ull(strview_t str)
+int strview_consume_ushort(unsigned short* dst, strview_t* src, int options)
 {
-	long long result = 0;
-	strview_t base_str;
+	int err;
+	unsigned long long val;
 
-	if(str.data)
-	{
-		str = strview_trim(str, cstr(" "));
+	err = consume_unsigned(&val, src, options, USHRT_MAX);
+	if(!err && dst)
+		*dst = (unsigned short)val;
 
-		base_str = strview_sub(str, 0, 2);
-		if( strview_is_match(base_str, cstr("0x"))
-		||	strview_is_match(base_str, cstr("0X")))
-			result = interpret_hex(strview_sub(str, 2,INT_MAX));
-
-		else if(strview_is_match(base_str, cstr("0b")))
-			result = interpret_bin(strview_sub(str, 2,INT_MAX));
-
-		else
-			result = interpret_dec(str);
-	};
-
-	return result;
+	return err;
 }
 
-strview_float_t strview_to_float(strview_t str)
+int strview_consume_uint(unsigned int* dst, strview_t* src, int options)
 {
-	strview_float_t result = 0;
-	bool is_neg = false;
+	int err;
+	unsigned long long val;
 
-	str = strview_trim(str, cstr(" "));
+	err = consume_unsigned(&val, src, options, UINT_MAX);
+	if(!err && dst)
+		*dst = (unsigned int)val;
 
-	if(!str.size)
-		result = NAN;
-	else if(strview_is_match_nocase(str, cstr("nan")))
-		result = NAN;
-	else if(str.data[0] == '+')
-		str = strview_sub(str, 1, INT_MAX);
-	else if(str.data[0] == '-')
-	{
-		is_neg = true;
-		str = strview_sub(str, 1, INT_MAX);
-	};
-	if(strview_is_match_nocase(str, cstr("inf")))
-		result = INFINITY;
-	else if(result == 0)
-		result = interpret_float(str);
+	return err;
+}
 
-	if((result == result) && is_neg)
-		result *= -1;
+int strview_consume_ulong(unsigned long* dst, strview_t* src, int options)
+{
+	int err;
+	unsigned long long val;
 
-	return result;
+	err = consume_unsigned(&val, src, options, ULONG_MAX);
+	if(!err && dst)
+		*dst = (unsigned long)val;
+
+	return err;
+}
+
+int strview_consume_ullong(unsigned long long* dst, strview_t* src, int options)
+{
+	return consume_unsigned(dst, src, options, ULLONG_MAX);
+}
+
+int strview_consume_char(char* dst, strview_t* src, int options)
+{
+	int err;
+	long long val;
+
+	err = consume_signed(&val, src, options, CHAR_MIN, CHAR_MAX);
+	if(!err && dst)
+		*dst = (char)val;
+
+	return err;
+}
+
+int strview_consume_short(short* dst, strview_t* src, int options)
+{
+	int err;
+	long long val;
+
+	err = consume_signed(&val, src, options, SHRT_MIN, SHRT_MAX);
+	if(!err && dst)
+		*dst = (short)val;
+
+	return err;
+}
+
+int strview_consume_int(int* dst, strview_t* src, int options)
+{
+	int err;
+	long long val;
+
+	err = consume_signed(&val, src, options, INT_MIN, INT_MAX);
+	if(!err && dst)
+		*dst = (int)val;
+
+	return err;
+}
+
+int strview_consume_long(long* dst, strview_t* src, int options)
+{
+	int err;
+	long long val;
+
+	err = consume_signed(&val, src, options, LONG_MIN, LONG_MAX);
+	if(!err && dst)
+		*dst = (long)val;
+
+	return err;
+}
+
+int strview_consume_llong(long long* dst, strview_t* src, int options)
+{
+	return consume_signed(dst, src, options, LLONG_MIN, LLONG_MAX);
 }
 
 strview_t strview_split_left_of_view(strview_t* strview_ptr, strview_t pos)
@@ -414,100 +472,532 @@ strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos)
 	return result;
 }
 
+int strview_consume_float(float* dst, strview_t* src, int options)
+{
+	int err = 0;
+	float value;
+	float_components_t fc =
+	{
+		.options = options,
+		.num = STRVIEW_INVALID,
+		.is_neg=false,
+		.is_special=false,
+		.got_integral=false,
+		.got_fractional=false,
+		.got_exponent=false
+	};
+
+	if(src)
+		fc.num = *src;
+
+	err = process_float_components(&fc);
+	value = fc.special_value;
+
+	// calculate/determine output value
+	if(!err && !fc.is_special)
+	{
+		value = 0.0;
+		if(fc.got_integral)
+			value += (float)fc.integral_value;
+		if(fc.got_fractional)
+			value += (float)fc.fractional_value * powf(10, fc.fractional_exponent);
+		if(fc.got_exponent)
+			value *= powf(10, fc.exp_value);
+		if(value == INFINITY)
+			err = ERANGE;
+	};
+
+	if(!err && dst)
+	{
+		if(value != value)
+			*dst = NAN;
+		else
+			*dst = fc.is_neg ? -value:value;
+	};
+
+	if(!err)
+		*src = fc.num;
+
+	return err;
+}
+
+int strview_consume_double(double* dst, strview_t* src, int options)
+{
+	int err = 0;
+	double value;
+	float_components_t fc =
+	{
+		.options = options,
+		.num = STRVIEW_INVALID,
+		.is_neg=false,
+		.is_special=false,
+		.got_integral=false,
+		.got_fractional=false,
+		.got_exponent=false
+	};
+
+	if(src)
+		fc.num = *src;
+
+	err = process_float_components(&fc);
+	value = fc.special_value;
+
+	// calculate/determine output value
+	if(!err && !fc.is_special)
+	{
+		value = 0.0;
+		if(fc.got_integral)
+			value += (double)fc.integral_value;
+		if(fc.got_fractional)
+			value += (double)fc.fractional_value * powf(10, fc.fractional_exponent);
+		if(fc.got_exponent)
+			value *= pow(10, fc.exp_value);
+		if(value == INFINITY)
+			err = ERANGE;
+	};
+
+	if(!err && dst)
+	{
+		if(value != value)
+			*dst = NAN;
+		else
+			*dst = fc.is_neg ? -value:value;
+	};
+
+	if(!err)
+		*src = fc.num;
+
+	return err;
+}
+
+int strview_consume_ldouble(long double* dst, strview_t* src, int options)
+{
+	int err = 0;
+	long double value;
+	float_components_t fc =
+	{
+		.options = options,
+		.num = STRVIEW_INVALID,
+		.is_neg=false,
+		.is_special=false,
+		.got_integral=false,
+		.got_fractional=false,
+		.got_exponent=false
+	};
+
+	if(src)
+		fc.num = *src;
+
+	err = process_float_components(&fc);
+	value = fc.special_value;
+
+	// calculate/determine output value
+	if(!err && !fc.is_special)
+	{
+		value = 0.0;
+		if(fc.got_integral)
+			value += (long double)fc.integral_value;
+		if(fc.got_fractional)
+			value += (long double)fc.fractional_value * powf(10, fc.fractional_exponent);
+		if(fc.got_exponent)
+			value *= powl(10, fc.exp_value);
+		if(value == INFINITY)
+			err = ERANGE;
+	};
+
+	if(!err && dst)
+	{
+		if(value != value)
+			*dst = NAN;
+		else
+			*dst = fc.is_neg ? -value:value;
+	};
+
+	if(!err)
+		*src = fc.num;
+
+	return err;
+}
+
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************
 
-static unsigned long long interpret_hex(strview_t str)
+static int process_float_components(float_components_t* fc)
 {
-	unsigned long long result = 0;
+	int err = 0;
+	if(!strview_is_valid(fc->num))
+		err = EINVAL;
 
-	while(str.size && isxdigit(str.data[0]))
+	//consume whitespace
+	if(!err && !(fc->options & STR_NOSPACE))
+		fc->num = strview_trim_start(fc->num, cstr(" "));
+
+	//consume sign
+	if(!err && !(fc->options & STR_NOSIGN))
+		fc->is_neg = consume_sign(&fc->num);
+
+	//consume special cases inf and nan
+	if(!err)
+		fc->special_value = consume_float_special(fc);
+
+	//consume integral digits
+	if(!err && !fc->is_special)
 	{
-		result <<= 4;
-		if(isalpha(str.data[0]))
-			result += 10 + (str.data[0] & 0x4F) - 'A';
+		err = consume_digits(&fc->integral_value, &fc->num, 10);
+		fc->got_integral = (err == 0);
+		if(err == EINVAL)
+			err = 0;	// It is valid not to have integral digits  (number can start with .)
+		// else if the integral digits cannot be represented by an unsigned long long, fail with ERANGE
+	};
+
+	//consume fractional digits
+	if(!err && !fc->is_special)
+	{
+		err = consume_fractional_digits(fc);
+		if(!err && !fc->got_integral && !fc->got_fractional)
+			err = EINVAL;
+	};
+
+	//consume exponent
+	if(!err && !fc->is_special && !(fc->options & STR_NOEXP) && fc->num.size && toupper(fc->num.data[0])=='E')
+		err = consume_exponent(fc);
+
+	return err;
+}
+
+static float consume_float_special(float_components_t* fc)
+{
+	float value = 0.0;
+	if(strview_is_match_nocase(fc->num, cstr("inf")))
+	{
+		value = INFINITY;
+		fc->num = strview_sub(fc->num, strlen("inf"), INT_MAX);
+		fc->is_special = true;
+	}
+	else if(strview_is_match_nocase(fc->num, cstr("nan")))
+	{
+		value = NAN;
+		fc->num = strview_sub(fc->num, strlen("nan"), INT_MAX);
+		fc->is_special = true;
+	};
+	return value;
+}
+
+static int consume_fractional_digits(float_components_t* fc)
+{
+	int err = 0;
+	strview_t post_fractional_view;
+	strview_t fractional_view;
+
+	if(fc->num.size && fc->num.data[0]=='.')
+	{
+		strview_pop_first_char(&fc->num);
+		post_fractional_view = strview_trim_start(fc->num, cstr("0123456789"));
+		fractional_view = fc->num;
+		fractional_view = strview_split_left_of_view(&fractional_view, post_fractional_view);
+		fractional_view = strview_trim_end(fractional_view, cstr("0"));
+		fc->fractional_exponent = fractional_view.size * -1;
+		err = consume_digits(&fc->fractional_value, &fractional_view, 10);
+		fc->got_fractional = (err == 0);
+		if(err == EINVAL)
+			err = 0;	// It is valid not to have fractional digits (FP number can end with . eg. "123.")
+		if(fc->got_fractional)
+			fc->num = post_fractional_view;
+	};
+	return err;
+}
+
+static int consume_exponent(float_components_t* fc)
+{
+	int err = 0;
+	strview_t exp_view;
+	exp_view = strview_sub(fc->num, 1, INT_MAX);
+	err = strview_consume_int(&fc->exp_value, &exp_view, STR_NOSPACE | STR_NOBX);
+	fc->got_exponent = (err == 0);
+	if(fc->got_exponent)
+		fc->num = exp_view;
+	else if(err == EINVAL)
+		err = 0;	// an invalid exponent (non-numeric) simply means we don't consume the exponent.
+	return err;
+}
+
+static int consume_signed(long long* dst, strview_t* src, int options, long long limit_min, long long limit_max)
+{
+	int err = 0;
+	bool is_neg = false;
+	strview_t num = STRVIEW_INVALID;
+	int base = 10;
+	unsigned long long val_ull;
+	long long val_ll;
+
+	if(options & STR_BASE_BIN)
+		base = 2;
+	else if(options & STR_BASE_HEX)
+		base = 16;
+
+	if(src)
+		num = *src;
+
+	if(!strview_is_valid(num))
+		err = EINVAL;
+
+	//consume whitespace
+	if(!err && !(options & STR_NOSPACE))
+		num = strview_trim_start(num, cstr(" "));
+
+	//consume sign
+	if(!err && !(options & STR_NOSIGN))
+		is_neg = consume_sign(&num);
+
+	//consume base prefix and digits
+	if(!err)
+	{
+		consume_base_prefix(&base, &num, options);
+		err = consume_digits(&val_ull, &num, base);
+	};
+
+	//check if over range for signed ll before applying sign
+	if(!err)
+	{
+		if(val_ull > (unsigned long long)LLONG_MAX)
+			err = ERANGE;
+		else if(is_neg)
+			val_ll = val_ull * -1;
 		else
-			result += str.data[0] & 0x0F;
-		str = strview_sub(str, 1, INT_MAX);
+			val_ll = val_ull;
 	};
 
-	return result;
+	//check if within range of destination type
+	if(!err && !(limit_min <= val_ll && val_ll <= limit_max))
+		err = ERANGE;
+
+	//provide output
+	if(!err)
+	{
+		if(dst)
+			*dst = val_ll;
+		if(src)
+			*src = num;
+	};		
+
+	return err;
 }
 
-static unsigned long long interpret_bin(strview_t str)
+static int consume_unsigned(unsigned long long* dst, strview_t* src, int options, unsigned long long limit_max)
 {
-	unsigned long long result = 0;
+	int err = 0;
+	strview_t num = STRVIEW_INVALID;
+	int base = 10;
+	unsigned long long val_ull;
 
-	while(str.size && (str.data[0]=='0' || str.data[0]=='1'))
+	if(options & STR_BASE_BIN)
+		base = 2;
+	else if(options & STR_BASE_HEX)
+		base = 16;
+
+	if(src)
+		num = *src;
+
+	if(!strview_is_valid(num))
+		err = EINVAL;
+
+	//consume whitespace
+	if(!err && !(options & STR_NOSPACE))
+		num = strview_trim_start(num, cstr(" "));
+
+	//consume base prefix and digits
+	if(!err)
 	{
-		result <<= 1;
-		result |= str.data[0] == '1';
-		str = strview_sub(str, 1, INT_MAX);
+		consume_base_prefix(&base, &num, options);
+		err = consume_digits(&val_ull, &num, base);
 	};
 
-	return result;
+	//check if within range of destination type
+	if(!err && val_ull > limit_max)
+		err = ERANGE;
+
+	//provide output
+	if(!err)
+	{
+		if(dst)
+			*dst = val_ull;
+		if(src)
+			*src = num;
+	};		
+
+	return err;
 }
 
-static unsigned long long interpret_dec(strview_t str)
+static void consume_base_prefix(int* base, strview_t* src, int options)
 {
-	unsigned long long result = 0;
-	
-	while(str.size && isdigit(str.data[0]))
+	strview_t base_prefix = strview_sub(*src, 0, BASE_PREFIX_LEN);
+
+	if(!(options & STR_NOBX))
 	{
-		result *= 10;
-		result += str.data[0] & 0x0F;
-		str = strview_sub(str, 1, INT_MAX);
-	};
-
-	return result;
-}
-
-#ifndef STR_NO_FLOAT
-static strview_float_t interpret_float(strview_t str)
-{
-	strview_float_t result = 0;
-	strview_float_t fractional_digit_weight = 1;
-	bool digit_found = false;
-	int exponent;
-
-	digit_found |= str.size && isdigit(str.data[0]);
-	while(str.size && isdigit(str.data[0]))
-	{
-		result *= 10;
-		result += str.data[0] & 0x0F;
-		str = strview_sub(str, 1, INT_MAX);
-	};
-
-	if(str.size && str.data[0]=='.')
-	{
-		str = strview_sub(str, 1, INT_MAX);
-
-		digit_found |= str.size && isdigit(str.data[0]);
-		while(str.size && isdigit(str.data[0]))
+		if(!(options & STR_BASE_HEX) && strview_is_match_nocase(base_prefix, cstr("0b")))
 		{
-			fractional_digit_weight /= 10.0;
-			result += (str.data[0] & 0x0F) * fractional_digit_weight;
-			str = strview_sub(str, 1, INT_MAX);
+			*src = strview_sub(*src, BASE_PREFIX_LEN, INT_MAX);
+			*base = 2;
+		}
+		else if(!(options & STR_BASE_BIN) && strview_is_match_nocase(base_prefix, cstr("0x")))
+		{
+			*src = strview_sub(*src, BASE_PREFIX_LEN, INT_MAX);
+			*base = 16;
+		};
+	};
+}
+
+static bool consume_sign(strview_t* num)
+{
+	bool is_neg = false;
+	if(num->data[0] == '-')
+	{
+		is_neg = true;
+		strview_pop_first_char(num);
+	}
+	else if(num->data[0] == '+')
+		strview_pop_first_char(num);
+	return is_neg;
+}
+
+static int consume_digits(unsigned long long* dst, strview_t *src, int base)
+{
+	int err;
+	if(base == 10)
+		err = consume_decimal_digits(dst, src);
+	else if(base == 16)
+		err = consume_hex_digits(dst, src);
+	else
+		err = consume_bin_digits(dst, src);
+	return err;
+}
+
+static int consume_decimal_digits(unsigned long long* dst, strview_t* str)
+{
+	#define UI_LIMIT 	((unsigned int)(UINT_MAX/10-9))
+	#define UL_LIMIT 	((unsigned long)(ULONG_MAX/10-9))
+	#define ULL_LIMIT 	((unsigned long long)(ULLONG_MAX/10-9))
+
+	int err;
+	unsigned int res_ui = 0;
+	unsigned long res_ul;
+	unsigned long long res_ull;
+
+	if(str->size && isdigit(str->data[0]))
+		err = 0;
+	else
+		err = EINVAL;
+
+	if(!err)
+	{
+		*str = strview_trim_start(*str, cstr("0"));
+		while(str->size && isdigit(str->data[0]) && res_ui < UI_LIMIT)
+		{
+			res_ui *= 10;
+			res_ui += strview_pop_first_char(str) & 0x0F;
+		};
+		res_ul = res_ui;
+		while(str->size && isdigit(str->data[0]) && res_ul < UL_LIMIT)
+		{
+			res_ul *= 10;
+			res_ul += strview_pop_first_char(str) & 0x0F;
+		};
+		res_ull = res_ul;
+		while(str->size && isdigit(str->data[0]) && res_ull < ULL_LIMIT)
+		{
+			res_ull *= 10;
+			res_ull += strview_pop_first_char(str) & 0x0F;
+		};
+		if(str->size && isdigit(str->data[0]))
+			err = ERANGE;
+	};
+
+	if(!err && dst)
+		*dst = res_ull;
+
+	#undef UI_LIMIT
+	#undef UL_LIMIT
+	#undef ULL_LIMIT
+	return err;
+}
+
+static int consume_hex_digits(unsigned long long* dst, strview_t* str)
+{
+	unsigned long long result = 0;
+	int err;
+
+	if(str->size && isxdigit(str->data[0]))
+		err = 0;
+	else
+		err = EINVAL;
+
+	if(!err)
+	{
+		while(str->size && isxdigit(str->data[0]))
+		{
+			if(!upper_nibble_ull_is_zero(result))
+				err = ERANGE;
+			result <<= 4;
+			result += xdigit_value(strview_pop_first_char(str));
 		};
 	};
 
-	if(str.size && toupper(str.data[0])=='E')
+	if(!err && dst)
+		*dst = result;
+
+	return err;
+}
+
+static int consume_bin_digits(unsigned long long* dst, strview_t* str)
+{
+	unsigned long long result = 0;
+	int err;
+
+	if(str->size && isbdigit(str->data[0]))
+		err = 0;
+	else
+		err = EINVAL;
+
+	if(!err)
 	{
-		str = strview_sub(str, 1, INT_MAX);
-		exponent = (int)strview_to_ll(str);
-		#ifdef STR_SUPPORT_FLOAT
-			result *= powf(10, exponent);
-		#elif defined STR_SUPPORT_LONG_DOUBLE
-			result *= powl(10, exponent);
-		#else
-			result *= pow(10, exponent);
-		#endif
+		while(str->size && isbdigit(str->data[0]))
+		{
+			if(!upper_bit_ull_is_zero(result))
+				err = ERANGE;
+			result <<= 1;
+			result |= strview_pop_first_char(str) & 1;
+		};
 	};
 
-	return digit_found ? result:NAN;
+	if(!err && dst)
+		*dst = result;
+
+	return err;
 }
-#endif
+
+static bool upper_nibble_ull_is_zero(unsigned long long i)
+{
+	return !(i & (0x0Full << (sizeof(unsigned long long)*8-4)));
+}
+
+static bool upper_bit_ull_is_zero(unsigned long long i)
+{
+	return !(i & (0x01ull << (sizeof(unsigned long long)*8-1)));
+}
+
+static int xdigit_value(char c)
+{
+	c &= 0x5F;
+	if(c & 0x40)
+		c += 9;
+	return c & 0x0F;
+}
+
+static bool isbdigit(char c)
+{
+	return (c & 0x7E) == 0x30;
+}
 
 static bool contains_char(strview_t str, char c, bool case_sensetive)
 {

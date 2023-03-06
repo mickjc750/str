@@ -1,18 +1,4 @@
 /*/
- The following may be added to compiler options:
-
-	The default precision for floating point conversions id double.
-	If you with to change this the following options are available.
-
-	-DSTR_NO_FLOAT
-		Don't provide floating point conversions. str.c will not need linking against the math library (-lm)
-	
-	-DSTR_SUPPORT_LONG_DOUBLE
-		Convert floating point values with long double precision.
-
-	-DSTR_SUPPORT_FLOAT
-		Convert floating point values with float precision.
-
 */
 
 #ifndef _STRVIEW_H_
@@ -22,10 +8,38 @@
 	#include <stdbool.h>
 	#include <stdarg.h>
 	#include <string.h>
+	#include <errno.h>
 
 //********************************************************************************************************
 // Public defines
 //********************************************************************************************************
+
+//	Options flags for number conversions
+
+//	Accept only binary digits, with an optional 0b or 0B prefix
+	#define STR_BASE_BIN	(1<<0)
+
+//	Accept only hex digits, with an optional 0x or 0X prefix
+	#define STR_BASE_HEX	(1<<1)
+
+//	Do not accept 0b 0B 0x or 0X 
+	#define STR_NOBX		(1<<2)
+
+//	Do not accept a sign character, even if the destination is a signed type
+	#define STR_NOSIGN		(1<<3)
+
+//	Do not accept leading whitespace
+	#define STR_NOSPACE		(1<<4)
+
+//	Do not accept exponent for floating point types
+	#define STR_NOEXP		(1<<5)
+
+//	Accept and evaluate trailing Si prefix
+//	#define STR_SI			(1<<6)	todo
+
+//	Accept and evaluate trailing binary Si prefix
+//	#define STR_SIB			(1<<7)	todo
+
 
 //	These macros can be used with printf for printing str types using dynamic precision.
 //	eg.  printf("name=%"PRIstr"\n", PRIstrarg(myname));
@@ -44,7 +58,24 @@
 	#define cstr_SL(sl_arg) ((strview_t){.data=(sl_arg), .size=sizeof(sl_arg)-1})
 
 //	Assign to a strview_t to make it invalid
-	#define STRVIEW_INVALID		((strview_t){.data = NULL, .size = 0})	
+	#define STRVIEW_INVALID		((strview_t){.data = NULL, .size = 0})
+
+//	Generic macro for calling number conversions based on the variable type
+	#define strview_consume_value(dst, src, opt) _Generic((dst),\
+		unsigned char*:			strview_consume_uchar,\
+		unsigned short*:		strview_consume_ushort,\
+		unsigned int*:			strview_consume_uint,\
+		unsigned long*:			strview_consume_ulong,\
+		unsigned long long*:	strview_consume_ullong,\
+		char*:					strview_consume_char,\
+		short*:					strview_consume_short,\
+		int*:					strview_consume_int,\
+		long*:					strview_consume_long,\
+		long long*:				strview_consume_llong,\
+		float*:					strview_consume_float,\
+		double*:				strview_consume_double,\
+		long double*:			strview_consume_ldouble\
+		)(dst, src, opt)
 
 //********************************************************************************************************
 // Public variables
@@ -53,6 +84,25 @@
 //********************************************************************************************************
 // Public prototypes
 //********************************************************************************************************
+
+
+//	These functions consume text representing a number from src, and write the value of the number into dst
+//	Return value is 0 on success, with src beginning at the character where conversion stopped
+//	If src does not contain a valid value for the given type EINVALID is returned, and src is unmodified
+//	If src contains a value out of range for the given type ERANGE is returned, and src is unmodified
+	int strview_consume_uchar(unsigned char* dst, strview_t* src, int options);
+	int strview_consume_ushort(unsigned short* dst, strview_t* src, int options);
+	int strview_consume_uint(unsigned int* dst, strview_t* src, int options);
+	int strview_consume_ulong(unsigned long* dst, strview_t* src, int options);
+	int strview_consume_ullong(unsigned long long* dst, strview_t* src, int options);
+	int strview_consume_char(char* dst, strview_t* src, int options);
+	int strview_consume_short(short* dst, strview_t* src, int options);
+	int strview_consume_int(int* dst, strview_t* src, int options);
+	int strview_consume_long(long* dst, strview_t* src, int options);
+	int strview_consume_llong(long long* dst, strview_t* src, int options);
+	int strview_consume_float(float* dst, strview_t* src, int options);
+	int strview_consume_double(double* dst, strview_t* src, int options);
+	int strview_consume_ldouble(long double* dst, strview_t* src, int options);
 
 //	Return a strview_t from a null terminated const char string.
 //	If the argument is a string literal, cstr_SL() may be used instead, to prevent traversing the string literal to measure it's length
@@ -181,39 +231,6 @@
 */
 	strview_t strview_split_line(strview_t* strview_ptr, char* eol);
 
-
-//	Convert number to long long
-	long long strview_to_ll(strview_t str);
-
-//	Convert number to unsigned long long
-	unsigned long long strview_to_ull(strview_t str);
-
-/*	Convert number to float
-	By default strview_to_float() works with and returns double
-	To support long double define STR_SUPPORT_LONG_DOUBLE
-	Or, to not supprt float conversions at all, define STR_NO_FLOAT*/
-	#ifndef STR_NO_FLOAT
-		#ifdef STR_SUPPORT_LONG_DOUBLE
-			typedef long double strview_float_t;
-		#elif defined STR_SUPPORT_FLOAT
-			typedef float strview_float_t;
-		#else
-			typedef double strview_float_t;
-		#endif
-		strview_float_t strview_to_float(strview_t str);
-	#endif
-
-//	Other standard sizes just cast the return value
-	#define strview_to_int(str) 		((int)strview_to_ll(str))
-	#define strview_to_int8_t(str) 		((int8_t)strview_to_ll(str))
-	#define strview_to_int16_t(str) 	((int16_t)strview_to_ll(str))
-	#define strview_to_int32_t(str) 	((int32_t)strview_to_ll(str))
-	#define strview_to_int64_t(str) 	((int64_t)strview_to_ll(str))
-	#define strview_to_unsigned(str)	((unsigned)strview_to_ull(str))
-	#define strview_to_uint8_t(str) 	((uint8_t)strview_to_ull(str))
-	#define strview_to_uint16_t(str) 	((uint16_t)strview_to_ull(str))
-	#define strview_to_uint32_t(str) 	((uint32_t)strview_to_ull(str))
-	#define strview_to_uint64_t(str) 	((uint64_t)strview_to_ull(str))
 
 #endif
 
