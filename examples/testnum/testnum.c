@@ -42,13 +42,6 @@
 // Public functions
 //********************************************************************************************************
 
-	#define numtsthelper(fmt, var, opt)																							\
-	do																															\
-	{																															\
-		v = view;																												\
-		err = strview_consume_value(&(var), &v, opt);																			\
-		printf("%8s Error=%30s    value= " fmt " remainder = [%"PRIstr"]\n", fmt, strerror(err), err? 0:(var), PRIstrarg(v));	\
-	}while(false)
 
 int main(int argc, const char* argv[])
 {
@@ -74,6 +67,14 @@ int main(int argc, const char* argv[])
 // Private functions
 //********************************************************************************************************
 
+	#define numtsthelper(fmt, var, opt)																							\
+	do																															\
+	{																															\
+		v = view;																												\
+		err = strview_consume_value(&(var), &v, opt);																			\
+		printf("%8s Error=%30s    value= " fmt " remainder = [%"PRIstr"]\n", fmt, strerror(err), err? 0:(var), PRIstrarg(v));	\
+	}while(false)
+
 static void test_number_conversion(strview_t view, int options)
 {
 	int err;
@@ -90,6 +91,8 @@ static void test_number_conversion(strview_t view, int options)
 	long				ilong   ;
 	long long			illong  ;
 	float				ifloat  ;
+	double				idouble ;
+	long double			ildouble ;
 	printf("\n[%"PRIstr"]\n", PRIstrarg(view));
 	numtsthelper("%hhu", iuchar, options);
 	numtsthelper("%hu", iushort, options);
@@ -102,6 +105,8 @@ static void test_number_conversion(strview_t view, int options)
 	numtsthelper("%li", ilong, options);
 	numtsthelper("%lli", illong, options);
 	numtsthelper("%f", ifloat, options);
+	numtsthelper("%lf", idouble, options);
+	numtsthelper("%Lf", ildouble, options);
 }
 
 static void char_handler_prnf(void* nothing, char c)

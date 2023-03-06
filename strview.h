@@ -72,7 +72,9 @@
 		int*:					strview_consume_int,\
 		long*:					strview_consume_long,\
 		long long*:				strview_consume_llong,\
-		float*:					strview_consume_float\
+		float*:					strview_consume_float,\
+		double*:				strview_consume_double,\
+		long double*:			strview_consume_ldouble\
 		)(dst, src, opt)
 
 //********************************************************************************************************
@@ -99,6 +101,8 @@
 	int strview_consume_long(long* dst, strview_t* src, int options);
 	int strview_consume_llong(long long* dst, strview_t* src, int options);
 	int strview_consume_float(float* dst, strview_t* src, int options);
+	int strview_consume_double(double* dst, strview_t* src, int options);
+	int strview_consume_ldouble(long double* dst, strview_t* src, int options);
 
 //	Return a strview_t from a null terminated const char string.
 //	If the argument is a string literal, cstr_SL() may be used instead, to prevent traversing the string literal to measure it's length

@@ -542,6 +542,172 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 	return err;
 }
 
+int strview_consume_double(double* dst, strview_t* src, int options)
+{
+	int err = 0;
+	strview_t num = STRVIEW_INVALID;
+	bool is_neg = false;
+	bool is_special = false;
+	double value;
+	unsigned long long integral_val;
+	unsigned long long fractional_val;
+	int exp_value;
+	bool got_integral = false;
+	bool got_fractional = false;
+	int fractional_exponent;
+	bool got_exponent = false;
+
+	if(src)
+		num = *src;
+
+	if(!strview_is_valid(num))
+		err = EINVAL;
+
+	//consume whitespace
+	if(!err && !(options & STR_NOSPACE))
+		num = strview_trim_start(num, cstr(" "));
+
+	//consume sign
+	if(!err && !(options & STR_NOSIGN))
+		is_neg = consume_sign(&num);
+
+	//consume special cases inf and nan
+	if(!err)
+		value = consume_float_special(&is_special, &num);
+
+	//consume integral digits
+	if(!err && !is_special)
+	{
+		err = consume_digits(&integral_val, &num, 10);
+		got_integral = (err == 0);
+		if(err == EINVAL)
+			err = 0;	// It is valid not to have integral digits  (number can start with .)
+		// else if the integral digits cannot be represented by an unsigned long long, fail with ERANGE
+	};
+
+	//consume fractional digits
+	if(!err && !is_special)
+	{
+		err = consume_fractional_digits(&fractional_val, &fractional_exponent, &got_fractional, &num);
+		if(!err && !got_integral && !got_fractional)
+			err = EINVAL;
+	};
+
+	//consume exponent
+	if(!err && !is_special && !(options & STR_NOEXP) && num.size && toupper(num.data[0])=='E')
+		err = consume_exponent(&exp_value, &got_exponent, &num);
+
+	// calculate/determine output value
+	if(!err && !is_special)
+	{
+		value = 0.0;
+		if(got_integral)
+			value += (double)integral_val;
+		if(got_fractional)
+			value += (double)fractional_val * pow(10, fractional_exponent);
+		if(got_exponent)
+			value *= pow(10, exp_value);
+		if(value == INFINITY)
+			err = ERANGE;
+	};
+
+	if(!err && dst)
+	{
+		if(value != value)
+			*dst = NAN;
+		else
+			*dst = is_neg ? -value:value;
+	};
+
+	if(!err)
+		*src = num;
+
+	return err;
+}
+
+int strview_consume_ldouble(long double* dst, strview_t* src, int options)
+{
+	int err = 0;
+	strview_t num = STRVIEW_INVALID;
+	bool is_neg = false;
+	bool is_special = false;
+	long double value;
+	unsigned long long integral_val;
+	unsigned long long fractional_val;
+	int exp_value;
+	bool got_integral = false;
+	bool got_fractional = false;
+	int fractional_exponent;
+	bool got_exponent = false;
+
+	if(src)
+		num = *src;
+
+	if(!strview_is_valid(num))
+		err = EINVAL;
+
+	//consume whitespace
+	if(!err && !(options & STR_NOSPACE))
+		num = strview_trim_start(num, cstr(" "));
+
+	//consume sign
+	if(!err && !(options & STR_NOSIGN))
+		is_neg = consume_sign(&num);
+
+	//consume special cases inf and nan
+	if(!err)
+		value = consume_float_special(&is_special, &num);
+
+	//consume integral digits
+	if(!err && !is_special)
+	{
+		err = consume_digits(&integral_val, &num, 10);
+		got_integral = (err == 0);
+		if(err == EINVAL)
+			err = 0;	// It is valid not to have integral digits  (number can start with .)
+		// else if the integral digits cannot be represented by an unsigned long long, fail with ERANGE
+	};
+
+	//consume fractional digits
+	if(!err && !is_special)
+	{
+		err = consume_fractional_digits(&fractional_val, &fractional_exponent, &got_fractional, &num);
+		if(!err && !got_integral && !got_fractional)
+			err = EINVAL;
+	};
+
+	//consume exponent
+	if(!err && !is_special && !(options & STR_NOEXP) && num.size && toupper(num.data[0])=='E')
+		err = consume_exponent(&exp_value, &got_exponent, &num);
+
+	// calculate/determine output value
+	if(!err && !is_special)
+	{
+		value = 0.0;
+		if(got_integral)
+			value += (long double)integral_val;
+		if(got_fractional)
+			value += (long double)fractional_val * powl(10, fractional_exponent);
+		if(got_exponent)
+			value *= powl(10, exp_value);
+		if(value == INFINITY)
+			err = ERANGE;
+	};
+
+	if(!err && dst)
+	{
+		if(value != value)
+			*dst = NAN;
+		else
+			*dst = is_neg ? -value:value;
+	};
+
+	if(!err)
+		*src = num;
+
+	return err;
+}
+
 static float consume_float_special(bool* is_special, strview_t* num)
 {
 	float value = 0.0;
