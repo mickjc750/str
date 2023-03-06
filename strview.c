@@ -20,6 +20,22 @@
 
 	#define BASE_PREFIX_LEN	2
 
+	typedef struct float_components_t
+	{
+		int options;
+		strview_t num;
+		bool is_neg;
+		bool is_special;
+		float special_value;
+		bool got_integral;
+		bool got_fractional;
+		bool got_exponent;
+		int fractional_exponent;
+		unsigned long long fractional_value;
+		unsigned long long integral_value;
+		int exp_value;
+	} float_components_t;
+
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
@@ -40,6 +56,7 @@
 	static int consume_hex_digits(unsigned long long* dst, strview_t* str);
 	static int consume_bin_digits(unsigned long long* dst, strview_t* str);
 
+	static int process_float_components(float_components_t* fc);
 	static float consume_float_special(bool* is_special, strview_t* num);
 	static int consume_fractional_digits(unsigned long long *fractional_val, int* fractional_exponent, bool* got_fractional, strview_t *num);
 	static int consume_exponent(int* exp_value, bool* got_exponent, strview_t* num);
@@ -455,75 +472,37 @@ strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos)
 	return result;
 }
 
-//********************************************************************************************************
-// Private functions
-//********************************************************************************************************
-
 int strview_consume_float(float* dst, strview_t* src, int options)
 {
 	int err = 0;
-	strview_t num = STRVIEW_INVALID;
-	bool is_neg = false;
-	bool is_special = false;
 	float value;
-	unsigned long long integral_val;
-	unsigned long long fractional_val;
-	int exp_value;
-	bool got_integral = false;
-	bool got_fractional = false;
-	int fractional_exponent;
-	bool got_exponent = false;
+	float_components_t fc =
+	{
+		.options = options,
+		.num = STRVIEW_INVALID,
+		.is_neg=false,
+		.is_special=false,
+		.got_integral=false,
+		.got_fractional=false,
+		.got_exponent=false
+	};
 
 	if(src)
-		num = *src;
+		fc.num = *src;
 
-	if(!strview_is_valid(num))
-		err = EINVAL;
-
-	//consume whitespace
-	if(!err && !(options & STR_NOSPACE))
-		num = strview_trim_start(num, cstr(" "));
-
-	//consume sign
-	if(!err && !(options & STR_NOSIGN))
-		is_neg = consume_sign(&num);
-
-	//consume special cases inf and nan
-	if(!err)
-		value = consume_float_special(&is_special, &num);
-
-	//consume integral digits
-	if(!err && !is_special)
-	{
-		err = consume_digits(&integral_val, &num, 10);
-		got_integral = (err == 0);
-		if(err == EINVAL)
-			err = 0;	// It is valid not to have integral digits  (number can start with .)
-		// else if the integral digits cannot be represented by an unsigned long long, fail with ERANGE
-	};
-
-	//consume fractional digits
-	if(!err && !is_special)
-	{
-		err = consume_fractional_digits(&fractional_val, &fractional_exponent, &got_fractional, &num);
-		if(!err && !got_integral && !got_fractional)
-			err = EINVAL;
-	};
-
-	//consume exponent
-	if(!err && !is_special && !(options & STR_NOEXP) && num.size && toupper(num.data[0])=='E')
-		err = consume_exponent(&exp_value, &got_exponent, &num);
+	err = process_float_components(&fc);
+	value = fc.special_value;
 
 	// calculate/determine output value
-	if(!err && !is_special)
+	if(!err && !fc.is_special)
 	{
 		value = 0.0;
-		if(got_integral)
-			value += (float)integral_val;
-		if(got_fractional)
-			value += (float)fractional_val * powf(10, fractional_exponent);
-		if(got_exponent)
-			value *= powf(10, exp_value);
+		if(fc.got_integral)
+			value += (float)fc.integral_value;
+		if(fc.got_fractional)
+			value += (float)fc.fractional_value * powf(10, fc.fractional_exponent);
+		if(fc.got_exponent)
+			value *= powf(10, fc.exp_value);
 		if(value == INFINITY)
 			err = ERANGE;
 	};
@@ -533,11 +512,11 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 		if(value != value)
 			*dst = NAN;
 		else
-			*dst = is_neg ? -value:value;
+			*dst = fc.is_neg ? -value:value;
 	};
 
 	if(!err)
-		*src = num;
+		*src = fc.num;
 
 	return err;
 }
@@ -545,68 +524,34 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 int strview_consume_double(double* dst, strview_t* src, int options)
 {
 	int err = 0;
-	strview_t num = STRVIEW_INVALID;
-	bool is_neg = false;
-	bool is_special = false;
 	double value;
-	unsigned long long integral_val;
-	unsigned long long fractional_val;
-	int exp_value;
-	bool got_integral = false;
-	bool got_fractional = false;
-	int fractional_exponent;
-	bool got_exponent = false;
+	float_components_t fc =
+	{
+		.options = options,
+		.num = STRVIEW_INVALID,
+		.is_neg=false,
+		.is_special=false,
+		.got_integral=false,
+		.got_fractional=false,
+		.got_exponent=false
+	};
 
 	if(src)
-		num = *src;
+		fc.num = *src;
 
-	if(!strview_is_valid(num))
-		err = EINVAL;
-
-	//consume whitespace
-	if(!err && !(options & STR_NOSPACE))
-		num = strview_trim_start(num, cstr(" "));
-
-	//consume sign
-	if(!err && !(options & STR_NOSIGN))
-		is_neg = consume_sign(&num);
-
-	//consume special cases inf and nan
-	if(!err)
-		value = consume_float_special(&is_special, &num);
-
-	//consume integral digits
-	if(!err && !is_special)
-	{
-		err = consume_digits(&integral_val, &num, 10);
-		got_integral = (err == 0);
-		if(err == EINVAL)
-			err = 0;	// It is valid not to have integral digits  (number can start with .)
-		// else if the integral digits cannot be represented by an unsigned long long, fail with ERANGE
-	};
-
-	//consume fractional digits
-	if(!err && !is_special)
-	{
-		err = consume_fractional_digits(&fractional_val, &fractional_exponent, &got_fractional, &num);
-		if(!err && !got_integral && !got_fractional)
-			err = EINVAL;
-	};
-
-	//consume exponent
-	if(!err && !is_special && !(options & STR_NOEXP) && num.size && toupper(num.data[0])=='E')
-		err = consume_exponent(&exp_value, &got_exponent, &num);
+	err = process_float_components(&fc);
+	value = fc.special_value;
 
 	// calculate/determine output value
-	if(!err && !is_special)
+	if(!err && !fc.is_special)
 	{
 		value = 0.0;
-		if(got_integral)
-			value += (double)integral_val;
-		if(got_fractional)
-			value += (double)fractional_val * pow(10, fractional_exponent);
-		if(got_exponent)
-			value *= pow(10, exp_value);
+		if(fc.got_integral)
+			value += (double)fc.integral_value;
+		if(fc.got_fractional)
+			value += (double)fc.fractional_value * powf(10, fc.fractional_exponent);
+		if(fc.got_exponent)
+			value *= pow(10, fc.exp_value);
 		if(value == INFINITY)
 			err = ERANGE;
 	};
@@ -616,11 +561,11 @@ int strview_consume_double(double* dst, strview_t* src, int options)
 		if(value != value)
 			*dst = NAN;
 		else
-			*dst = is_neg ? -value:value;
+			*dst = fc.is_neg ? -value:value;
 	};
 
 	if(!err)
-		*src = num;
+		*src = fc.num;
 
 	return err;
 }
@@ -628,68 +573,34 @@ int strview_consume_double(double* dst, strview_t* src, int options)
 int strview_consume_ldouble(long double* dst, strview_t* src, int options)
 {
 	int err = 0;
-	strview_t num = STRVIEW_INVALID;
-	bool is_neg = false;
-	bool is_special = false;
 	long double value;
-	unsigned long long integral_val;
-	unsigned long long fractional_val;
-	int exp_value;
-	bool got_integral = false;
-	bool got_fractional = false;
-	int fractional_exponent;
-	bool got_exponent = false;
+	float_components_t fc =
+	{
+		.options = options,
+		.num = STRVIEW_INVALID,
+		.is_neg=false,
+		.is_special=false,
+		.got_integral=false,
+		.got_fractional=false,
+		.got_exponent=false
+	};
 
 	if(src)
-		num = *src;
+		fc.num = *src;
 
-	if(!strview_is_valid(num))
-		err = EINVAL;
-
-	//consume whitespace
-	if(!err && !(options & STR_NOSPACE))
-		num = strview_trim_start(num, cstr(" "));
-
-	//consume sign
-	if(!err && !(options & STR_NOSIGN))
-		is_neg = consume_sign(&num);
-
-	//consume special cases inf and nan
-	if(!err)
-		value = consume_float_special(&is_special, &num);
-
-	//consume integral digits
-	if(!err && !is_special)
-	{
-		err = consume_digits(&integral_val, &num, 10);
-		got_integral = (err == 0);
-		if(err == EINVAL)
-			err = 0;	// It is valid not to have integral digits  (number can start with .)
-		// else if the integral digits cannot be represented by an unsigned long long, fail with ERANGE
-	};
-
-	//consume fractional digits
-	if(!err && !is_special)
-	{
-		err = consume_fractional_digits(&fractional_val, &fractional_exponent, &got_fractional, &num);
-		if(!err && !got_integral && !got_fractional)
-			err = EINVAL;
-	};
-
-	//consume exponent
-	if(!err && !is_special && !(options & STR_NOEXP) && num.size && toupper(num.data[0])=='E')
-		err = consume_exponent(&exp_value, &got_exponent, &num);
+	err = process_float_components(&fc);
+	value = fc.special_value;
 
 	// calculate/determine output value
-	if(!err && !is_special)
+	if(!err && !fc.is_special)
 	{
 		value = 0.0;
-		if(got_integral)
-			value += (long double)integral_val;
-		if(got_fractional)
-			value += (long double)fractional_val * powl(10, fractional_exponent);
-		if(got_exponent)
-			value *= powl(10, exp_value);
+		if(fc.got_integral)
+			value += (long double)fc.integral_value;
+		if(fc.got_fractional)
+			value += (long double)fc.fractional_value * powf(10, fc.fractional_exponent);
+		if(fc.got_exponent)
+			value *= powl(10, fc.exp_value);
 		if(value == INFINITY)
 			err = ERANGE;
 	};
@@ -699,11 +610,58 @@ int strview_consume_ldouble(long double* dst, strview_t* src, int options)
 		if(value != value)
 			*dst = NAN;
 		else
-			*dst = is_neg ? -value:value;
+			*dst = fc.is_neg ? -value:value;
 	};
 
 	if(!err)
-		*src = num;
+		*src = fc.num;
+
+	return err;
+}
+
+//********************************************************************************************************
+// Private functions
+//********************************************************************************************************
+
+static int process_float_components(float_components_t* fc)
+{
+	int err = 0;
+	if(!strview_is_valid(fc->num))
+		err = EINVAL;
+
+	//consume whitespace
+	if(!err && !(fc->options & STR_NOSPACE))
+		fc->num = strview_trim_start(fc->num, cstr(" "));
+
+	//consume sign
+	if(!err && !(fc->options & STR_NOSIGN))
+		fc->is_neg = consume_sign(&fc->num);
+
+	//consume special cases inf and nan
+	if(!err)
+		fc->special_value = consume_float_special(&fc->is_special, &fc->num);
+
+	//consume integral digits
+	if(!err && !fc->is_special)
+	{
+		err = consume_digits(&fc->integral_value, &fc->num, 10);
+		fc->got_integral = (err == 0);
+		if(err == EINVAL)
+			err = 0;	// It is valid not to have integral digits  (number can start with .)
+		// else if the integral digits cannot be represented by an unsigned long long, fail with ERANGE
+	};
+
+	//consume fractional digits
+	if(!err && !fc->is_special)
+	{
+		err = consume_fractional_digits(&fc->fractional_value, &fc->fractional_exponent, &fc->got_fractional, &fc->num);
+		if(!err && !fc->got_integral && !fc->got_fractional)
+			err = EINVAL;
+	};
+
+	//consume exponent
+	if(!err && !fc->is_special && !(fc->options & STR_NOEXP) && fc->num.size && toupper(fc->num.data[0])=='E')
+		err = consume_exponent(&fc->exp_value, &fc->got_exponent, &fc->num);
 
 	return err;
 }
