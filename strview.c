@@ -531,13 +531,13 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 			fractional_view = num;
 			fractional_view = strview_split_left_of_view(&fractional_view, post_fractional_view);
 			fractional_view = strview_trim_end(fractional_view, cstr("0"));
+			fractional_exponent = fractional_view.size * -1;
 			err = consume_digits(&fractional_val, &fractional_view, 10);
 			got_fractional = (err == 0);
 			if(err == EINVAL)
 				err = 0;	// It is valid not to have fractional digits (FP number can end with . eg. "123.")
 			if(got_fractional)
 			{
-				fractional_exponent = fractional_view.size * -1;
 				num = post_fractional_view;
 			};
 		};
@@ -831,7 +831,7 @@ static int consume_bin_digits(unsigned long long* dst, strview_t* str)
 	if(!err && dst)
 		*dst = result;
 
-	return result;
+	return err;
 }
 
 static bool upper_nibble_ull_is_zero(unsigned long long i)
