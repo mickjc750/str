@@ -59,7 +59,7 @@
 	static int process_float_components(float_components_t* fc);
 	static float consume_float_special(float_components_t* fc);
 	static int consume_fractional_digits(float_components_t* fc);
-	static int consume_exponent(int* exp_value, bool* got_exponent, strview_t* num);
+	static int consume_exponent(float_components_t* fc);
 	
 	static bool upper_nibble_ull_is_zero(unsigned long long i);
 	static bool upper_bit_ull_is_zero(unsigned long long i);
@@ -661,7 +661,7 @@ static int process_float_components(float_components_t* fc)
 
 	//consume exponent
 	if(!err && !fc->is_special && !(fc->options & STR_NOEXP) && fc->num.size && toupper(fc->num.data[0])=='E')
-		err = consume_exponent(&fc->exp_value, &fc->got_exponent, &fc->num);
+		err = consume_exponent(fc);
 
 	return err;
 }
@@ -708,15 +708,15 @@ static int consume_fractional_digits(float_components_t* fc)
 	return err;
 }
 
-static int consume_exponent(int* exp_value, bool* got_exponent, strview_t* num)
+static int consume_exponent(float_components_t* fc)
 {
 	int err = 0;
 	strview_t exp_view;
-	exp_view = strview_sub(*num, 1, INT_MAX);
-	err = strview_consume_int(exp_value, &exp_view, STR_NOSPACE | STR_NOBX);
-	*got_exponent = (err == 0);
-	if(*got_exponent)
-		*num = exp_view;
+	exp_view = strview_sub(fc->num, 1, INT_MAX);
+	err = strview_consume_int(&fc->exp_value, &exp_view, STR_NOSPACE | STR_NOBX);
+	fc->got_exponent = (err == 0);
+	if(fc->got_exponent)
+		fc->num = exp_view;
 	else if(err == EINVAL)
 		err = 0;	// an invalid exponent (non-numeric) simply means we don't consume the exponent.
 	return err;
