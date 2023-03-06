@@ -57,7 +57,7 @@
 	static int consume_bin_digits(unsigned long long* dst, strview_t* str);
 
 	static int process_float_components(float_components_t* fc);
-	static float consume_float_special(bool* is_special, strview_t* num);
+	static float consume_float_special(float_components_t* fc);
 	static int consume_fractional_digits(unsigned long long *fractional_val, int* fractional_exponent, bool* got_fractional, strview_t *num);
 	static int consume_exponent(int* exp_value, bool* got_exponent, strview_t* num);
 	
@@ -639,7 +639,7 @@ static int process_float_components(float_components_t* fc)
 
 	//consume special cases inf and nan
 	if(!err)
-		fc->special_value = consume_float_special(&fc->is_special, &fc->num);
+		fc->special_value = consume_float_special(fc);
 
 	//consume integral digits
 	if(!err && !fc->is_special)
@@ -666,20 +666,20 @@ static int process_float_components(float_components_t* fc)
 	return err;
 }
 
-static float consume_float_special(bool* is_special, strview_t* num)
+static float consume_float_special(float_components_t* fc)
 {
 	float value = 0.0;
-	if(strview_is_match_nocase(*num, cstr("inf")))
+	if(strview_is_match_nocase(fc->num, cstr("inf")))
 	{
 		value = INFINITY;
-		*num = strview_sub(*num, strlen("inf"), INT_MAX);
-		*is_special = true;
+		fc->num = strview_sub(fc->num, strlen("inf"), INT_MAX);
+		fc->is_special = true;
 	}
-	else if(strview_is_match_nocase(*num, cstr("nan")))
+	else if(strview_is_match_nocase(fc->num, cstr("nan")))
 	{
 		value = NAN;
-		*num = strview_sub(*num, strlen("nan"), INT_MAX);
-		*is_special = true;
+		fc->num = strview_sub(fc->num, strlen("nan"), INT_MAX);
+		fc->is_special = true;
 	};
 	return value;
 }
