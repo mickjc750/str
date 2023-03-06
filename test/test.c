@@ -54,10 +54,49 @@
 //********************************************************************************************************
 
 	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	static void test_number_conversion(strview_t view, int options);
 
 //********************************************************************************************************
 // Public functions
 //********************************************************************************************************
+
+	#define numtsthelper(fmt, var, opt)																					\
+	do																												\
+	{																												\
+		v = view;																									\
+		err = strview_consume_value(&(var), &v, opt);																	\
+		printf("%8s Error=%30s    value= " fmt " remainder = [%"PRIstr"]\n", fmt, strerror(err), err? 0:(var), PRIstrarg(v));	\
+	}while(false)
+
+static void test_number_conversion(strview_t view, int options)
+{
+	int err;
+	strview_t v;
+
+	unsigned char		iuchar  ;
+	unsigned short		iushort ;
+	unsigned int		iuint   ;
+	unsigned long		iulong  ;
+	unsigned long long	iullong ;
+	char				ichar   ;
+	short				ishort  ;
+	int					iint    ;
+	long				ilong   ;
+	long long			illong  ;
+	float				ifloat  ;
+	printf("\n[%"PRIstr"]\n", PRIstrarg(view));
+	numtsthelper("%hhu", iuchar, options);
+	numtsthelper("%hu", iushort, options);
+	numtsthelper("%u", iuint, options);
+	numtsthelper("%lu", iulong, options);
+	numtsthelper("%llu", iullong, options);
+	numtsthelper("%hhi", ichar, options);
+	numtsthelper("%hi", ishort, options);
+	numtsthelper("%i", iint, options);
+	numtsthelper("%li", ilong, options);
+	numtsthelper("%lli", illong, options);
+	numtsthelper("%f", ifloat, options);
+}
 
 int main(int argc, const char* argv[])
 {
@@ -69,6 +108,9 @@ int main(int argc, const char* argv[])
 	strbuf_t* buf;
 	strview_t str1, str2, str3, search_result;
 	const char* chrptr;
+
+	test_number_conversion(cstr("-0x43FR"), 0);
+	abort();
 
 	printf("\n\n");
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);

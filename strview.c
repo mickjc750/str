@@ -454,7 +454,7 @@ strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos)
 // Private functions
 //********************************************************************************************************
 
-static int consume_float(float* dst, strview_t* src, int options)
+int strview_consume_float(float* dst, strview_t* src, int options)
 {
 	int err = 0;
 	strview_t num = STRVIEW_INVALID;
@@ -578,6 +578,9 @@ static int consume_float(float* dst, strview_t* src, int options)
 		else
 			*dst = is_neg ? -value:value;
 	};
+
+	if(!err)
+		*src = num;
 
 	return err;
 }

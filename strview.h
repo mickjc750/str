@@ -62,18 +62,18 @@
 
 //	Generic macro for calling integer conversions based on the variable type
 	#define strview_consume_value(dst, src, opt) _Generic((dst),\
-		unsigned char*:			strview_consume_uchar((dst), (src), (opt))\
-		unsigned short*:		strview_consume_ushort((dst), (src), (opt))\
-		unsigned int*:			strview_consume_uint((dst), (src), (opt))\
-		unsigned long*:			strview_consume_ulong((dst), (src), (opt))\
-		unsigned long long*:	strview_consume_ullong((dst), (src), (opt))\
-		char*:					strview_consume_char((dst), (src), (opt))\
-		short*:					strview_consume_short((dst), (src), (opt))\
-		int*:					strview_consume_int((dst), (src), (opt))\
-		long*:					strview_consume_long((dst), (src), (opt))\
-		long long*:				strview_consume_llong((dst), (src), (opt))\
-		float*:					strview_consume_float((dst), (src), (opt))\
-		)
+		unsigned char*:			strview_consume_uchar,\
+		unsigned short*:		strview_consume_ushort,\
+		unsigned int*:			strview_consume_uint,\
+		unsigned long*:			strview_consume_ulong,\
+		unsigned long long*:	strview_consume_ullong,\
+		char*:					strview_consume_char,\
+		short*:					strview_consume_short,\
+		int*:					strview_consume_int,\
+		long*:					strview_consume_long,\
+		long long*:				strview_consume_llong,\
+		float*:					strview_consume_float\
+		)(dst, src, opt)
 
 //********************************************************************************************************
 // Public variables
