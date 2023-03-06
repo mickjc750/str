@@ -58,7 +58,7 @@
 
 	static int process_float_components(float_components_t* fc);
 	static float consume_float_special(float_components_t* fc);
-	static int consume_fractional_digits(unsigned long long *fractional_val, int* fractional_exponent, bool* got_fractional, strview_t *num);
+	static int consume_fractional_digits(float_components_t* fc);
 	static int consume_exponent(int* exp_value, bool* got_exponent, strview_t* num);
 	
 	static bool upper_nibble_ull_is_zero(unsigned long long i);
@@ -654,7 +654,7 @@ static int process_float_components(float_components_t* fc)
 	//consume fractional digits
 	if(!err && !fc->is_special)
 	{
-		err = consume_fractional_digits(&fc->fractional_value, &fc->fractional_exponent, &fc->got_fractional, &fc->num);
+		err = consume_fractional_digits(fc);
 		if(!err && !fc->got_integral && !fc->got_fractional)
 			err = EINVAL;
 	};
@@ -684,26 +684,26 @@ static float consume_float_special(float_components_t* fc)
 	return value;
 }
 
-static int consume_fractional_digits(unsigned long long *fractional_val, int* fractional_exponent, bool* got_fractional, strview_t *num)
+static int consume_fractional_digits(float_components_t* fc)
 {
 	int err = 0;
 	strview_t post_fractional_view;
 	strview_t fractional_view;
 
-	if(num->size && num->data[0]=='.')
+	if(fc->num.size && fc->num.data[0]=='.')
 	{
-		strview_pop_first_char(num);
-		post_fractional_view = strview_trim_start(*num, cstr("0123456789"));
-		fractional_view = *num;
+		strview_pop_first_char(&fc->num);
+		post_fractional_view = strview_trim_start(fc->num, cstr("0123456789"));
+		fractional_view = fc->num;
 		fractional_view = strview_split_left_of_view(&fractional_view, post_fractional_view);
 		fractional_view = strview_trim_end(fractional_view, cstr("0"));
-		*fractional_exponent = fractional_view.size * -1;
-		err = consume_digits(fractional_val, &fractional_view, 10);
-		*got_fractional = (err == 0);
+		fc->fractional_exponent = fractional_view.size * -1;
+		err = consume_digits(&fc->fractional_value, &fractional_view, 10);
+		fc->got_fractional = (err == 0);
 		if(err == EINVAL)
 			err = 0;	// It is valid not to have fractional digits (FP number can end with . eg. "123.")
-		if(*got_fractional)
-			*num = post_fractional_view;
+		if(fc->got_fractional)
+			fc->num = post_fractional_view;
 	};
 	return err;
 }
