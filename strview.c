@@ -40,9 +40,10 @@
 	static int consume_hex_digits(unsigned long long* dst, strview_t* str);
 	static int consume_bin_digits(unsigned long long* dst, strview_t* str);
 
-	static int consume_fractional_digits(unsigned long long *fractional_val, int* fractional_exponent, bool* got_fractional, strview_t *num);
 	static float consume_float_special(bool* is_special, strview_t* num);
-
+	static int consume_fractional_digits(unsigned long long *fractional_val, int* fractional_exponent, bool* got_fractional, strview_t *num);
+	static int consume_exponent(int* exp_value, bool* got_exponent, strview_t* num);
+	
 	static bool upper_nibble_ull_is_zero(unsigned long long i);
 	static bool upper_bit_ull_is_zero(unsigned long long i);
 
@@ -462,7 +463,6 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 {
 	int err = 0;
 	strview_t num = STRVIEW_INVALID;
-	strview_t exp_view;
 	bool is_neg = false;
 	bool is_special = false;
 	float value;
@@ -512,15 +512,7 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 
 	//consume exponent
 	if(!err && !is_special && !(options & STR_NOEXP) && num.size && toupper(num.data[0])=='E')
-	{
-		exp_view = strview_sub(num, 1, INT_MAX);
-		err = strview_consume_int(&exp_value, &exp_view, STR_NOSPACE | STR_NOBX);
-		got_exponent = (err == 0);
-		if(got_exponent)
-			num = exp_view;
-		else if(err == EINVAL)
-			err = 0;	// an invalid exponent (non-numeric) simply means we don't consume the exponent.
-	};
+		err = consume_exponent(&exp_value, &got_exponent, &num);
 
 	// calculate/determine output value
 	if(!err && !is_special)
@@ -589,6 +581,20 @@ static int consume_fractional_digits(unsigned long long *fractional_val, int* fr
 		if(*got_fractional)
 			*num = post_fractional_view;
 	};
+	return err;
+}
+
+static int consume_exponent(int* exp_value, bool* got_exponent, strview_t* num)
+{
+	int err = 0;
+	strview_t exp_view;
+	exp_view = strview_sub(*num, 1, INT_MAX);
+	err = strview_consume_int(exp_value, &exp_view, STR_NOSPACE | STR_NOBX);
+	*got_exponent = (err == 0);
+	if(*got_exponent)
+		*num = exp_view;
+	else if(err == EINVAL)
+		err = 0;	// an invalid exponent (non-numeric) simply means we don't consume the exponent.
 	return err;
 }
 
