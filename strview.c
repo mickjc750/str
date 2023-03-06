@@ -33,11 +33,15 @@
 	static int consume_signed(long long* dst, strview_t* src, int options, long long limit_min, long long limit_max);
 	static int consume_unsigned(unsigned long long* dst, strview_t* src, int options, unsigned long long limit_max);
 
+	static bool consume_sign(strview_t* num);
 	static void consume_base_prefix(int* base, strview_t* src, int options);
 	static int consume_digits(unsigned long long* dst, strview_t *src, int base);
 	static int consume_decimal_digits(unsigned long long* dst, strview_t* str);
 	static int consume_hex_digits(unsigned long long* dst, strview_t* str);
 	static int consume_bin_digits(unsigned long long* dst, strview_t* str);
+
+	static int consume_fractional_digits(unsigned long long *fractional_val, int* fractional_exponent, bool* got_fractional, strview_t *num);
+	static float consume_float_special(bool* is_special, strview_t* num);
 
 	static bool upper_nibble_ull_is_zero(unsigned long long i);
 	static bool upper_bit_ull_is_zero(unsigned long long i);
@@ -459,8 +463,6 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 	int err = 0;
 	strview_t num = STRVIEW_INVALID;
 	strview_t exp_view;
-	strview_t fractional_view;
-	strview_t post_fractional_view;
 	bool is_neg = false;
 	bool is_special = false;
 	float value;
@@ -484,32 +486,11 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 
 	//consume sign
 	if(!err && !(options & STR_NOSIGN))
-	{
-		if(num.data[0] == '-')
-		{
-			is_neg = true;
-			strview_pop_first_char(&num);
-		}
-		else if(num.data[0] == '+')
-			strview_pop_first_char(&num);
-	};
+		is_neg = consume_sign(&num);
 
 	//consume special cases inf and nan
 	if(!err)
-	{
-		if(strview_is_match_nocase(num, cstr("inf")))
-		{
-			value = INFINITY;
-			num = strview_sub(num, 3, INT_MAX);
-			is_special = true;
-		}
-		else if(strview_is_match_nocase(num, cstr("nan")))
-		{
-			value = NAN;
-			num = strview_sub(num, 3, INT_MAX);
-			is_special = true;
-		};
-	};
+		value = consume_float_special(&is_special, &num);
 
 	//consume integral digits
 	if(!err && !is_special)
@@ -521,31 +502,15 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 		// else if the integral digits cannot be represented by an unsigned long long, fail with ERANGE
 	};
 
-	//get fractional digits
+	//consume fractional digits
 	if(!err && !is_special)
 	{
-		if(num.size && num.data[0]=='.')
-		{
-			strview_pop_first_char(&num);
-			post_fractional_view = strview_trim_start(num, cstr("0123456789"));
-			fractional_view = num;
-			fractional_view = strview_split_left_of_view(&fractional_view, post_fractional_view);
-			fractional_view = strview_trim_end(fractional_view, cstr("0"));
-			fractional_exponent = fractional_view.size * -1;
-			err = consume_digits(&fractional_val, &fractional_view, 10);
-			got_fractional = (err == 0);
-			if(err == EINVAL)
-				err = 0;	// It is valid not to have fractional digits (FP number can end with . eg. "123.")
-			if(got_fractional)
-			{
-				num = post_fractional_view;
-			};
-		};
+		err = consume_fractional_digits(&fractional_val, &fractional_exponent, &got_fractional, &num);
 		if(!err && !got_integral && !got_fractional)
 			err = EINVAL;
 	};
 
-	//get exponent
+	//consume exponent
 	if(!err && !is_special && !(options & STR_NOEXP) && num.size && toupper(num.data[0])=='E')
 	{
 		exp_view = strview_sub(num, 1, INT_MAX);
@@ -585,6 +550,48 @@ int strview_consume_float(float* dst, strview_t* src, int options)
 	return err;
 }
 
+static float consume_float_special(bool* is_special, strview_t* num)
+{
+	float value = 0.0;
+	if(strview_is_match_nocase(*num, cstr("inf")))
+	{
+		value = INFINITY;
+		*num = strview_sub(*num, strlen("inf"), INT_MAX);
+		*is_special = true;
+	}
+	else if(strview_is_match_nocase(*num, cstr("nan")))
+	{
+		value = NAN;
+		*num = strview_sub(*num, strlen("nan"), INT_MAX);
+		*is_special = true;
+	};
+	return value;
+}
+
+static int consume_fractional_digits(unsigned long long *fractional_val, int* fractional_exponent, bool* got_fractional, strview_t *num)
+{
+	int err = 0;
+	strview_t post_fractional_view;
+	strview_t fractional_view;
+
+	if(num->size && num->data[0]=='.')
+	{
+		strview_pop_first_char(num);
+		post_fractional_view = strview_trim_start(*num, cstr("0123456789"));
+		fractional_view = *num;
+		fractional_view = strview_split_left_of_view(&fractional_view, post_fractional_view);
+		fractional_view = strview_trim_end(fractional_view, cstr("0"));
+		*fractional_exponent = fractional_view.size * -1;
+		err = consume_digits(fractional_val, &fractional_view, 10);
+		*got_fractional = (err == 0);
+		if(err == EINVAL)
+			err = 0;	// It is valid not to have fractional digits (FP number can end with . eg. "123.")
+		if(*got_fractional)
+			*num = post_fractional_view;
+	};
+	return err;
+}
+
 static int consume_signed(long long* dst, strview_t* src, int options, long long limit_min, long long limit_max)
 {
 	int err = 0;
@@ -611,15 +618,7 @@ static int consume_signed(long long* dst, strview_t* src, int options, long long
 
 	//consume sign
 	if(!err && !(options & STR_NOSIGN))
-	{
-		if(num.data[0] == '-')
-		{
-			is_neg = true;
-			strview_pop_first_char(&num);
-		}
-		else if(num.data[0] == '+')
-			strview_pop_first_char(&num);
-	};
+		is_neg = consume_sign(&num);
 
 	//consume base prefix and digits
 	if(!err)
@@ -717,6 +716,19 @@ static void consume_base_prefix(int* base, strview_t* src, int options)
 			*base = 16;
 		};
 	};
+}
+
+static bool consume_sign(strview_t* num)
+{
+	bool is_neg = false;
+	if(num->data[0] == '-')
+	{
+		is_neg = true;
+		strview_pop_first_char(num);
+	}
+	else if(num->data[0] == '+')
+		strview_pop_first_char(num);
+	return is_neg;
 }
 
 static int consume_digits(unsigned long long* dst, strview_t *src, int base)
