@@ -60,7 +60,7 @@
 //	Assign to a strview_t to make it invalid
 	#define STRVIEW_INVALID		((strview_t){.data = NULL, .size = 0})
 
-//	Generic macro for calling integer conversions based on the variable type
+//	Generic macro for calling number conversions based on the variable type
 	#define strview_consume_value(dst, src, opt) _Generic((dst),\
 		unsigned char*:			strview_consume_uchar,\
 		unsigned short*:		strview_consume_ushort,\
