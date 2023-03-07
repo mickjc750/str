@@ -84,6 +84,7 @@
 	TEST test_strview_split_line(void);
 	TEST test_strview_split_left_of_view(void);
 	TEST test_strview_split_right_of_view(void);
+	TEST test_strview_consume_value(void);
 
 //********************************************************************************************************
 // Public functions
@@ -156,6 +157,8 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_split_line);
 	RUN_TEST(test_strview_split_left_of_view);
 	RUN_TEST(test_strview_split_right_of_view);
+	RUN_TEST(test_strview_consume_value);
+
 }
 
 TEST test_strbuf_create_using_malloc(void)
@@ -1229,3 +1232,89 @@ TEST test_strview_split_right_of_view(void)
 	PASS();
 }
 
+TEST test_strview_consume_value(void)
+{
+	strbuf_t* buf = strbuf_create(0,NULL);
+	int err;
+	strview_t v;
+	unsigned char		iuchar;
+	unsigned short		iushort;
+	unsigned int		iuint;
+	unsigned long		iulong;
+	unsigned long long	iullong;
+	char				ichar;
+	short				ishort;
+	int					iint;
+	long				ilong;
+	long long			illong;
+	float				ifloat;
+	double				idouble;
+	long double			ildouble;
+
+	ASSERT(buf);
+
+	// Test all integer types at their limits
+	#define TEST_AT_LIMIT(fmt, lim, var)				\
+	do													\
+	{													\
+		v = strbuf_printf(&buf, fmt, (lim));			\
+		err = strview_consume_value(&(var), &v, 0);		\
+		ASSERT(err == 0);								\
+		ASSERT(var == (lim));							\
+	}while(0);											\
+
+	TEST_AT_LIMIT("%u", UCHAR_MAX, iuchar);
+	TEST_AT_LIMIT("%u", USHRT_MAX, iushort);
+	TEST_AT_LIMIT("%u", UINT_MAX,  iuint);
+	TEST_AT_LIMIT("%lu", ULONG_MAX, iulong);
+	TEST_AT_LIMIT("%llu", ULLONG_MAX, iullong);
+	TEST_AT_LIMIT("%i", CHAR_MIN, ichar);
+	TEST_AT_LIMIT("%i", CHAR_MAX, ichar);
+	TEST_AT_LIMIT("%i", SHRT_MIN, ishort);
+	TEST_AT_LIMIT("%i", SHRT_MAX, ishort);
+	TEST_AT_LIMIT("%i", INT_MIN, iint);
+	TEST_AT_LIMIT("%i", INT_MAX, iint);
+	TEST_AT_LIMIT("%li", LONG_MIN, ilong);
+	TEST_AT_LIMIT("%li", LONG_MAX, ilong);
+	TEST_AT_LIMIT("%lli", LLONG_MIN, illong);
+	TEST_AT_LIMIT("%lli", LLONG_MAX, illong);
+
+	//it just so happens that no relevant powers of 2 end in 9, so the last digit can be incremented to exceed the limit
+	#define TEST_OVER_LIMIT(fmt, lim, var)				\
+	do													\
+	{													\
+		v = strbuf_printf(&buf, fmt, (lim));			\
+		buf->cstr[buf->size-1]++;						\
+		err = strview_consume_value(&(var), &v, 0);		\
+		ASSERT(err == ERANGE);							\
+	}while(0);											\
+
+	TEST_OVER_LIMIT("%u", UCHAR_MAX, iuchar);
+	TEST_OVER_LIMIT("%u", USHRT_MAX, iushort);
+	TEST_OVER_LIMIT("%u", UINT_MAX,  iuint);
+	TEST_OVER_LIMIT("%lu", ULONG_MAX, iulong);
+	TEST_OVER_LIMIT("%llu", ULLONG_MAX, iullong);
+	TEST_OVER_LIMIT("%i", CHAR_MIN, ichar);
+	TEST_OVER_LIMIT("%i", CHAR_MAX, ichar);
+	TEST_OVER_LIMIT("%i", SHRT_MIN, ishort);
+	TEST_OVER_LIMIT("%i", SHRT_MAX, ishort);
+	TEST_OVER_LIMIT("%i", INT_MIN, iint);
+	TEST_OVER_LIMIT("%i", INT_MAX, iint);
+	TEST_OVER_LIMIT("%li", LONG_MIN, ilong);
+	TEST_OVER_LIMIT("%li", LONG_MAX, ilong);
+	TEST_OVER_LIMIT("%lli", LLONG_MIN, illong);
+	TEST_OVER_LIMIT("%lli", LLONG_MAX, illong);
+
+
+	strbuf_destroy(&buf);
+	ASSERT(!buf);
+	PASS();
+
+
+/*
+	CHAR_MIN, CHAR_MAX
+	SHRT_MIN, SHRT_MAX
+	INT_MIN, INT_MAX
+	LONG_MIN, LONG_MAX
+	LLONG_MIN, LLONG_MAX*/
+}

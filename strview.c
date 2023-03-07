@@ -760,10 +760,15 @@ static int consume_signed(long long* dst, strview_t* src, int options, long long
 	//check if over range for signed ll before applying sign
 	if(!err)
 	{
-		if(val_ull > (unsigned long long)LLONG_MAX)
+		if(is_neg)
+		{
+			if(val_ull > (unsigned long long)LLONG_MIN)
+				err = ERANGE;
+			else 
+				val_ll = val_ull * -1;
+		}
+		else if(val_ull > LLONG_MAX)
 			err = ERANGE;
-		else if(is_neg)
-			val_ll = val_ull * -1;
 		else
 			val_ll = val_ull;
 	};
@@ -883,6 +888,7 @@ static int consume_decimal_digits(unsigned long long* dst, strview_t* str)
 	unsigned int res_ui = 0;
 	unsigned long res_ul;
 	unsigned long long res_ull;
+	unsigned long long pre_add;
 
 	if(str->size && isdigit(str->data[0]))
 		err = 0;
@@ -904,13 +910,16 @@ static int consume_decimal_digits(unsigned long long* dst, strview_t* str)
 			res_ul += strview_pop_first_char(str) & 0x0F;
 		};
 		res_ull = res_ul;
-		while(str->size && isdigit(str->data[0]) && res_ull < ULL_LIMIT)
+		while(str->size && isdigit(str->data[0]) && !err)
 		{
+			if(res_ull > ULLONG_MAX/10)
+				err = ERANGE;
 			res_ull *= 10;
+			pre_add = res_ull;
 			res_ull += strview_pop_first_char(str) & 0x0F;
+			if(res_ull < pre_add)
+				err = ERANGE;
 		};
-		if(str->size && isdigit(str->data[0]))
-			err = ERANGE;
 	};
 
 	if(!err && dst)
