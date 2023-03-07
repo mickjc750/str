@@ -42,10 +42,24 @@
 
 	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
 
+	SUITE(suite_strbuf);
 	TEST test_strbuf_create_using_malloc(void);
 	TEST test_strbuf_create_using_allocator(void);
 	TEST test_strbuf_create_static(void);
 	TEST test_strbuf_strcat(void);
+	TEST test_strbuf_shrink(void);
+	TEST test_strbuf_printf(void);
+	TEST test_strbuf_append_printf(void);
+	TEST test_strbuf_prnf(void);
+	TEST test_strbuf_append_prnf(void);
+	TEST test_strbuf_assign(void);
+	TEST test_strbuf_append(void);
+	TEST test_strbuf_prepend(void);
+	TEST test_strbuf_insert_at_index(void);
+	TEST test_strbuf_insert_before(void);
+	TEST test_strbuf_insert_after(void);
+
+	SUITE(suite_strview);
 	TEST test_strview_sub(void);
 	TEST test_strview_sub_edge_cases(void);
 	TEST test_strview_split_first_delimiter(void);
@@ -59,7 +73,6 @@
 	TEST test_strview_find_last_edge_cases(void);
 	TEST test_strview_is_valid(void);
 	TEST test_strview_append_char(void);
-	TEST test_strbuf_shrink(void);
 	TEST test_strview_is_match(void);
 	TEST test_strview_is_match_nocase(void);
 	TEST test_strview_trim_start(void);
@@ -68,17 +81,7 @@
 	TEST test_strview_to_cstr(void);
 	TEST test_strview_compare(void);
 	TEST test_strview_split_index(void);
-	TEST test_strbuf_printf(void);
-	TEST test_strbuf_append_printf(void);
-	TEST test_strbuf_prnf(void);
-	TEST test_strbuf_append_prnf(void);
-	TEST test_strbuf_assign(void);
-	TEST test_strbuf_append(void);
-	TEST test_strbuf_prepend(void);
-	TEST test_strbuf_insert_at_index(void);
 	TEST test_strview_split_line(void);
-	TEST test_strbuf_insert_before(void);
-	TEST test_strbuf_insert_after(void);
 	TEST test_strview_split_left_of_view(void);
 	TEST test_strview_split_right_of_view(void);
 
@@ -89,49 +92,9 @@
 int main(int argc, const char* argv[])
 {
 	GREATEST_MAIN_BEGIN();
-
-	RUN_TEST(test_strbuf_create_using_malloc);
-	RUN_TEST(test_strbuf_create_using_allocator);
-	RUN_TEST(test_strbuf_create_static);
-	RUN_TEST(test_strbuf_strcat);
-	RUN_TEST(test_strview_sub);
-	RUN_TEST(test_strview_sub_edge_cases);
-	RUN_TEST(test_strview_split_first_delimiter);
-	RUN_TEST(test_strview_split_first_delimiter_edge_cases);
-	RUN_TEST(test_strview_split_first_delimiter_nocase);
-	RUN_TEST(test_strview_split_last_delimiter);
-	RUN_TEST(test_strview_split_last_delimiter_edge_cases);
-	RUN_TEST(test_strview_find_first);
-	RUN_TEST(test_strview_find_first_edge_cases);
-	RUN_TEST(test_strview_find_last);
-	RUN_TEST(test_strview_find_last_edge_cases);
-	RUN_TEST(test_strview_is_valid);
-	RUN_TEST(test_strview_append_char);
-	RUN_TEST(test_strbuf_shrink);
-	RUN_TEST(test_strview_is_match);
-	RUN_TEST(test_strview_is_match_nocase);
-	RUN_TEST(test_strview_trim_start);
-	RUN_TEST(test_strview_trim_end);
-	RUN_TEST(test_strview_trim);
-	RUN_TEST(test_strview_to_cstr);
-	RUN_TEST(test_strview_compare);
-	RUN_TEST(test_strview_split_index);
-	RUN_TEST(test_strbuf_printf);
-	RUN_TEST(test_strbuf_append_printf);
-	RUN_TEST(test_strbuf_prnf);
-	RUN_TEST(test_strbuf_append_prnf);
-	RUN_TEST(test_strbuf_assign);
-	RUN_TEST(test_strbuf_append);
-	RUN_TEST(test_strbuf_prepend);
-	RUN_TEST(test_strbuf_insert_at_index);
-	RUN_TEST(test_strview_split_line);
-	RUN_TEST(test_strbuf_insert_before);
-	RUN_TEST(test_strbuf_insert_after);
-	RUN_TEST(test_strview_split_left_of_view);
-	RUN_TEST(test_strview_split_right_of_view);
-
+	RUN_SUITE(suite_strbuf);
+	RUN_SUITE(suite_strview);
 	GREATEST_MAIN_END();
-
 	return 0;
 }
 
@@ -146,6 +109,53 @@ static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_f
 	result = realloc(ptr_to_free, size);
 	assert(size==0 || result);	// You need to catch a failed allocation here.
 	return result;
+}
+
+SUITE(suite_strbuf)
+{
+	RUN_TEST(test_strbuf_create_using_malloc);
+	RUN_TEST(test_strbuf_create_using_allocator);
+	RUN_TEST(test_strbuf_create_static);
+	RUN_TEST(test_strbuf_strcat);
+	RUN_TEST(test_strbuf_shrink);
+	RUN_TEST(test_strbuf_printf);
+	RUN_TEST(test_strbuf_append_printf);
+	RUN_TEST(test_strbuf_prnf);
+	RUN_TEST(test_strbuf_append_prnf);
+	RUN_TEST(test_strbuf_assign);
+	RUN_TEST(test_strbuf_append);
+	RUN_TEST(test_strbuf_prepend);
+	RUN_TEST(test_strbuf_insert_at_index);
+	RUN_TEST(test_strbuf_insert_before);
+	RUN_TEST(test_strbuf_insert_after);
+}
+
+SUITE(suite_strview)
+{
+	RUN_TEST(test_strview_sub);
+	RUN_TEST(test_strview_sub_edge_cases);
+	RUN_TEST(test_strview_split_first_delimiter);
+	RUN_TEST(test_strview_split_first_delimiter_edge_cases);
+	RUN_TEST(test_strview_split_first_delimiter_nocase);
+	RUN_TEST(test_strview_split_last_delimiter);
+	RUN_TEST(test_strview_split_last_delimiter_edge_cases);
+	RUN_TEST(test_strview_find_first);
+	RUN_TEST(test_strview_find_first_edge_cases);
+	RUN_TEST(test_strview_find_last);
+	RUN_TEST(test_strview_find_last_edge_cases);
+	RUN_TEST(test_strview_is_valid);
+	RUN_TEST(test_strview_append_char);
+	RUN_TEST(test_strview_is_match);
+	RUN_TEST(test_strview_is_match_nocase);
+	RUN_TEST(test_strview_trim_start);
+	RUN_TEST(test_strview_trim_end);
+	RUN_TEST(test_strview_trim);
+	RUN_TEST(test_strview_to_cstr);
+	RUN_TEST(test_strview_compare);
+	RUN_TEST(test_strview_split_index);
+	RUN_TEST(test_strview_split_line);
+	RUN_TEST(test_strview_split_left_of_view);
+	RUN_TEST(test_strview_split_right_of_view);
 }
 
 TEST test_strbuf_create_using_malloc(void)
