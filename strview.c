@@ -1,7 +1,7 @@
 /*
 */
 
-	#ifndef STR_NO_FLOAT
+	#ifndef STRVIEW_NOFLOAT
 		#include <math.h>
 	#endif
 	#include <limits.h>
@@ -20,6 +20,7 @@
 
 	#define BASE_PREFIX_LEN	2
 
+#ifndef STRVIEW_NOFLOAT
 	typedef struct float_components_t
 	{
 		int options;
@@ -35,6 +36,7 @@
 		unsigned long long integral_value;
 		int exp_value;
 	} float_components_t;
+#endif
 
 //********************************************************************************************************
 // Private prototypes
@@ -56,11 +58,13 @@
 	static int consume_hex_digits(unsigned long long* dst, strview_t* str);
 	static int consume_bin_digits(unsigned long long* dst, strview_t* str);
 
+#ifndef STRVIEW_NOFLOAT
 	static int process_float_components(float_components_t* fc);
 	static float consume_float_special(float_components_t* fc);
 	static int consume_fractional_digits(float_components_t* fc);
 	static int consume_exponent(float_components_t* fc);
-	
+#endif
+
 	static bool upper_nibble_ull_is_zero(unsigned long long i);
 	static bool upper_bit_ull_is_zero(unsigned long long i);
 
@@ -440,7 +444,7 @@ int strview_consume_llong(long long* dst, strview_t* src, int options)
 	return consume_signed(dst, src, options, LLONG_MIN, LLONG_MAX);
 }
 
-strview_t strview_split_left_of_view(strview_t* strview_ptr, strview_t pos)
+strview_t strview_split_left(strview_t* strview_ptr, strview_t pos)
 {
 	strview_t result = STRVIEW_INVALID;
 	if(strview_ptr && strview_is_valid(*strview_ptr) && strview_is_valid(pos))
@@ -451,7 +455,7 @@ strview_t strview_split_left_of_view(strview_t* strview_ptr, strview_t pos)
 	return result;
 }
 
-strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos)
+strview_t strview_split_right(strview_t* strview_ptr, strview_t pos)
 {
 	strview_t result = STRVIEW_INVALID;
 	strview_t src;
@@ -471,7 +475,7 @@ strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos)
 
 	return result;
 }
-
+#ifndef STRVIEW_NOFLOAT
 int strview_consume_float(float* dst, strview_t* src, int options)
 {
 	int err = 0;
@@ -618,11 +622,13 @@ int strview_consume_ldouble(long double* dst, strview_t* src, int options)
 
 	return err;
 }
+#endif
 
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************
 
+#ifndef STRVIEW_NOFLOAT
 static int process_float_components(float_components_t* fc)
 {
 	int err = 0;
@@ -695,7 +701,7 @@ static int consume_fractional_digits(float_components_t* fc)
 		strview_pop_first_char(&fc->num);
 		post_fractional_view = strview_trim_start(fc->num, cstr("0123456789"));
 		fractional_view = fc->num;
-		fractional_view = strview_split_left_of_view(&fractional_view, post_fractional_view);
+		fractional_view = strview_split_left(&fractional_view, post_fractional_view);
 		fractional_view = strview_trim_end(fractional_view, cstr("0"));
 		fc->fractional_exponent = fractional_view.size * -1;
 		err = consume_digits(&fc->fractional_value, &fractional_view, 10);
@@ -721,6 +727,7 @@ static int consume_exponent(float_components_t* fc)
 		err = 0;	// an invalid exponent (non-numeric) simply means we don't consume the exponent.
 	return err;
 }
+#endif
 
 static int consume_signed(long long* dst, strview_t* src, int options, long long limit_min, long long limit_max)
 {

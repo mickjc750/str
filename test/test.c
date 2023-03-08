@@ -82,8 +82,8 @@
 	TEST test_strview_compare(void);
 	TEST test_strview_split_index(void);
 	TEST test_strview_split_line(void);
-	TEST test_strview_split_left_of_view(void);
-	TEST test_strview_split_right_of_view(void);
+	TEST test_strview_split_left(void);
+	TEST test_strview_split_right(void);
 	TEST test_strview_consume_value(void);
 
 //********************************************************************************************************
@@ -155,8 +155,8 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_compare);
 	RUN_TEST(test_strview_split_index);
 	RUN_TEST(test_strview_split_line);
-	RUN_TEST(test_strview_split_left_of_view);
-	RUN_TEST(test_strview_split_right_of_view);
+	RUN_TEST(test_strview_split_left);
+	RUN_TEST(test_strview_split_right);
 	RUN_TEST(test_strview_consume_value);
 
 }
@@ -1154,78 +1154,78 @@ TEST test_strbuf_insert_after(void)
 	PASS();
 }
 
-TEST test_strview_split_left_of_view(void)
+TEST test_strview_split_left(void)
 {
 	strview_t str1,str2,str3;
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_first(str1, cstr("testing"));
-	str3 = strview_split_left_of_view(&str1, str2);
+	str3 = strview_split_left(&str1, str2);
 	ASSERT(strview_is_match(str3, cstr("Hello-")));
 	ASSERT(strview_is_match(str1, cstr("testing-123")));
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_first(str1, cstr(""));
-	str3 = strview_split_left_of_view(&str1, str2);
+	str3 = strview_split_left(&str1, str2);
 	ASSERT(strview_is_valid(str3)); ASSERT(str3.size == 0);
 	ASSERT(strview_is_match(str1, cstr("Hello-testing-123")));
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_last(str1, cstr(""));
-	str3 = strview_split_left_of_view(&str1, str2);
+	str3 = strview_split_left(&str1, str2);
 	ASSERT(strview_is_valid(str1)); ASSERT(str1.size == 0);
 	ASSERT(strview_is_match(str3, cstr("Hello-testing-123")));
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_first(str1, cstr(""));
 	str2.data--;
-	str3 = strview_split_left_of_view(&str1, str2);
+	str3 = strview_split_left(&str1, str2);
 	ASSERT(!strview_is_valid(str3));
 	ASSERT(strview_is_match(str1, cstr("Hello-testing-123")));
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_last(str1, cstr(""));
 	str2.data++;
-	str3 = strview_split_left_of_view(&str1, str2);
+	str3 = strview_split_left(&str1, str2);
 	ASSERT(!strview_is_valid(str3));
 	ASSERT(strview_is_match(str1, cstr("Hello-testing-123")));
 
 	PASS();
 }
 
-TEST test_strview_split_right_of_view(void)
+TEST test_strview_split_right(void)
 {
 	strview_t str1,str2,str3;
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_first(str1, cstr("testing"));
-	str3 = strview_split_right_of_view(&str1, str2);
+	str3 = strview_split_right(&str1, str2);
 	ASSERT(strview_is_match(str3, cstr("-123")));
 	ASSERT(strview_is_match(str1, cstr("Hello-testing")));
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_first(str1, cstr(""));
-	str3 = strview_split_right_of_view(&str1, str2);
+	str3 = strview_split_right(&str1, str2);
 	ASSERT(strview_is_valid(str1)); ASSERT(str1.size == 0);
 	ASSERT(strview_is_match(str3, cstr("Hello-testing-123")));
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_last(str1, cstr(""));
-	str3 = strview_split_right_of_view(&str1, str2);
+	str3 = strview_split_right(&str1, str2);
 	ASSERT(strview_is_valid(str3)); ASSERT(str3.size == 0);
 	ASSERT(strview_is_match(str1, cstr("Hello-testing-123")));
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_first(str1, cstr(""));
 	str2.data--;
-	str3 = strview_split_right_of_view(&str1, str2);
+	str3 = strview_split_right(&str1, str2);
 	ASSERT(!strview_is_valid(str3));
 	ASSERT(strview_is_match(str1, cstr("Hello-testing-123")));
 
 	str1 = cstr("Hello-testing-123");
 	str2 = strview_find_last(str1, cstr(""));
 	str2.data++;
-	str3 = strview_split_right_of_view(&str1, str2);
+	str3 = strview_split_right(&str1, str2);
 	ASSERT(!strview_is_valid(str3));
 	ASSERT(strview_is_match(str1, cstr("Hello-testing-123")));
 
@@ -1279,7 +1279,8 @@ TEST test_strview_consume_value(void)
 	TEST_AT_LIMIT("%lli", LLONG_MIN, illong);
 	TEST_AT_LIMIT("%lli", LLONG_MAX, illong);
 
-	//it just so happens that no relevant powers of 2 end in 9, so the last digit can be incremented to exceed the limit
+	//Test all integer types over their limits by 1
+	//It just so happens that no relevant powers of 2 end in 9, so the last digit can always be incremented to exceed the limit
 	#define TEST_OVER_LIMIT(fmt, lim, var)				\
 	do													\
 	{													\
@@ -1305,16 +1306,148 @@ TEST test_strview_consume_value(void)
 	TEST_OVER_LIMIT("%lli", LLONG_MIN, illong);
 	TEST_OVER_LIMIT("%lli", LLONG_MAX, illong);
 
+	// check that white space is tolerated
+	v = cstr(" 123");
+	err = strview_consume_value(&iint, &v, 0);
+	ASSERT(!err);
+	ASSERT(iint == 123);
+	// check that white space is not tolerated
+	iint = 0;
+	v = cstr(" 123");
+	err = strview_consume_value(&iint, &v, STR_NOSPACE);
+	ASSERT(err == EINVAL);
+	ASSERT(iint == 0);
+
+	// test 0b 0B 0x 0X base prefix
+	v = cstr("0b1001");
+	err = strview_consume_value(&iint, &v, 0);
+	ASSERT(!err);
+	ASSERT(iint == 0b1001);
+	v = cstr("0B1001");
+	err = strview_consume_value(&iint, &v, 0);
+	ASSERT(!err);
+	ASSERT(iint == 0b1001);
+	v = cstr("0x3fE1");
+	err = strview_consume_value(&iint, &v, 0);
+	ASSERT(!err);
+	ASSERT(iint == 0x3FE1);
+	v = cstr("0X3Fe1");
+	err = strview_consume_value(&iint, &v, 0);
+	ASSERT(!err);
+	ASSERT(iint == 0x3FE1);
+
+	// test rejection of 0b 0B 0x 0X base prefix
+	v = cstr("0b1001");
+	iint = 1;
+	err = strview_consume_value(&iint, &v, STR_NOBX);
+	ASSERT(!err);
+	ASSERT(iint == 0);
+	ASSERT(strview_is_match(v, cstr("b1001")));
+	v = cstr("0B1001");
+	iint = 1;
+	err = strview_consume_value(&iint, &v, STR_NOBX);
+	ASSERT(!err);
+	ASSERT(iint == 0);
+	ASSERT(strview_is_match(v, cstr("B1001")));
+	v = cstr("0x3F711");
+	iint = 1;
+	err = strview_consume_value(&iint, &v, STR_NOBX);
+	ASSERT(!err);
+	ASSERT(iint == 0);
+	ASSERT(strview_is_match(v, cstr("x3F711")));
+	v = cstr("0x3F711");
+	iint = 1;
+	err = strview_consume_value(&iint, &v, STR_NOBX);
+	ASSERT(!err);
+	ASSERT(iint == 0);
+	ASSERT(strview_is_match(v, cstr("x3F711")));
+
+	// test rejection of sign character
+	v = cstr("+123");
+	iint = 0;
+	err = strview_consume_value(&iint, &v, STR_NOSIGN);
+	ASSERT(err == EINVAL);
+	ASSERT(iint == 0);
+	ASSERT(strview_is_match(v, cstr("+123")));
+
+	// test binary digits without prefix
+	v = cstr("1001");
+	iint = 0;
+	err = strview_consume_value(&iint, &v, STR_BASE_BIN);
+	ASSERT(!err);
+	ASSERT(iint == 0b1001);
+
+	// test binary digits with 0b prefix
+	v = cstr("0b1001");
+	iint = 0;
+	err = strview_consume_value(&iint, &v, STR_BASE_BIN);
+	ASSERT(!err);
+	ASSERT(iint == 0b1001);
+
+	// test rejection of 0x when binary is expected
+	v = cstr("0x13F");
+	iint = 1;
+	err = strview_consume_value(&iint, &v, STR_BASE_BIN);
+	ASSERT(!err);
+	ASSERT(iint == 0);
+	ASSERT(strview_is_match(v, cstr("x13F")));
+
+	// test hex digits without prefix
+	v = cstr("3eF1");
+	iint = 0;
+	err = strview_consume_value(&iint, &v, STR_BASE_HEX);
+	ASSERT(!err);
+	ASSERT(iint == 0x3EF1);
+
+	// test hex digits with prefix
+	v = cstr("0x3eF1");
+	iint = 0;
+	err = strview_consume_value(&iint, &v, STR_BASE_HEX);
+	ASSERT(!err);
+	ASSERT(iint == 0x3EF1);
+
+	// test interpretation of 0b as hex digits when hex is expected
+	v = cstr("0b100");
+	iint = 0;
+	err = strview_consume_value(&iint, &v, STR_BASE_HEX);
+	ASSERT(!err);
+	ASSERT(iint == 0xb100);
+
+	// test float types close to their limits
+	v = strbuf_printf(&buf, "%Le", (long double)(__FLT_MAX__ * 0.998));
+	err = strview_consume_value(&ifloat, &v, 0);
+	ASSERT(!err);
+	ASSERT(__FLT_MAX__*0.997 < ifloat && ifloat < __FLT_MAX__ * 0.999);
+	v = strbuf_printf(&buf, "%Le", (long double)(__DBL_MAX__ * 0.998));
+	err = strview_consume_value(&idouble, &v, 0);
+	ASSERT(!err);
+	ASSERT(__DBL_MAX__*0.997 < idouble && idouble < __DBL_MAX__ * 0.999);
+	v = strbuf_printf(&buf, "%Le", (long double)(__LDBL_MAX__ * 0.998));
+	err = strview_consume_value(&ildouble, &v, 0);
+	ASSERT(!err);
+	ASSERT(__LDBL_MAX__*0.997 < ildouble && ildouble < __LDBL_MAX__ * 0.999);
+	v = strbuf_printf(&buf, "%Le", (long double)(__FLT_MIN__ * 0.998));
+	err = strview_consume_value(&ifloat, &v, 0);
+	ASSERT(!err);
+	ASSERT(__FLT_MIN__*0.997 < ifloat && ifloat < __FLT_MIN__ * 0.999);
+	v = strbuf_printf(&buf, "%Le", (long double)(__DBL_MIN__ * 0.998));
+	err = strview_consume_value(&idouble, &v, 0);
+	ASSERT(!err);
+	ASSERT(__DBL_MIN__*0.997 < idouble && idouble < __DBL_MIN__ * 0.999);
+	v = strbuf_printf(&buf, "%Le", (long double)(__LDBL_MIN__ * 0.998));
+	err = strview_consume_value(&ildouble, &v, 0);
+	ASSERT(!err);
+	ASSERT(__LDBL_MIN__*0.997 < ildouble && ildouble < __LDBL_MIN__ * 0.999);
+
+	// test rejection of exponent
+	v = cstr("3.17E2");
+	ifloat = 0.0;
+	err = strview_consume_value(&ifloat, &v, STR_NOEXP);
+	ASSERT(!err);
+	ASSERT(3.1699 < ifloat && ifloat < 3.1701);
+	ASSERT(strview_is_match(v, cstr("E2")));
 
 	strbuf_destroy(&buf);
 	ASSERT(!buf);
 	PASS();
-
-
-/*
-	CHAR_MIN, CHAR_MAX
-	SHRT_MIN, SHRT_MAX
-	INT_MIN, INT_MAX
-	LONG_MIN, LONG_MAX
-	LLONG_MIN, LLONG_MAX*/
 }
