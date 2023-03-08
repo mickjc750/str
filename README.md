@@ -222,40 +222,6 @@ This variable stores the state of the eol discriminator, regarding if a future C
 It's initial value should be 0.
 
 &nbsp;
-## long long strview_to_ll(strview_t str);
- Convert the ascii representation of the signed long long in **str**, into a long long value.
- The input string is first  trimmed of any leading spaces, and may start with 0x or 0X for hex numbers, or 0b for binary numbers.
-
-&nbsp;
-## unsigned long long strview_to_ull(strview_t str);
- Same as **strview_to_ull()** but converts to an unsigned value.
-
-The above **strview_to_ull** and **strview_to_ll()** are also cast to stdint.h types using macros.
-
-	#define strview_to_int(str)         ((int)strview_to_ll(str))
-	#define strview_to_int8_t(str)      ((int8_t)strview_to_ll(str))
-	#define strview_to_int16_t(str)     ((int16_t)strview_to_ll(str))
-	#define strview_to_int32_t(str)     ((int32_t)strview_to_ll(str))
-	#define strview_to_int64_t(str)     ((int64_t)strview_to_ll(str))
-	#define strview_to_unsigned(str)    ((unsigned)strview_to_ull(str))
-	#define strview_to_uint8_t(str)     ((uint8_t)strview_to_ull(str))
-	#define strview_to_uint16_t(str)    ((uint16_t)strview_to_ull(str))
-	#define strview_to_uint32_t(str)    ((uint32_t)strview_to_ull(str))
-	#define strview_to_uint64_t(str)    ((uint64_t)strview_to_ull(str))
-
-&nbsp;
-## double strview_to_float(strview_t str);
- Convert the ascii representation of a floating point value in **str**, into a double.
-
-The default precision of this function is double, but **strview.h** accepts the following defined symbols:
-* STR_NO_FLOAT - Do not provide floating point conversions. 
-* STR_SUPPORT_FLOAT - Use float instead of double.
-* STR_SUPPORT_LONG_DOUBLE - Use long double instead of double.
-
-These can be added to your compiler flags eg. -DSTR_SUPPORT_LONG_DOUBLE
-This feature requires linking against the maths library, so linker options will need -lm, unless you define **STR_NO_FLOAT**
-
-&nbsp;
 # strbuf.h
  strbuf.h provides functions for allocating, building and storing strings.
  Unlike the strview_t type, a strbuf_t owns the string data, and contains all the information needed to modify it, resize it, or free it.

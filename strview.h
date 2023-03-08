@@ -1,4 +1,9 @@
-/*/
+/*
+	strview.h
+	Functions for parsing and interpreting strings.
+	Floating point number conversion requires the standard maths library (-lm)
+	If you do not want to link against the maths library define the symbol STRVIEW_NOFLOAT
+	 by adding -DSTRVIEW_NOFLOAT to your compiler options
 */
 
 #ifndef _STRVIEW_H_
@@ -31,7 +36,7 @@
 //	Do not accept leading whitespace
 	#define STR_NOSPACE		(1<<4)
 
-//	Do not accept exponent for floating point types
+//	Do not accept an exponent for floating point types
 	#define STR_NOEXP		(1<<5)
 
 //	Accept and evaluate trailing Si prefix
@@ -60,6 +65,7 @@
 //	Assign to a strview_t to make it invalid
 	#define STRVIEW_INVALID		((strview_t){.data = NULL, .size = 0})
 
+	#ifndef STRVIEW_NOFLOAT
 //	Generic macro for calling number conversions based on the variable type
 	#define strview_consume_value(dst, src, opt) _Generic((dst),\
 		unsigned char*:			strview_consume_uchar,\
@@ -76,6 +82,21 @@
 		double*:				strview_consume_double,\
 		long double*:			strview_consume_ldouble\
 		)(dst, src, opt)
+	#else
+//	Generic macro for calling number conversions based on the variable type
+	#define strview_consume_value(dst, src, opt) _Generic((dst),\
+		unsigned char*:			strview_consume_uchar,\
+		unsigned short*:		strview_consume_ushort,\
+		unsigned int*:			strview_consume_uint,\
+		unsigned long*:			strview_consume_ulong,\
+		unsigned long long*:	strview_consume_ullong,\
+		char*:					strview_consume_char,\
+		short*:					strview_consume_short,\
+		int*:					strview_consume_int,\
+		long*:					strview_consume_long,\
+		long long*:				strview_consume_llong,\
+		)(dst, src, opt)
+	#endif
 
 //********************************************************************************************************
 // Public variables
@@ -87,7 +108,7 @@
 
 
 //	These functions consume text representing a number from src, and write the value of the number into dst
-//	Return value is 0 on success, with src beginning at the character where conversion stopped
+//	Return value is 0 on success, the remaining text in src begins where conversion stopped.
 //	If src does not contain a valid value for the given type EINVALID is returned, and src is unmodified
 //	If src contains a value out of range for the given type ERANGE is returned, and src is unmodified
 	int strview_consume_uchar(unsigned char* dst, strview_t* src, int options);
@@ -100,9 +121,11 @@
 	int strview_consume_int(int* dst, strview_t* src, int options);
 	int strview_consume_long(long* dst, strview_t* src, int options);
 	int strview_consume_llong(long long* dst, strview_t* src, int options);
+#ifndef STRVIEW_NOFLOAT
 	int strview_consume_float(float* dst, strview_t* src, int options);
 	int strview_consume_double(double* dst, strview_t* src, int options);
 	int strview_consume_ldouble(long double* dst, strview_t* src, int options);
+#endif
 
 //	Return a strview_t from a null terminated const char string.
 //	If the argument is a string literal, cstr_SL() may be used instead, to prevent traversing the string literal to measure it's length
@@ -123,6 +146,13 @@
 
 //	Same as strview_is_match() ignoring case
 	bool strview_is_match_nocase(strview_t str1, strview_t str2);
+
+/*	Returns true if the content of str2 is found at the beginning of str1
+	Returns true if BOTH strings are invalid */
+	bool strview_starts_with(strview_t str1, strview_t str2);
+
+//	Same as strview_starts_with() ignoring case
+	bool strview_starts_with_nocase(strview_t str1, strview_t str2);
 
 /*	Replaces strcmp()
 	returns >0 if the first non-matching character in str1 is greater (in ASCII) than that of str2.
@@ -193,7 +223,7 @@
 
 	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
 */
-	strview_t strview_split_left_of_view(strview_t* strview_ptr, strview_t pos);
+	strview_t strview_split_left(strview_t* strview_ptr, strview_t pos);
 
 /*	Split a strview_t at a position specified by pos
 
@@ -204,7 +234,7 @@
 
 	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
 */
-	strview_t strview_split_right_of_view(strview_t* strview_ptr, strview_t pos);
+	strview_t strview_split_right(strview_t* strview_ptr, strview_t pos);
 
 /*	Return the first char of str, and remove it from the str.
 	Returns 0 if there are no characters in str.
