@@ -119,6 +119,30 @@ bool strview_is_match_nocase(strview_t str1, strview_t str2)
 	return (str1.size == str2.size) && (str1.data == str2.data || !memcmp_nocase(str1.data, str2.data, str1.size));
 }
 
+bool strview_starts_with(strview_t str1, strview_t str2)
+{
+	bool result;
+
+	if(!strview_is_valid(str2))
+		result = !strview_is_valid(str1);
+	else
+		result = (str1.size >= str2.size) && (str1.data == str2.data || !memcmp(str1.data, str2.data, str2.size));
+
+	return result;
+}
+
+bool strview_starts_with_nocase(strview_t str1, strview_t str2)
+{
+	bool result;
+
+	if(!strview_is_valid(str2))
+		result = !strview_is_valid(str1);
+	else
+		result = (str1.size >= str2.size) && (str1.data == str2.data || !memcmp_nocase(str1.data, str2.data, str2.size));
+
+	return result;
+}
+
 int strview_compare(strview_t str1, strview_t str2)
 {
 	int compare_size = str1.size < str2.size ? str1.size:str2.size;
@@ -666,7 +690,7 @@ static int process_float_components(float_components_t* fc)
 	};
 
 	//consume exponent
-	if(!err && !fc->is_special && !(fc->options & STR_NOEXP) && fc->num.size && toupper(fc->num.data[0])=='E')
+	if(!err && !fc->is_special && !(fc->options & STR_NOEXP) && strview_starts_with_nocase(fc->num, cstr("E")))
 		err = consume_exponent(fc);
 
 	return err;

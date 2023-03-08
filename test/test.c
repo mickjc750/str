@@ -75,6 +75,8 @@
 	TEST test_strview_append_char(void);
 	TEST test_strview_is_match(void);
 	TEST test_strview_is_match_nocase(void);
+	TEST test_strview_starts_with(void);
+	TEST test_strview_starts_with_nocase(void);
 	TEST test_strview_trim_start(void);
 	TEST test_strview_trim_end(void);
 	TEST test_strview_trim(void);
@@ -148,6 +150,8 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_append_char);
 	RUN_TEST(test_strview_is_match);
 	RUN_TEST(test_strview_is_match_nocase);
+	RUN_TEST(test_strview_starts_with);
+	RUN_TEST(test_strview_starts_with_nocase);
 	RUN_TEST(test_strview_trim_start);
 	RUN_TEST(test_strview_trim_end);
 	RUN_TEST(test_strview_trim);
@@ -666,6 +670,26 @@ TEST test_strview_is_match_nocase(void)
 	ASSERT(!strview_is_match_nocase(cstr("Hell"), cstr("Hello")));
 	ASSERT(!strview_is_match_nocase(cstr("Hello"), STRVIEW_INVALID));
 	ASSERT(!strview_is_match_nocase(STRVIEW_INVALID, cstr("Hello")));
+	PASS();
+}
+
+TEST test_strview_starts_with(void)
+{
+	ASSERT(strview_starts_with(cstr("Hello..."), cstr("Hello")));
+	ASSERT(strview_starts_with(STRVIEW_INVALID, STRVIEW_INVALID));
+	ASSERT(!strview_starts_with(cstr("Hello.."), cstr("Hello...")));
+	ASSERT(!strview_starts_with(cstr("Hello"), STRVIEW_INVALID));
+	ASSERT(!strview_starts_with(STRVIEW_INVALID, cstr("Hello")));
+	PASS();
+}
+
+TEST test_strview_starts_with_nocase(void)
+{
+	ASSERT(strview_starts_with_nocase(cstr("hELlo..."), cstr("Hello")));
+	ASSERT(strview_starts_with_nocase(STRVIEW_INVALID, STRVIEW_INVALID));
+	ASSERT(!strview_starts_with_nocase(cstr("Hello.."), cstr("Hello...")));
+	ASSERT(!strview_starts_with_nocase(cstr("Hello"), STRVIEW_INVALID));
+	ASSERT(!strview_starts_with_nocase(STRVIEW_INVALID, cstr("Hello")));
 	PASS();
 }
 

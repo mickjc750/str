@@ -147,6 +147,13 @@
 //	Same as strview_is_match() ignoring case
 	bool strview_is_match_nocase(strview_t str1, strview_t str2);
 
+/*	Returns true if the content of str2 is found at the beginning of str1
+	Returns true if BOTH strings are invalid */
+	bool strview_starts_with(strview_t str1, strview_t str2);
+
+//	Same as strview_starts_with() ignoring case
+	bool strview_starts_with_nocase(strview_t str1, strview_t str2);
+
 /*	Replaces strcmp()
 	returns >0 if the first non-matching character in str1 is greater (in ASCII) than that of str2.
 	returns <0 if the first non-matching character in str1 is lower   (in ASCII) than that of str2.
