@@ -11,6 +11,7 @@
 	#include "greatest.h"
 	#include "strbuf.h"
 	#include "strview.h"
+	#include "strnum.h"
 
 //********************************************************************************************************
 // Configurable defines
@@ -86,7 +87,7 @@
 	TEST test_strview_split_line(void);
 	TEST test_strview_split_left(void);
 	TEST test_strview_split_right(void);
-	TEST test_strview_consume_value(void);
+	TEST test_strnum_value(void);
 
 //********************************************************************************************************
 // Public functions
@@ -161,7 +162,7 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_split_line);
 	RUN_TEST(test_strview_split_left);
 	RUN_TEST(test_strview_split_right);
-	RUN_TEST(test_strview_consume_value);
+	RUN_TEST(test_strnum_value);
 
 }
 
@@ -1256,7 +1257,7 @@ TEST test_strview_split_right(void)
 	PASS();
 }
 
-TEST test_strview_consume_value(void)
+TEST test_strnum_value(void)
 {
 	strbuf_t* buf = strbuf_create(0,NULL);
 	int err;
@@ -1282,7 +1283,7 @@ TEST test_strview_consume_value(void)
 	do													\
 	{													\
 		v = strbuf_printf(&buf, fmt, (lim));			\
-		err = strview_consume_value(&(var), &v, 0);		\
+		err = strnum_value(&(var), &v, 0);				\
 		ASSERT(err == 0);								\
 		ASSERT(var == (lim));							\
 	}while(0);											\
@@ -1310,7 +1311,7 @@ TEST test_strview_consume_value(void)
 	{													\
 		v = strbuf_printf(&buf, fmt, (lim));			\
 		buf->cstr[buf->size-1]++;						\
-		err = strview_consume_value(&(var), &v, 0);		\
+		err = strnum_value(&(var), &v, 0);				\
 		ASSERT(err == ERANGE);							\
 	}while(0);											\
 
@@ -1332,56 +1333,56 @@ TEST test_strview_consume_value(void)
 
 	// check that white space is tolerated
 	v = cstr(" 123");
-	err = strview_consume_value(&iint, &v, 0);
+	err = strnum_value(&iint, &v, 0);
 	ASSERT(!err);
 	ASSERT(iint == 123);
 	// check that white space is not tolerated
 	iint = 0;
 	v = cstr(" 123");
-	err = strview_consume_value(&iint, &v, STR_NOSPACE);
+	err = strnum_value(&iint, &v, STRNUM_NOSPACE);
 	ASSERT(err == EINVAL);
 	ASSERT(iint == 0);
 
 	// test 0b 0B 0x 0X base prefix
 	v = cstr("0b1001");
-	err = strview_consume_value(&iint, &v, 0);
+	err = strnum_value(&iint, &v, 0);
 	ASSERT(!err);
 	ASSERT(iint == 0b1001);
 	v = cstr("0B1001");
-	err = strview_consume_value(&iint, &v, 0);
+	err = strnum_value(&iint, &v, 0);
 	ASSERT(!err);
 	ASSERT(iint == 0b1001);
 	v = cstr("0x3fE1");
-	err = strview_consume_value(&iint, &v, 0);
+	err = strnum_value(&iint, &v, 0);
 	ASSERT(!err);
 	ASSERT(iint == 0x3FE1);
 	v = cstr("0X3Fe1");
-	err = strview_consume_value(&iint, &v, 0);
+	err = strnum_value(&iint, &v, 0);
 	ASSERT(!err);
 	ASSERT(iint == 0x3FE1);
 
 	// test rejection of 0b 0B 0x 0X base prefix
 	v = cstr("0b1001");
 	iint = 1;
-	err = strview_consume_value(&iint, &v, STR_NOBX);
+	err = strnum_value(&iint, &v, STRNUM_NOBX);
 	ASSERT(!err);
 	ASSERT(iint == 0);
 	ASSERT(strview_is_match(v, cstr("b1001")));
 	v = cstr("0B1001");
 	iint = 1;
-	err = strview_consume_value(&iint, &v, STR_NOBX);
+	err = strnum_value(&iint, &v, STRNUM_NOBX);
 	ASSERT(!err);
 	ASSERT(iint == 0);
 	ASSERT(strview_is_match(v, cstr("B1001")));
 	v = cstr("0x3F711");
 	iint = 1;
-	err = strview_consume_value(&iint, &v, STR_NOBX);
+	err = strnum_value(&iint, &v, STRNUM_NOBX);
 	ASSERT(!err);
 	ASSERT(iint == 0);
 	ASSERT(strview_is_match(v, cstr("x3F711")));
 	v = cstr("0x3F711");
 	iint = 1;
-	err = strview_consume_value(&iint, &v, STR_NOBX);
+	err = strnum_value(&iint, &v, STRNUM_NOBX);
 	ASSERT(!err);
 	ASSERT(iint == 0);
 	ASSERT(strview_is_match(v, cstr("x3F711")));
@@ -1389,7 +1390,7 @@ TEST test_strview_consume_value(void)
 	// test rejection of sign character
 	v = cstr("+123");
 	iint = 0;
-	err = strview_consume_value(&iint, &v, STR_NOSIGN);
+	err = strnum_value(&iint, &v, STRNUM_NOSIGN);
 	ASSERT(err == EINVAL);
 	ASSERT(iint == 0);
 	ASSERT(strview_is_match(v, cstr("+123")));
@@ -1397,21 +1398,21 @@ TEST test_strview_consume_value(void)
 	// test binary digits without prefix
 	v = cstr("1001");
 	iint = 0;
-	err = strview_consume_value(&iint, &v, STR_BASE_BIN);
+	err = strnum_value(&iint, &v, STRNUM_BASE_BIN);
 	ASSERT(!err);
 	ASSERT(iint == 0b1001);
 
 	// test binary digits with 0b prefix
 	v = cstr("0b1001");
 	iint = 0;
-	err = strview_consume_value(&iint, &v, STR_BASE_BIN);
+	err = strnum_value(&iint, &v, STRNUM_BASE_BIN);
 	ASSERT(!err);
 	ASSERT(iint == 0b1001);
 
 	// test rejection of 0x when binary is expected
 	v = cstr("0x13F");
 	iint = 1;
-	err = strview_consume_value(&iint, &v, STR_BASE_BIN);
+	err = strnum_value(&iint, &v, STRNUM_BASE_BIN);
 	ASSERT(!err);
 	ASSERT(iint == 0);
 	ASSERT(strview_is_match(v, cstr("x13F")));
@@ -1419,54 +1420,54 @@ TEST test_strview_consume_value(void)
 	// test hex digits without prefix
 	v = cstr("3eF1");
 	iint = 0;
-	err = strview_consume_value(&iint, &v, STR_BASE_HEX);
+	err = strnum_value(&iint, &v, STRNUM_BASE_HEX);
 	ASSERT(!err);
 	ASSERT(iint == 0x3EF1);
 
 	// test hex digits with prefix
 	v = cstr("0x3eF1");
 	iint = 0;
-	err = strview_consume_value(&iint, &v, STR_BASE_HEX);
+	err = strnum_value(&iint, &v, STRNUM_BASE_HEX);
 	ASSERT(!err);
 	ASSERT(iint == 0x3EF1);
 
 	// test interpretation of 0b as hex digits when hex is expected
 	v = cstr("0b100");
 	iint = 0;
-	err = strview_consume_value(&iint, &v, STR_BASE_HEX);
+	err = strnum_value(&iint, &v, STRNUM_BASE_HEX);
 	ASSERT(!err);
 	ASSERT(iint == 0xb100);
 
 	// test float types close to their limits
 	v = strbuf_printf(&buf, "%Le", (long double)(__FLT_MAX__ * 0.998));
-	err = strview_consume_value(&ifloat, &v, 0);
+	err = strnum_value(&ifloat, &v, 0);
 	ASSERT(!err);
 	ASSERT(__FLT_MAX__*0.997 < ifloat && ifloat < __FLT_MAX__ * 0.999);
 	v = strbuf_printf(&buf, "%Le", (long double)(__DBL_MAX__ * 0.998));
-	err = strview_consume_value(&idouble, &v, 0);
+	err = strnum_value(&idouble, &v, 0);
 	ASSERT(!err);
 	ASSERT(__DBL_MAX__*0.997 < idouble && idouble < __DBL_MAX__ * 0.999);
 	v = strbuf_printf(&buf, "%Le", (long double)(__LDBL_MAX__ * 0.998));
-	err = strview_consume_value(&ildouble, &v, 0);
+	err = strnum_value(&ildouble, &v, 0);
 	ASSERT(!err);
 	ASSERT(__LDBL_MAX__*0.997 < ildouble && ildouble < __LDBL_MAX__ * 0.999);
 	v = strbuf_printf(&buf, "%Le", (long double)(__FLT_MIN__ * 0.998));
-	err = strview_consume_value(&ifloat, &v, 0);
+	err = strnum_value(&ifloat, &v, 0);
 	ASSERT(!err);
 	ASSERT(__FLT_MIN__*0.997 < ifloat && ifloat < __FLT_MIN__ * 0.999);
 	v = strbuf_printf(&buf, "%Le", (long double)(__DBL_MIN__ * 0.998));
-	err = strview_consume_value(&idouble, &v, 0);
+	err = strnum_value(&idouble, &v, 0);
 	ASSERT(!err);
 	ASSERT(__DBL_MIN__*0.997 < idouble && idouble < __DBL_MIN__ * 0.999);
 	v = strbuf_printf(&buf, "%Le", (long double)(__LDBL_MIN__ * 0.998));
-	err = strview_consume_value(&ildouble, &v, 0);
+	err = strnum_value(&ildouble, &v, 0);
 	ASSERT(!err);
 	ASSERT(__LDBL_MIN__*0.997 < ildouble && ildouble < __LDBL_MIN__ * 0.999);
 
 	// test rejection of exponent
 	v = cstr("3.17E2");
 	ifloat = 0.0;
-	err = strview_consume_value(&ifloat, &v, STR_NOEXP);
+	err = strnum_value(&ifloat, &v, STRNUM_NOEXP);
 	ASSERT(!err);
 	ASSERT(3.1699 < ifloat && ifloat < 3.1701);
 	ASSERT(strview_is_match(v, cstr("E2")));

@@ -8,8 +8,9 @@
 	#include <stdint.h>
 	#include <math.h>
 
-	#include "../../strbuf.h"
-	#include "../../strview.h"
+	#include "strbuf.h"
+	#include "strview.h"
+	#include "strnum.h"
 
 //********************************************************************************************************
 // Configurable defines
@@ -104,7 +105,7 @@ Currently enabled options : %s %s %s %s %s %s \n\nTypes number lines or ctrl-c t
 	do																															\
 	{																															\
 		v = view;																												\
-		err = strview_consume_value(&(var), &v, opt);																			\
+		err = strnum_value(&(var), &v, opt);																			\
 		printf("%8s Error=%30s    value= " fmt " remainder = [%"PRIstr"]\n", fmt, strerror(err), err? 0:(var), PRIstrarg(v));	\
 	}while(false)
 
