@@ -16,6 +16,7 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 11. [printf to a strbuf_t](#printf-to-a-strbuf_t)
 12. [prnf to a strbuf_t](#prnf-to-a-strbuft)
 13. [strbuf.h functions](#strbufh-functions)
+14. [Number parsing with strnum.h](#number-parsing-with-strnumh)
 
 &nbsp;
 &nbsp;
@@ -28,9 +29,32 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
  * Returning strings by value, to avoid pointers.
  * Ditching the requirement for null termination.
 
+## Features
+ * Supports static or stack allocated buffers, for applications unable (or programmers unwilling) to use dynamic memory allocation.
+ * Supports custom allocators, for applications which use temporary allocators for speed. Or can default to malloc/free.
+ * A rich set of of string splitting/trim/search functions.
+ * A number parser which checks for errors, including range errors, or invalid input.
+ * A test suite which uses https://github.com/silentbicycle/greatest, currently passing all 42 tests, 486 assertions.
+
+ STR is not currently MISRA compliant, but as it doesn't depend on dynamic memory allocation, it has the potential to be so. I don't possess a MISRA linter, and I'm unable to find a free one. If a contributor wishes to provide information regarding the violations, I'm willing to make it comply.
+
+ For an example of how useful this approach to string handling is, see the URI parser in examples/.
+
 &nbsp;
-# Understanding the separate purposes of strview.h and strbuf.h
-This project is provided in two main parts, **strview.h** which provides a **strview_t** type, and **strbuf.c** which provides a **strbuf_t** type.
+## Standard used
+ GNU99
+
+&nbsp;
+## Usage
+ Copy the source files __strview.h__/__strview.c__ and optionally __strbuf.h__/__strbuf.c__ , __strnum.h__/__strnum.c__ into your project.
+ Add any desired options (described below) to your compiler flags (eg. -DSTRBUF_PROVIDE_PRINTF).
+ strnum.c requires linking against the maths library for interpreting float values. So either add -lm to your linker options, or -DSTRNUM_NOFLOAT to your compiler options if you don't need float conversion.
+ A list and explanation of options is included at the top of each header file for convenient copy & pasting.
+
+&nbsp;
+# Understanding the separate purposes of strview.h, strbuf.h, and strnum.h
+ This project is provided in three main parts, **strview.h** which provides a **strview_t** type, and **strbuf.c** which provides a **strbuf_t** type.
+ Additionally **strnum.h** is provided for interpreting numbers, and is inspired by from_chars.
 
 To understand this approach to string handling, and the purpose of each, it helps to think in terms of string ownership.
 
@@ -40,31 +64,40 @@ To understand this approach to string handling, and the purpose of each, it help
 
 &nbsp;
 ## strbuf_t
-**strbuf_t** DOES own the string, and contains the information needed to resize it, change it's contents, or free it. Dynamic memory allocation is not mandatory. The memory space can be as simple as a static buffer provided by the application. For a dynamic buffer, the application may either provide it's own allocator, or strbuf can default to using malloc/free.
+**strbuf_t** DOES own the string, and contains the information needed to resize it, change it's contents, or free it. Dynamic memory allocation is not mandatory. The memory space can be as simple as a static buffer provided by the application. For a dynamic buffer, the application may either provide it's own allocator, or for simplicity, strbuf can default to using malloc/free.
 
 &nbsp;
+## Use cases and good practices.
 
  Whether or not you pass a **strview_t** or a **strbuf_t** to your functions depends on the use case.
 
- If you wish to pass a string to a function which frees it, then you need to pass ownership along with it, so in that case a strbuf_t needs to be passed.
+ If you want to get data from a function, pass it a buffer, ie.
+ 
+	strbuf_t* mybuf = strbuf_create(0, NULL);
+	get_something(&mybuf);
 
- If you only wish to provide a view into an existing string (read only), then a **strview_t** can be passed.
+ If you want to provide a string to a function which should not modify it, use a strview_t.
 
-&nbsp;
-## Standard used
- GCC - GNU99
+	strview_t title_view = strbuf_view(&title_buf);	// view the buffer
+	title_set(title_view);	// pass the view to a function
 
-&nbsp;
-## Usage
- Copy the source files __strview.h__/__strview.c__ and optionally __strbuf.h__/__strbuf.c__ into your project.
- Add any desired options (described below) to your compiler flags (eg. -DSTRBUF_PROVIDE_PRINTF).
- str.c requires linking against the maths library for interpreting float values. So either add -lm to your linker options, or -DSTR_NO_FLOAT to your compiler options if you don't need float conversion.
- A list and explanation of options is included at the top of each header file for convenient copy & pasting.
+ Views of strings are usually temporary. If the receiving function of a strview_t wishes to guarantee the existence of the data after it returns, then it should assign it to it's own buffer.
 
+## Passing strings to printf()
+
+ If the buffer holding the string is available, the buf->cstr member can be accessed and will always contain a null terminated string.
+
+ 	strbuf_t* mybuf = strbuf_create(0, NULL);
+	get_something(&mybuf);
+	printf("Got %s", mybuf->cstr);
+
+ For passing a view to printf, two macros defined for this **PRIstr** and **PRIstrarg()**, which make use if printf's dynamic precision to limit the number of characters read. These are __PRIstr__ for the type, and __PRIstrarg__ as an argument wrapper.
+
+	printf("The string is %"PRIstr"\n", PRIstrarg(mystring));
 
 &nbsp;
 # strview.h
- strview.h provides functions for navigating, reading, and interpreting portions of const char string data. It may be used standalone, and does not depend on **strbuf.h**.
+ strview.h provides functions for navigating, splitting, and trimming portions of const char string data. It may be used standalone, and does not depend on **strbuf.h**.
 
 It does not store the underlying data itself, and is not intended to be used for modifying the data. The string data may be stored anywhere, string literals (the string pool), a dynamic buffer provided by strbuf.h, or a static buffer etc...
 
@@ -80,17 +113,9 @@ Note that this holds only:
  * A pointer to the beginning of the string
  * The size (in characters) of the string
 
-Some operations may return an invalid strview_t, in this case .data=NULL and .size==0. 
+Some operations may return an invalid strview_t, in this case .data=NULL and .size==0. This is useful not only for indicating that an operation failed, but also for indicating that the data you attempted to parse does not exist. See the example/uri-parser for an example of how this is useful.
 
-Note that it is valid to have a strview_t of length 0. In this case *data should never be de-referenced (as it points to something of size 0, ie non-existent).
-
-&nbsp;
-# Passing a strview_t to printf()
- There are two macros defined for this **PRIstr** and **PRIstrarg()**, which make use if printf's dynamic precision to limit the number of characters read.
- 
- Example usage:
-
-	printf("The string is %"PRIstr"\n", PRIstrarg(mystring));
+Note that it is valid to have a strview_t of length 0. In this case *data should never be de-referenced (as it points to something of size 0, where no characters exist).
 
 &nbsp;
 # strview.h functions:
@@ -111,6 +136,8 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 ##	void strview_swap(strview_t* a, strview_t* b);
  Swap strings a and b.
 
+# String Comparison
+
 &nbsp;
 ## bool strview_is_match(strview_t str1, strview_t str2);
  Return true if the strings match. Also returns true if BOTH strings are invalid.
@@ -124,10 +151,14 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
  A replacement for strcmp(). Used for alphabetizing strings. May also be used instead of **strview_is_match()**, although keep in mind that it will return 0 if it compares an invalid string to a valid string of length 0. (Where **strview_is_match()** would return false if only one string is invalid.)
 
 &nbsp;
-## strview_t strview_sub(strview_t str, int begin, int end);
- Return the sub string indexed by **begin** to **end**, where **end** is non-inclusive.
- Negative values may be used, and will index from the end of the string backwards.
- The indexes are clipped to the strings length, so INT_MAX may be safely used to index the end of the string. If the requested range is entirely outside of the input string, then an invalid **strview_t** is returned.
+## int bool strview_starts_with(strview_t str1, strview_t str2);
+ Similar to strview_is_match() but allows for trailing data in str1. Returns true if the content of str2 is found at the beginning of str1. Also Returns true if BOTH strings are invalid.
+
+&nbsp;
+## int bool strview_starts_with_nocase(strview_t str1, strview_t str2);
+ Same as strview_starts_with(), ignoring case.
+
+# Trimming strings
 
 &nbsp;
 ## strview_t strview_trim(strview_t str, strview_t chars_to_trim);
@@ -145,7 +176,8 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 ## strview_t strview_find_first(strview_t haystack, strview_t needle);
  Return the **strview_t** for the first occurrence of needle in haystack.
  If the needle is not found, strview_find_first() returns an invalid strview_t.
- If the needle is found, the returned strview_t will match the contents of needle, only it will reference data within the haystack, and can be used with various strbuf.h functions as a means of specifying the position within the buffer.
+ If the needle is found, the returned strview_t will match the contents of needle, only it will reference data within the haystack. 
+ This can then be used as a position reference for further parsing with strview.h functions, or modification with strbuf.h functions.
 
 Some special cases to consider:
  * If **needle** is valid, and of length 0, it will always be found at the start of the string.
@@ -158,6 +190,14 @@ Some special cases to consider:
 Some special cases to consider:
 * If **needle** is valid, and of length 0, it will always be found at the end of **haystack**.
 * If **needle** is invalid, or if **haystack** is invalid, it will not be found.
+
+# Splitting strings
+
+&nbsp;
+## strview_t strview_sub(strview_t str, int begin, int end);
+ Return the sub string indexed by **begin** to **end**, where **end** is non-inclusive.
+ Negative values may be used, and will index from the end of the string backwards.
+ The indexes are clipped to the strings length, so INT_MAX may be safely used to index the end of the string. If the requested range is entirely outside of the input string, then an invalid **strview_t** is returned.
 
 &nbsp;
 ## strview_t strview_split_first_delimeter(strview_t* strview_ptr, strview_t delimiters);
@@ -197,14 +237,35 @@ Split a strview_t at a specified index n.
 
 If the index is outside of the range of the source string, then an invalid strview_t is returned and the source is unmodified
 
+If you do not wish to remove/pop the split string from the source, this is easily achieved:
+
+Instead of:
+
+	strview_t full_view = cstr("Hello World");
+	strview_t first_word = strview_split_first_delimiter(&full_view, cstr(" ")); // (full view becomes "World")
+
+Simply assign the source to your destination before splitting:
+
+	strview_t full_view = cstr("Hello World");
+	strview_t first_word = full_view;
+	first_word = strview_split_first_delimiter(&first_word, cstr(" ")); (full view remains unmodified)
+
+&nbsp;
+##	strview_t strview_split_left(strview_t* strview_ptr, strview_t pos);
+Given a view (pos) into strview_ptr, will return a strview_t containing the content to the left of strview_ptr.
+
+&nbsp;
+##	strview_t strview_split_right(strview_t* strview_ptr, strview_t pos);
+Given a view (pos) into strview_ptr, will return a strview_t containing the content to the right of strview_ptr.
+
 &nbsp;
 ## char strview_pop_first_char(strview_t* strview_ptr);
-Return the first char of str, and remove it from the str.
+Return the first char of *strview_ptr, and remove it from *strview_ptr.
 Returns 0 if there are no characters in str.
  If str is known to contain at least one character, it is the equivalent of:
 
 	strview_split_index(&str, 1).data[0]
-Only it avoids dereferencing a NULL pointer in the case where strview_split_index() would return an invalid str due to the str being empty.
+Only it avoids dereferencing a NULL pointer in the case where strview_split_index() would return an invalid strview_t due to the string being empty.
 
 &nbsp;
 ## strview_t strview_split_line(strview_t* strview_ptr, char* eol);
@@ -213,13 +274,13 @@ The returned line and the terminator are removed (popped) from the source string
 If a line terminator is not found, an invalid strview_t is returned and the source string is unmodified.
 
  If the source string already contains one or more lines:
-Any mixture of (CR,LF,CRLF,LFCR) can be handled, a CRLF or LFCR sequence will always be interpreted as 1 line ending.
-In this case eol may be NULL.
+Any mixture of (CR,LF,CRLF,LFCR) can be handled, a CRLF or LFCR sequence will always be interpreted as one line ending.
+In this case *eol may be NULL.
 
  If the source string is being appended to one character at a time, such as when gathering user input:
 Any type of line ending can be handled by providing variable eol.
 This variable stores the state of the eol discriminator, regarding if a future CR or LF needs to be ignored.
-It's initial value should be 0.
+It's initial value should be 0. See the test suite for usage of this.
 
 &nbsp;
 # strbuf.h
@@ -247,6 +308,7 @@ It's initial value should be 0.
 	strbuf_t*	mybuffer;
 	mybuffer = strbuf_create(50, NULL);
 	strbuf_assign(&mybuffer, cstr("Hello"));
+
 
 As mybuffer is a pointer, members of the strbuf_t may be accessed using the arrow operator. Example:
 
@@ -290,7 +352,7 @@ The parameters to this function are:
 
 &nbsp;
 # Allocator example
-One for stdlib's realloc is provided under allocator_example/ Even though stdlib can be used as the default allocator in the case where the user doesn't wish to provide one, it is the simplest one to use for an example.
+One for stdlib's realloc is provided under allocator_example/ Even though realloc can be used as the default allocator in the case where the user doesn't wish to provide one, it is the simplest one to use for an example.
 
 &nbsp;
 # Buffer re-sizing
@@ -379,7 +441,7 @@ Example use:
 	
 &nbsp;
 ## void strbuf_destroy(strbuf_t** buf_ptr);
- Free memory allocated to hold the buffer and it's contents.
+ Free memory allocated to hold the buffer and it's contents. buf_ptr is nulled.
 
 &nbsp;
 ## strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str);
@@ -431,8 +493,51 @@ Example use:
  These behave like the printf functions, but use an alternative text formatter https://github.com/mickjc750/prnf
 
 &nbsp;
+# Number parsing with strnum.h
 
+ __strnum.h__ provides a number parser which is inspired by from_chars https://github.com/Andersama/from_chars
+
+ The generic macro is available: __strnum_value(*dst, strview_t src, int options)__
+
+The behavior of strnum_value depends on the destination type.
+
+__strnum_value()__ will convert as many characters as possible into a value. If the value is valid, and in range of the destination type, it will be written to *dst, any unconsumed characters will remain in src. 
+
+The return value is 0 on success, ERANGE if the value is out of range for the destination type, or EINVAL if the source contains no meaningful representation of a value.
+
+A number of options are available for number conversions:
+
+__STRNUM_NOBX__
+ By default, strnum_value() will accept base prefixes 0b 0B 0x 0X to indicate binary or hex digits.
+ If you do not with to accept 0b 0X as part of the number, add this option. Binary and he string can still be converted by using options __STRNUM_BASE_BIN__ or __STRNM_BASE_HEX__ in combination with this option.
+
+__STRNUM_NOSPACE__
+ By default, strnum_value() will ignore leading whitespace. If you do not wish to accept leading whitespace add this flag to options.
+
+__STRNUM_NOSIGN__
+ Normally strnum_value() will accept a sign character (+/-) for signed integer types and float types only. Ifyou do not with to accept a sign character for any type, add this flag to options.
+
+ __STRNUM_BASE_BIN__
+ Expect binary digits in the source. The digits may still be preceeded by 0b or 0B, but not 0x or 0X. If you do not wish to accept the base prefix, add __STRNUM_NOBX__.
+ 
+ __STRNUM_BASE_HEX__
+ Expect hex digits in the source. The digits may still be preceeded by 0x or 0X, but not 0b or 0B. If you do not wish to accept the base prefix, add __STRNUM_NOBX__.
+
+ __STRNUM_NOEXP__
+ For floating point conversions, do not accept an exponent such as E-4 e+12 e9 etc..
+
+# Floating point conversions
+
+__strnum_value()__ can compute floating point values using either float, double, or long double precision, depending on the destination type.
+
+Long strings can be handled such as 45986643598673456876456498675643789.23485734657324923845765467892348756
+By default, a trailing exponent is accepted.
+
+Floating point arithmetic comes with the usual caveates regarding rounding errors. __strnum_value()__ attempts to minimise rounding errors by converting as many digits as possible using unsigned long long arithmetic.
+
+
+
+&nbsp;
 # Contributing
 
 Please raise issues to discuss changes or new features, or comment on existing issues.  
-I'm yet to tag a release, so the API is open to changes. I'm still quite active, and I value others input.
