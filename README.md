@@ -508,7 +508,7 @@ Example use:
 
  __strnum.h__ provides a number parser which is inspired by from_chars https://github.com/Andersama/from_chars
 
- The generic macro is available: __strnum_value(*dst, strview_t src, int options)__
+ The generic macro is available: __strnum_value(*dst, strview_t* src, int options)__
 
 The behavior of strnum_value depends on the destination type.
 
@@ -526,7 +526,7 @@ __STRNUM_NOSPACE__
  By default, strnum_value() will ignore leading whitespace. If you do not wish to accept leading whitespace add this flag to options.
 
 __STRNUM_NOSIGN__
- Normally strnum_value() will accept a sign character (+/-) for signed integer types and float types only. Ifyou do not with to accept a sign character for any type, add this flag to options.
+ Normally strnum_value() will accept a sign character (+/-) for signed integer types and float types only. If you do not with to accept a sign character for any type, add this flag to options.
 
  __STRNUM_BASE_BIN__
  Expect binary digits in the source. The digits may still be preceeded by 0b or 0B, but not 0x or 0X. If you do not wish to accept the base prefix, add __STRNUM_NOBX__.
