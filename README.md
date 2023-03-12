@@ -533,9 +533,9 @@ __strnum_value()__ can compute floating point values using either float, double,
 Long strings can be handled such as 45986643598673456876456498675643789.23485734657324923845765467892348756
 By default, a trailing exponent is accepted.
 
-Floating point arithmetic comes with the usual caveates regarding rounding errors. __strnum_value()__ attempts to minimise rounding errors by converting as many digits as possible using unsigned long long arithmetic.
+Floating point arithmetic comes with the usual caveates regarding rounding errors. __strnum_value()__ attempts to minimise rounding errors by converting as many digits as possible using unsigned long long arithmetic, applying this value to the result, and repeating untilall values are converted.
 
-
+For special cases, the text "infinity", "inf" or "nan" will write the corresponding value to the destination, and will return success (0). Floating point conversions only return an error if the given text overflows during conversion, of if the given text does not represent a number. In these cases the destination is not modified.
 
 &nbsp;
 # Contributing
