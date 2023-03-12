@@ -39,7 +39,7 @@ user@host:<port>/path/path
 	#include <string.h>
 	#include <ctype.h>
 
-	#include "../../strview.h"
+	#include "strview.h"
 
 //********************************************************************************************************
 // Configurable defines

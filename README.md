@@ -17,7 +17,8 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 12. [prnf to a strbuf_t](#prnf-to-a-strbuft)
 13. [strbuf.h functions](#strbufh-functions)
 14. [Number parsing with strnum.h](#number-parsing-with-strnumh)
-
+15. [Floating point conversions](#floating-point-conversions)
+    
 &nbsp;
 &nbsp;
 ## Introduction
@@ -364,6 +365,16 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 # non-dynamic buffers
 
  A function **strbuf_create_fixed()** is provided for initializing a strbuf_t* from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than is available, this will result in an empty buffer. The capacity will be slightly less than the buffer size, as the memory must also hold a strbuf_t, and due to this the memory provided must also be suitably aligned with __ attribute __ ((aligned)). If the memory is not aligned, or is insufficient to hold event strbuf_t, then a NULL will be returned.
+
+Example to create a static buffer:
+
+	char buf_space[100] __ attribute __ ((aligned));
+	strbuf_t* mybuf = strbuf_create_fixed(buf_space, 100);
+	strbuf_assign(&mybuf, cstr("Fred"));
+
+With the exception of strbuf_cat(), all buffer operations can source data from the destination itself. The following example which you might expect to fail, works fine, without any need to create a temporary buffer: 
+
+	strbuf_insert_at_index(&mybuf, 2, strbuf_view(&mybuf));	// Results in "FrFreded"
 
 &nbsp;
 # printf to a strbuf_t

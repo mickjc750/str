@@ -6,8 +6,8 @@
 	#include <assert.h>
 	#include <stdbool.h>
 
-	#include "../strbuf.h"
-	#include "../str.h"
+	#include "strbuf.h"
+	#include "strview.h"
 
 //********************************************************************************************************
 // Configurable defines

@@ -13,7 +13,7 @@ SRC = $(wildcard ../../strview.c) $(wildcard *.c)
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = . 
+EXTRAINCDIRS = . ../..
 
 # Object and list files directory
 #     To put .o and .lst files alongside .c files use a dot (.), do NOT make
