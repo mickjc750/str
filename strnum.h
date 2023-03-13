@@ -1,10 +1,14 @@
 /*
 	strnum.h
 	Functions for reading numbers from strings
-	Floating point number conversion requires the standard maths library (-lm)
-	If you do not want to link against the maths library define the symbol STRVIEW_NOFLOAT
-	 by adding -DSTRVIEW_NOFLOAT to your compiler options
+
+
+	The following may be added to compiler options:
+
+	-DSTRNUM_NOFLOAT
+		Do not provide floating point conversions. Avoids the need to link with the standard maths library (-lm)
 */
+
 
 #ifndef _STRNUM_H_
 	#define _STRNUM_H_

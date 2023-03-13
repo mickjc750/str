@@ -1,7 +1,14 @@
 /*
 
 strview_t demo to extract scheme (http/ftp/etc..), host, user, path and port from the following URI formats:
-The function which does this is less than 50 lines, requires no buffers, and does not modify the given uri.
+
+The function which does this:
+	* Is less than 50 lines.
+	* Requires no buffers.
+	* Doesn't modify the given uri.
+	* Doesn't even copy any data from the given uri. (we already HAVE the data, we don't need to copy it).
+
+Possible combinations of URI components:
 
 scheme:
 scheme:path
