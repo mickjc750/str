@@ -216,11 +216,11 @@ Simply assign the source to your destination before splitting:
 
 &nbsp;
 ## `strview_t strview_split_left(strview_t* strview_ptr, strview_t pos);`
-Given a view (pos) into strview_ptr, will return a strview_t containing the content to the left of strview_ptr.
+Given a view (pos) into strview_ptr, will return a strview_t containing the content to the left of strview_ptr. The returned view will be removed (popped) from strview_ptr.
 
 &nbsp;
 ## `strview_t strview_split_right(strview_t* strview_ptr, strview_t pos);`
-Given a view (pos) into strview_ptr, will return a strview_t containing the content to the right of strview_ptr.
+Given a view (pos) into strview_ptr, will return a strview_t containing the content to the right of strview_ptr. The returned view will be removed (popped) from strview_ptr.
 
 &nbsp;
 ## `char strview_pop_first_char(strview_t* strview_ptr);`

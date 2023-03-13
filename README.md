@@ -163,9 +163,15 @@ While this is a string api, dropping the requirement for null termination means 
 
  If the buffer holding the string is available, the buf->cstr member can be accessed and will always contain a null terminated string.
 
- For passing a view to printf, two macros defined for this **PRIstr** and **PRIstrarg()**, which make use if printf's dynamic precision to limit the number of characters read. These are __PRIstr__ for the type, and __PRIstrarg__ as an argument wrapper.
+ For passing a view to printf, two macros are defined for this **PRIstr** and **PRIstrarg()**, which make use of printf's dynamic precision to limit the number of characters read. These are __PRIstr__ for the type, and __PRIstrarg__ as an argument wrapper.
 
 	printf("The string is %"PRIstr"\n", PRIstrarg(mystring));
+
+&nbsp;
+# For more details on the usage of strbuf.h strview.h and strnum.h see the following:
+ * [strbuf.h api reference](/docs/strbuf-api.md)
+ * [strview.h api reference](/docs/strview-api.md)
+ * [strnum.h api reference](/docs/strnum-api.md)
 
 
 &nbsp;
