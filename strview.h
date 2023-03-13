@@ -102,18 +102,18 @@
 /*	Return a strview_t representing the contents of the source string up to, but not including, any of the delimiters.
 	Additionally this text, and the delimeter itself is removed (popped) from the source string.
 	If no delimeter is found, the returned string is the entire source string, and the source string becomes invalid */
-	strview_t strview_split_first_delimeter(strview_t* strview_ptr, strview_t delimiters);
+	strview_t strview_split_first_delimeter(strview_t* src, strview_t delimiters);
 
 //	Same as strview_split_first_delimeter, ignoring case on the delimiters
-	strview_t strview_split_first_delimiter_nocase(strview_t* strview_ptr, strview_t delimiters);
+	strview_t strview_split_first_delimiter_nocase(strview_t* src, strview_t delimiters);
 
 /*	Return a strview_t representing the contents of the source string from (but not including) the last delimiter found.
 	Additionally this text, and the delimeter itself is removed (popped) from the end of the source string.
 	If no delimeter is found the returned string is the entire source string, and the source string becomes invalid */
-	strview_t strview_split_last_delimeter(strview_t* strview_ptr, strview_t delimiters);
+	strview_t strview_split_last_delimeter(strview_t* src, strview_t delimiters);
 
 //	Same as strview_split_last_delimeter, ignoring case on the delimiters
-	strview_t strview_split_last_delimeter_nocase(strview_t* strview_ptr, strview_t delimiters);
+	strview_t strview_split_last_delimeter_nocase(strview_t* src, strview_t delimiters);
 
 /*	Split a strview_t at a specified index n.
 	For n >= 0
@@ -126,30 +126,29 @@
 		Additionally the last -n characters are removed (popped) from the end of the source string.
 		If -n is greater than the size of the source string ALL characters will be popped.
 */
-	strview_t strview_split_index(strview_t* strview_ptr, int index);
+	strview_t strview_split_index(strview_t* src, int index);
 
 /*	Split a strview_t at a position specified by pos
 
-	If pos references characters within *strview_ptr, return a strview_t representing all characters to the left of pos.
-	If pos references the upper limit of *strview_ptr, the entire *strview_ptr is returned.
-	If pos references the start of *strview_ptr, a valid strview_t of length 0 is returned.
+	If pos references characters within *src, return a strview_t representing all characters to the left of pos.
+	If pos references the upper limit of *src, the entire *src is returned.
+	If pos references the start of *src, a valid strview_t of length 0 is returned.
 
-	The returned characters are removed (popped) from *strview_ptr
+	The returned characters are removed (popped) from *src
 
-	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
-*/
-	strview_t strview_split_left(strview_t* strview_ptr, strview_t pos);
+	If src is NULL, *src is invalid, or pos is not a valid reference, an invalid string is returned and src is unmodified.*/
+	strview_t strview_split_left(strview_t* src, strview_t pos);
+
 
 /*	Split a strview_t at a position specified by pos
 
-	If pos references characters within *strview_ptr, return a strview_t representing all characters to the right of pos.
-	If the upper limit of pos matches the upper limit of *strview_ptr, a valid strview_t of length 0 is returned.
+	If pos references characters within *src, return a strview_t representing all characters to the right of pos.
+	If the upper limit of pos matches the upper limit of *src, a valid strview_t of length 0 is returned.
 
-	The returned characters are removed (popped) from *strview_ptr
+	The returned characters are removed (popped) from *src
 
-	If strview_ptr is NULL, *strview_ptr is invalid, or pos is not a valid reference, an invalid string is returned and strview_ptr is unmodified.
-*/
-	strview_t strview_split_right(strview_t* strview_ptr, strview_t pos);
+	If src is NULL, *src is invalid, or pos is not a valid reference, an invalid string is returned and src is unmodified.*/
+	strview_t strview_split_right(strview_t* src, strview_t pos);
 
 /*	Return the first char of str, and remove it from the str.
 	Returns 0 if there are no characters in str.
@@ -157,7 +156,7 @@
 		strview_split_index(&str, 1).data[0]
 	Only it avoids dereferencing a NULL pointer in the case where strview_split_index() returns an invalid str.
 */
-	char strview_pop_first_char(strview_t* strview_ptr);
+	char strview_pop_first_char(strview_t* src);
 
 
 /*
@@ -174,7 +173,7 @@
 		This variable stores the state of the eol discriminator, regarding if a future CR or LF needs to be ignored.
 		It's initial value should be 0.
 */
-	strview_t strview_split_line(strview_t* strview_ptr, char* eol);
+	strview_t strview_split_line(strview_t* src, char* eol);
 
 
 #endif

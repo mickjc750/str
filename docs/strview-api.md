@@ -58,15 +58,15 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 ## Splitting
 
  * [strview_t strview_sub(strview_t str, int begin, int end);](#strviewt-strviewsubstrviewt-str-int-begin-int-end)
- * [strview_t strview_split_first_delimeter(strview_t* strview_ptr, strview_t delimiters);](#strviewt-strviewsplitfirstdelimeterstrviewt-strviewptr-strviewt-delimiters)
- * [strview_t strview_split_last_delimeter(strview_t* strview_ptr, strview_t delimiters);](#strviewt-strviewsplitlastdelimeterstrviewt-strviewptr-strviewt-delimiters)
- * [strview_t strview_split_first_delimiter_nocase(strview_t* strview_ptr, strview_t delimiters);](#strviewt-strviewsplitfirstdelimiternocasestrviewt-strviewptr-strviewt-delimiters)
- * [strview_t strview_split_last_delimeter_nocase(strview_t* strview_ptr, strview_t delimiters);](#strviewt-strviewsplitlastdelimeternocasestrviewt-strviewptr-strviewt-delimiters)
- * [strview_t strview_split_index(strview_t* strview_ptr, int index);](#strviewt-strviewsplitindexstrviewt-strviewptr-int-index)
- * [strview_t strview_split_left(strview_t* strview_ptr, strview_t pos);](#strviewt-strviewsplitleftstrviewt-strviewptr-strviewt-pos)
- * [strview_t strview_split_right(strview_t* strview_ptr, strview_t pos);](#strviewt-strviewsplitrightstrviewt-strviewptr-strviewt-pos)
- * [char strview_pop_first_char(strview_t* strview_ptr);](#char-strviewpopfirstcharstrviewt-strviewptr)
- * [strview_t strview_split_line(strview_t* strview_ptr, char* eol);](#strviewt-strviewsplitlinestrviewt-strviewptr-char-eol)
+ * [strview_t strview_split_first_delimeter(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitfirstdelimeterstrviewt-src-strviewt-delimiters)
+ * [strview_t strview_split_last_delimeter(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitlastdelimeterstrviewt-src-strviewt-delimiters)
+ * [strview_t strview_split_first_delimiter_nocase(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitfirstdelimiternocasestrviewt-src-strviewt-delimiters)
+ * [strview_t strview_split_last_delimeter_nocase(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitlastdelimeternocasestrviewt-src-strviewt-delimiters)
+ * [strview_t strview_split_index(strview_t* src, int index);](#strviewt-strviewsplitindexstrviewt-src-int-index)
+ * [strview_t strview_split_left(strview_t* src, strview_t pos);](#strviewt-strviewsplitleftstrviewt-src-strviewt-pos)
+ * [strview_t strview_split_right(strview_t* src, strview_t pos);](#strviewt-strviewsplitrightstrviewt-src-strviewt-pos)
+ * [char strview_pop_first_char(strview_t* src);](#char-strviewpopfirstcharstrviewt-src)
+ * [strview_t strview_split_line(strview_t* src, char* eol);](#strviewt-strviewsplitlinestrviewt-src-char-eol)
 
 
 
@@ -164,7 +164,7 @@ Some special cases to consider:
  The indexes are clipped to the strings length, so INT_MAX may be safely used to index the end of the string. If the requested range is entirely outside of the input string, then an invalid **strview_t** is returned.
 
 &nbsp;
-## `strview_t strview_split_first_delimeter(strview_t* strview_ptr, strview_t delimiters);`
+## `strview_t strview_split_first_delimeter(strview_t* src, strview_t delimiters);`
  Return a **strview_t** representing the contents of the source string up to, but not including, any of characters in **delimiters**.
  Additionally, the contents of the returned **strview_t**, and the delimiter character itself is removed (popped) from the input string.
  If no delimiter is found, the returned string is the entire source string, and the source string becomes invalid.
@@ -177,19 +177,19 @@ Example usage:
     strview_t day   = strview_split_first_delimeter(&date, cstr("/"));
 
 &nbsp;
-## `strview_t strview_split_last_delimeter(strview_t* strview_ptr, strview_t delimiters);`
+## `strview_t strview_split_last_delimeter(strview_t* src, strview_t delimiters);`
  Same as **strview_split_first_delimeter()** but searches from the end of the string backwards.
 
 &nbsp;
-## `strview_t strview_split_first_delimiter_nocase(strview_t* strview_ptr, strview_t delimiters);`
+## `strview_t strview_split_first_delimiter_nocase(strview_t* src, strview_t delimiters);`
 Same as **strview_split_first_delimeter()** but ignores the case of the delimiters
 
 &nbsp;
-## `strview_t strview_split_last_delimeter_nocase(strview_t* strview_ptr, strview_t delimiters);`
+## `strview_t strview_split_last_delimeter_nocase(strview_t* src, strview_t delimiters);`
 Same as **strview_split_last_delimeter()** but ignores the case of the delimiters
 
 &nbsp;
-## `strview_t strview_split_index(strview_t* strview_ptr, int index);`
+## `strview_t strview_split_index(strview_t* src, int index);`
 Split a strview_t at a specified index n.
 * For n >= 0
  Return a strview_t representing the first n characters of the source string.
@@ -215,16 +215,16 @@ Simply assign the source to your destination before splitting:
 	first_word = strview_split_first_delimiter(&first_word, cstr(" ")); (full view remains unmodified)
 
 &nbsp;
-## `strview_t strview_split_left(strview_t* strview_ptr, strview_t pos);`
-Given a view (pos) into strview_ptr, will return a strview_t containing the content to the left of strview_ptr. The returned view will be removed (popped) from strview_ptr.
+## `strview_t strview_split_left(strview_t* src, strview_t pos);`
+Given a view (pos) into src, will return a strview_t containing the content to the left of pos. The returned view will be removed (popped) from src.
 
 &nbsp;
-## `strview_t strview_split_right(strview_t* strview_ptr, strview_t pos);`
-Given a view (pos) into strview_ptr, will return a strview_t containing the content to the right of strview_ptr. The returned view will be removed (popped) from strview_ptr.
+## `strview_t strview_split_right(strview_t* src, strview_t pos);`
+Given a view (pos) into src, will return a strview_t containing the content to the right of pos. The returned view will be removed (popped) from src.
 
 &nbsp;
-## `char strview_pop_first_char(strview_t* strview_ptr);`
-Return the first char of *strview_ptr, and remove it from *strview_ptr.
+## `char strview_pop_first_char(strview_t* src);`
+Return the first char of *src, and remove it from *src.
 Returns 0 if there are no characters in str.
  If str is known to contain at least one character, it is the equivalent of:
 
@@ -232,7 +232,7 @@ Returns 0 if there are no characters in str.
 Only it avoids dereferencing a NULL pointer in the case where strview_split_index() would return an invalid strview_t due to the string being empty.
 
 &nbsp;
-## `strview_t strview_split_line(strview_t* strview_ptr, char* eol);`
+## `strview_t strview_split_line(strview_t* src, char* eol);`
 Returns a strview_t representing the first line within the source string, not including the eol terminator.
 The returned line and the terminator are removed (popped) from the source string.
 If a line terminator is not found, an invalid strview_t is returned and the source string is unmodified.

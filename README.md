@@ -122,7 +122,7 @@ It should be noted, that __strview.h__ and __strnum.h__ do not depend on __strbu
 
 &nbsp;
 ## Advantages over SDS
-* STR also supports static or heap allocated buffers.
+* STR also supports static or stack allocated buffers.
 * STR supports more than one type of allocator at runtime.
 * STR provides number parsing, with error and range checking.
 
