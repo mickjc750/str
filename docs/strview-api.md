@@ -244,4 +244,4 @@ In this case *eol may be NULL.
  If the source string is being appended to one character at a time, such as when gathering user input:
 Any type of line ending can be handled by providing variable eol.
 This variable stores the state of the eol discriminator, regarding if a future CR or LF needs to be ignored.
-It's initial value should be 0. See the test suite for usage of this.
+its initial value should be 0. See the test suite for usage of this.

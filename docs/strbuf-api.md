@@ -152,7 +152,7 @@ With the exception of strbuf_cat(), all buffer operations can source data from t
 &nbsp;
 # Assigning buffer contents using prnf
 
- If you don't wish to use printf() because of it's size or performance. There is a lightweight and fast alternative text formatter available.
+ If you don't wish to use printf() because of its size or performance. There is a lightweight and fast alternative text formatter available.
  https://github.com/mickjc750/prnf
  To enable this feature, you must define the symbol __STRBUF_PROVIDE_PRNF__.
  
@@ -191,7 +191,7 @@ Example use:
 
 &nbsp;
 ## `void strbuf_destroy(strbuf_t** buf_ptr);`
- Free memory allocated to hold the buffer and it's contents. buf_ptr is nulled.
+ Free memory allocated to hold the buffer and its contents. buf_ptr is nulled.
 
 &nbsp;
 ## `strview_t strbuf_view(strbuf_t** buf_ptr);`
@@ -199,7 +199,7 @@ Example use:
 
 &nbsp;
 ## `strview_t strbuf_shrink(strbuf_t** buf_ptr);`
- Shrink buffer to the minimum size required to hold it's contents.
+ Shrink buffer to the minimum size required to hold its contents.
 
 &nbsp;
 ## `strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size);`

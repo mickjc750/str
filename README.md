@@ -9,7 +9,7 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 3.  [Usage](#usage)
 4.  [Understanding the separate purposes of strview.h, strbuf.h, and strnum.h](#understanding-the-separate-purposes-of-strviewh-strbufh-and-strnumh)
 5.  [Use cases and good practices](#use-cases-and-good-practices)
-6.  [Use C strings and string literals with functions that take a strview_t](#use-of-regular-c-strings-and-string-literals-with-functions-that-take-a-strviewt)
+6.  [Use C strings and string literals with functions that take a strview_t](#use-of-regular-c-strings-and-string-literals-with-functions-that-take-a-strview_t)
 7.  [Comparison with SDS](#comparison-with-sds-httpsgithubcomantirezsds)
 8.  [Using strbuf for things other than strings](#using-strbuf-for-things-other-than-strings)
 9.  [Passing strings to printf()](#passing-strings-to-printf)
@@ -60,12 +60,12 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 To understand this approach to string handling, and the purpose of each, it helps to think in terms of string ownership.
 
 ## strview_t
-**strview_t** doesn't own the string. It's just a view into a string, and can't be used to free it, and shouldn't be used to change it's characters. You can only change the range of the view, or split it into multiple views, or interpret a view as a number etc. **strview_t** is intended for reading and parsing strings, not building them. As there is no null terminator requirement, binary strings including the full ascii set 0-255 can safely be worked with.
+**strview_t** doesn't own the string. It's just a view into a string, and can't be used to free it, and shouldn't be used to change its characters. You can only change the range of the view, or split it into multiple views, or interpret a view as a number etc. **strview_t** is intended for reading and parsing strings, not building them. As there is no null terminator requirement, binary strings including the full ascii set 0-255 can safely be worked with.
 **strview.h** does not depend on **strbuf.h**, and can be useful on it’s own.
 
 &nbsp;
 ## strbuf_t
-**strbuf_t** DOES own the string, and contains the information needed to resize it, change it's contents, or free it. Dynamic memory allocation is not mandatory. The memory space can be as simple as a static buffer provided by the application. For a dynamic buffer, the application may either provide it's own allocator, or for simplicity, strbuf can default to using malloc/free.
+**strbuf_t** DOES own the string, and contains the information needed to resize it, change its contents, or free it. Dynamic memory allocation is not mandatory. The memory space can be as simple as a static buffer provided by the application. For a dynamic buffer, the application may either provide its own allocator, or for simplicity, strbuf can default to using malloc/free.
 
 &nbsp;
 # Use cases and good practices.
@@ -92,12 +92,12 @@ To understand this approach to string handling, and the purpose of each, it help
 	strbuf_assign(&mybuf, cstr("Hello"));
 	strbuf_append(yourbuf, cstr(" Fred"));
 
- When passing a string to a function which doesn't need to change it's characters, such as a function which might otherwise take a const char*, you should pass it a view of the string. Almost all strbuf functions will return a view of the buffer.
+ When passing a string to a function which doesn't need to change its characters, such as a function which might otherwise take a const char*, you should pass it a view of the string. Almost all strbuf functions will return a view of the buffer.
 
 	strview_t title_view = strbuf_view(&title_buf);	// view the buffer
 	title_set(title_view);	// pass the view to a function
 
- If the receiver of a strview_t wishes to guarantee the existence of the data after it returns, then it should assign it to it's own buffer.
+ If the receiver of a strview_t wishes to guarantee the existence of the data after it returns, then it should assign it to its own buffer.
 
 &nbsp;
 # Use of regular C strings and string literals with functions that take a strview_t
@@ -118,7 +118,7 @@ It should be noted, that __strview.h__ and __strnum.h__ do not depend on __strbu
 &nbsp;
 ## Common Advantages
 
-* Like SDS, the buffer structure and it's contents are held in a single allocation which improves cache locality.
+* Like SDS, the buffer structure and its contents are held in a single allocation which improves cache locality.
 
 &nbsp;
 ## Advantages over SDS
