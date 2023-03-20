@@ -52,7 +52,6 @@
 #ifndef STRNUM_NOFLOAT
 	static int process_float_components(float_components_t* fc);
 	static float consume_float_special(float_components_t* fc);
-	static int consume_fractional_digits(float_components_t* fc);
 	static int consume_exponent(float_components_t* fc);
 
 	static float make_float(strview_t integral_digits, strview_t fractional_digits, int exp_value);
@@ -182,7 +181,7 @@ int strnum_llong(long long* dst, strview_t* src, int options)
 int strnum_float(float* dst, strview_t* src, int options)
 {
 	int err = 0;
-	float value;
+	float value = 0.0;
 	float_components_t fc =
 	{
 		.options = options,
@@ -607,8 +606,8 @@ static int consume_decimal_digits(unsigned long long* dst, strview_t* str)
 
 	int err;
 	unsigned int res_ui = 0;
-	unsigned long res_ul;
-	unsigned long long res_ull;
+	unsigned long res_ul = 0;
+	unsigned long long res_ull = 0;
 	unsigned long long post_add;
 	unsigned long long next_weight;
 
