@@ -7,7 +7,7 @@
 2. [Providing an allocator](#providing-an-allocator-for-strbufcreate)
 3. [Allocator example](#allocator-example)
 4. [Buffer re-sizing](#buffer-re-sizing)
-5. [Using static or heap allocated buffers](#using-static-or-heap-allocated-buffers)
+5. [Using static or stack allocated buffers](#using-static-or-stack-allocated-buffers)
 
 # Function reference
  * [strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator)](#strbuft-strbufcreatesizet-initialcapacity-strbufallocatort-allocator)
@@ -126,7 +126,7 @@ The initial capacity of the buffer will be exactly as provided to strbuf_create(
 The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which case it will be reduced to the minimum possible.
 
 &nbsp;
-# Using static or heap allocated buffers
+# Using static or stack allocated buffers
 
  A function **strbuf_create_fixed()** is provided for initializing a __strbuf_t*__ from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than available, this will result in an empty buffer. The capacity will be slightly less than the buffer size, as the memory must also hold a __strbuf_t__, and due to this the memory provided must also be suitably aligned with **__attribute__((aligned))**. If the memory is not aligned, or is of insufficient space to hold even __strbuf_t__, then a NULL will be returned.
 
