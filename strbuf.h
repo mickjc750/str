@@ -31,6 +31,21 @@
 // Public defines
 //********************************************************************************************************
 
+//	Used for buffers with stack or static storage. See examples/stack-buf and examples/static-buf
+
+//	A data structure large enough to hold a strbuf_t with the given capacity.
+//	If instantiated on the stack, the capacity may be determined at runtime using an integer variable.
+	#define strbuf_space_t(cap)		struct {strbuf_t buf; char bdy[(cap)+1];}
+
+//	An initializer for the stucture strbuf_space_t
+	#define STRBUF_STATIC_INIT(cap)		{.buf.capacity=(cap), .buf.size=0, .buf.allocator.allocator=NULL, .buf.allocator.app_data=NULL, .bdy[0]=0}
+
+//	Instantiate and provide the address of an initialized strbuf_t with the given capacity. The capacity must be a literal value.
+//	When used within a function the buffer will be on the stack.
+	#define STRBUF_FIXED_CAP(cap)	((strbuf_t*)&((strbuf_space_t(cap)){.buf.capacity=(cap), .buf.size=0, .buf.allocator.allocator=NULL, .buf.allocator.app_data=NULL, .bdy[0]=0}))
+
+
+
 /*	The buffer capacity is rounded up to a multiple of this when:
 		* creating a new buffer with strbuf_create()
 		* expanding the buffer for any reason
