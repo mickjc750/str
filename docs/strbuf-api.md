@@ -128,16 +128,13 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 &nbsp;
 # Using static or stack allocated buffers
 
- A function **strbuf_create_fixed()** is provided for initializing a __strbuf_t*__ from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than available, this will result in an empty buffer. The capacity will be slightly less than the buffer size, as the memory must also hold a __strbuf_t__, and due to this the memory provided must also be suitably aligned with **__attribute__((aligned))**. If the memory is not aligned, or is of insufficient space to hold even __strbuf_t__, then a NULL will be returned.
+A function **strbuf_create_fixed()** is provided for initializing a __strbuf_t*__ from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than available, this will result in an empty buffer. The capacity will be slightly less than the buffer size, as the memory must also hold a __strbuf_t__, and due to this the memory provided must also be suitably aligned with **__attribute__((aligned))**. If the memory is not aligned, or is of insufficient space to hold even __strbuf_t__, then a NULL will be returned.
 
-Example to create a static buffer:
-
-	char buf_space[100] __ attribute __ ((aligned));
-	strbuf_t* mybuf = strbuf_create_fixed(buf_space, 100);	//(actual capacity is 100 - sizeof(strbuf_t))
-	strbuf_assign(&mybuf, cstr("Fred"));
+Examples of using stack and static buffers are available in __/examples__
 
 With the exception of strbuf_cat(), all buffer operations can source data from the destination itself. The following example which you might expect to fail, works fine, without any need to create a temporary buffer: 
 
+	strbuf_assign(&mybuf, cstr("Fred"));
 	strbuf_insert_at_index(&mybuf, 2, strbuf_view(&mybuf));	// Results in "FrFreded"
 
 &nbsp;
