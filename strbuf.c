@@ -394,7 +394,10 @@ strview_t strbuf_append_using(strbuf_t** buf_ptr, int (*strbuf_fetcher)(void* ds
 		if(fetch_fault)
 			empty_buf(buf);
 		else
+		{
+			buf->size += bytes_appended;
 			buf->cstr[buf->size] = 0;
+		};
 		*buf_ptr = buf;
 	};
 
