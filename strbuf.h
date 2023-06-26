@@ -1,3 +1,9 @@
+/**
+ * @file strbuf.h
+ * Functions for creating buffers and building their contents.
+ * 
+ */
+
 /*
  The following may be added to compiler options:
 
@@ -34,7 +40,7 @@
 //	Used for buffers with stack or static storage. See examples/stack-buf and examples/static-buf
 
 /**
- * @def
+ * @def strbuf_space_t(cap)
  * @brief (macro) A data structure large enough to hold a strbuf_t with a fixed capacity.
  * @param cap The capacity of the buffer.
  * @note If instantiated on the stack, the capacity may be determined at runtime using an integer variable.
@@ -42,14 +48,14 @@
 	#define strbuf_space_t(cap)		struct {strbuf_t buf; char bdy[(cap)+1];}
 
 /**
- * @def
+ * @def STRBUF_STATIC_INIT(cap)
  * @brief (macro) An initializer for the type strbuf_space_t
  * @param cap The capacity of the buffer, this must match the value passed to the strbuf_space_t() macro.
   **********************************************************************************/ 
 	#define STRBUF_STATIC_INIT(cap)		{.buf.capacity=(cap), .buf.size=0, .buf.allocator.allocator=NULL, .buf.allocator.app_data=NULL, .bdy[0]=0}
 
 /**
- * @def
+ * @def STRBUF_FIXED_CAP(cap)
  * @brief (macro) Instantiate and provide the address of an initialized strbuf_t with a fixed capacity.
  * @param cap The capacity of the buffer.
  * @note When used within a function, the capacity may be determined at runtime by providing an integer variable for cap.
@@ -67,13 +73,11 @@
 	#ifndef STRBUF_CAPACITY_GROW_STEP
 		#define STRBUF_CAPACITY_GROW_STEP 16
 	#endif
-
+/// @cond DEV
 //	This is used for counting the number of arguments to the strbuf_cat() macro below.
 // 	From https://stackoverflow.com/questions/4421681/how-to-count-the-number-of-arguments-passed-to-a-function-that-accepts-a-variabl
-
 	#define		PP_NARG(...) 	PP_NARG_(__VA_ARGS__,PP_RSEQ_N())
 	#define 	PP_NARG_(...) 	PP_128TH_ARG(__VA_ARGS__)
-
 	#define PP_128TH_ARG( \
           _1, _2, _3, _4, _5, _6, _7, _8, _9,_10, \
          _11,_12,_13,_14,_15,_16,_17,_18,_19,_20, \
@@ -103,6 +107,7 @@
          29,28,27,26,25,24,23,22,21,20, \
          19,18,17,16,15,14,13,12,11,10, \
          9,8,7,6,5,4,3,2,1,0
+/// @endcond
 
 /*	Use strbuf_cat to concatenate an arbitrary number of strings into a buffer.
 	The buffers contents itself may be used as an argument, in this case a temporary buffer will be allcoated to build the output.

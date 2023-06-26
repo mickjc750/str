@@ -51,7 +51,13 @@
 //	#define STR_SIB			(1<<7)	todo
 
 	#ifndef STRNUM_NOFLOAT
-//	Generic macro for calling number conversions based on the variable type
+/**
+ * @def
+ * @brief Generic macro for calling number conversions based on the variable type
+ * @param dst A pointer to the destination.
+ * @param src A pointer to a view of the source.
+ * @param opt One or more option flags.
+  **********************************************************************************/ 
 	#define strnum_value(dst, src, opt) _Generic((dst),\
 		unsigned char*:			strnum_uchar,\
 		unsigned short*:		strnum_ushort,\
