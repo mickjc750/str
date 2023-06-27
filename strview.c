@@ -33,7 +33,7 @@
 
 strview_t cstr(const char* c_str)
 {
-	return (strview_t){.data = c_str, .size = strlen(c_str)};
+	return c_str ? (strview_t){.data = c_str, .size = strlen(c_str)} : STRVIEW_INVALID;
 }
 
 char* strview_to_cstr(char* dst, size_t dst_size, strview_t str)
