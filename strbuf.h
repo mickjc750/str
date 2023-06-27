@@ -1,6 +1,36 @@
 /**
  * @file strbuf.h
- * Functions for creating buffers and building their contents.
+ * A buffer API complementing strview.h
+ * 
+ * * Provides functions for allocating buffers on the heap, stack, or static memory.
+ * * Provides functions for building and modifying string data.
+ * * Able to use custom allocators provided at runtime. Dynamic allocation is not mandatory.
+ * 
+ * __strbuf.h__ defines the following __strbuf_t__ type :
+ * 
+ * 	typedef struct strbuf_t
+ * 	{
+ * 		int size;
+ * 		int capacity;
+ * 		strbuf_allocator_t allocator;
+ * 		char cstr[];
+ * 	} strbuf_t;
+ *
+ * The structure is stored in the memory preceding the buffers contents, and the type is intended to be declared as a pointer to this structure.
+ * If the buffer is relocated this pointer needs to change, therefore __strbuf.h__ functions take the address of this pointer as an argument. Example:
+ * 
+ * 	strbuf_t*	my_buf;
+ * 	my_buf = strbuf_create(50, NULL);
+ * 	strbuf_assign(&my_buf, cstr("Hello"));
+ * 
+ * All strbuf.h functions maintain a null terminator at the end of the content.
+ * 
+ * As my_buf is a pointer, members of the strbuf_t may be accessed using the arrow operator. Example:
+ * 
+ * 	printf("The buffer contains %s\n", my_buf->cstr);
+ * 
+ * Functions which modify a buffers contents return a view of the resulting buffer contents.
+ * If an insert or append operation fails due to insufficient capacity, the buffer will be emptied.
  * 
  */
 
@@ -41,28 +71,48 @@
 
 /**
  * @def strbuf_space_t(cap)
- * @brief (macro) A data structure large enough to hold a strbuf_t with a fixed capacity.
+ * @hideinitializer
+ * @brief (macro) Used to instantiate static buffers within functions. A structure large enough to hold a strbuf_t of given capacity. 
  * @param cap The capacity of the buffer.
- * @note If instantiated on the stack, the capacity may be determined at runtime using an integer variable.
+ * @note The structure requires initialisation using STRBUF_STATIC_INIT(cap).
+ * @note The address of the structure may be cast and assigned to a strbuf_t*
+ * @note For a buffer on the stack, instead use STRBUF_FIXED_CAP(cap).
+ * @note Example:
+ * @code{.c}
+ * #define BUF_CAP 50
+ * static strbuf_space_t(BUF_CAP) buf_space = STRBUF_STATIC_INIT(BUF_CAP);
+ * strbuf_t* buf = (strbuf_t*)&buf_space;
+ * @endcode
   **********************************************************************************/ 
 	#define strbuf_space_t(cap)		struct {strbuf_t buf; char bdy[(cap)+1];}
 
 /**
  * @def STRBUF_STATIC_INIT(cap)
+ * @hideinitializer
  * @brief (macro) An initializer for the type strbuf_space_t
  * @param cap The capacity of the buffer, this must match the value passed to the strbuf_space_t() macro.
+ * @note Example:
+ * @code{.c}
+ * #define BUF_CAP 50
+ * static strbuf_space_t(BUF_CAP) buf_space = STRBUF_STATIC_INIT(BUF_CAP);
+ * strbuf_t* my_buf = (strbuf_t*)&buf_space;
+ * @endcode
   **********************************************************************************/ 
 	#define STRBUF_STATIC_INIT(cap)		{.buf.capacity=(cap), .buf.size=0, .buf.allocator.allocator=NULL, .buf.allocator.app_data=NULL, .bdy[0]=0}
 
 /**
  * @def STRBUF_FIXED_CAP(cap)
+ * @hideinitializer
  * @brief (macro) Instantiate and provide the address of an initialized strbuf_t with a fixed capacity.
  * @param cap The capacity of the buffer.
- * @note When used within a function, the capacity may be determined at runtime by providing an integer variable for cap.
- * @note When used within a function the buffer will be on the stack.
- * @note When used outside of any function, the capacity must be a literal value.
- * @note When used outside of any function, the buffer will have static storage duration.
-  **********************************************************************************/ 
+ * @note When used within a function, the capacity may be determined at runtime by providing an integer variable for cap, and the buffer will be on the stack.
+ * @note When used outside of any function, the capacity must be a literal value, and the buffer will have static storage.
+ * @note Example:
+ * @code{.c}
+ * #define BUF_CAP 50
+ * strbuf_t* my_buf = STRBUF_FIXED(BUF_CAP);
+ * @endcode
+   **********************************************************************************/ 
 	#define STRBUF_FIXED_CAP(cap)	((strbuf_t*)&((strbuf_space_t(cap)){.buf.capacity=(cap), .buf.size=0, .buf.allocator.allocator=NULL, .buf.allocator.app_data=NULL, .bdy[0]=0}))
 
 /*	The buffer capacity is rounded up to a multiple of this when:
@@ -70,9 +120,10 @@
 		* expanding the buffer for any reason
 	The buffer size can only ever be shrunk by calling strbuf_shrink(), which shrinks it to the minimum needed.
 	Higher values will reduce calls to the allocator, at the expense of more memory overhead. */
-	#ifndef STRBUF_CAPACITY_GROW_STEP
+ 	#ifndef STRBUF_CAPACITY_GROW_STEP
 		#define STRBUF_CAPACITY_GROW_STEP 16
 	#endif
+
 /// @cond DEV
 //	This is used for counting the number of arguments to the strbuf_cat() macro below.
 // 	From https://stackoverflow.com/questions/4421681/how-to-count-the-number-of-arguments-passed-to-a-function-that-accepts-a-variabl
@@ -116,7 +167,7 @@
 	Example to append to a buffer:  strbuf_cat(&mybuffer, strbuf_view(&mybuffer), str_to_append) */
 
 /**
- * @def
+ * @def strbuf_cat(buf_ptr, ...)
  * @brief (macro) Concatenate an arbitrary number of string views into a buffer.
  * @param buf_ptr The address of a pointer to the buffer.
  * @param ... One or more strview_t to be concatenated.
