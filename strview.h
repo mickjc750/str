@@ -170,9 +170,9 @@
 
 /**
  * @brief Alphabetical comparison of two views.
- * @return >0 if the first non-matching character in str1 is greater than that of str2.
- * @return <0 if the first non-matching character in str1 is less than that of str2.
- * @return 0 if the views are equal.
+ * @return >0 if the first non-matching character in str1 is greater than that of str2, or if str2 is invalid.
+ * @return <0 if the first non-matching character in str1 is less than that of str2, or if str1 is invalid.
+ * @return 0 if the views are equal, or if both views are invalid.
   **********************************************************************************/
 	int strview_compare(strview_t str1, strview_t str2);
 
