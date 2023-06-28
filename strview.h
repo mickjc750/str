@@ -1,7 +1,14 @@
-/*
-	strview.h
-	Functions for parsing and interpreting strings.
-*/
+/**
+ * @file strview.h
+ * @brief A string view API for navigating and parsing string data.
+ * 
+ * strview.h declares the type strview_t, which is a pointer+size pair, or a 'view' of some existing string data.
+ * 
+ * Functions are provided for searching, comparing, trimming, and splitting portions of const char string data.
+ * 
+ * strview.h may be used standalone, and does not depend on **strbuf.h**.
+ * 
+ */
 
 #ifndef _STRVIEW_H_
 	#define _STRVIEW_H_
@@ -15,23 +22,61 @@
 // Public defines
 //********************************************************************************************************
 
-//	These macros can be used with printf for printing str types using dynamic precision.
-//	eg.  printf("name=%"PRIstr"\n", PRIstrarg(myname));
+/**
+ * @def PRIstr
+ * @brief (macro) a printf placeholder for a string view.
+ * @note In the style of <inttypes.h> PRIstr should be concatenated with the format string literal.
+ * @note The corresponding strview_t argument must also be wrapped in PRIstrarg()
+ * @note Example:
+ * @code{.c}
+ * printf("The view is %"PRIstr"\n", PRIstrarg(my_view));
+ * @endcode
+  **********************************************************************************/ 
 	#define PRIstr	".*s"
+
+
+/**
+ * @def PRIstrarg(arg)
+ * @brief (macro) a wrapper for passing string views as arguments to printf.
+ * @param arg A strview_t argument.
+ * @note This macro will expand the argument twice, so avoid side affects in the argument.
+ * @note Example:
+ * @code{.c}
+ * printf("The view is %"PRIstr"\n", PRIstrarg(my_view));
+ * @endcode
+  **********************************************************************************/ 
 	#define PRIstrarg(arg)	((arg).size),((arg).data)
 
-//	String structure.
-//	This does not own the memory used to hold the string. It references data either in a string buffer, or const chars in the string pool.
+/**
+ * @struct strview_t
+ * @brief A view of some string data
+ **********************************************************************************/
 	typedef struct strview_t
 	{
 		const char* data;
 		int size;
 	} strview_t;
 
-//	Can be used instead of cstr, to avoid measuring the length of string literals at runtime
+
+/**
+ * @def cstr_SL(sl_arg)
+ * @brief (macro) Provides a view of a string literal, without needing to measure it's length as runtime.
+ * @param sl_arg A string literal.
+ * @note Only use this to wrap "string literals", it will not work with a const char* due to pointer decay.
+ * @note To get a view of a const char* or a char* use instead the cstr() function.
+ * @note Example:
+ * @code{.c}
+ * strview_t title_view = cstr_SL("My Title");
+ * @endcode
+ **********************************************************************************/
 	#define cstr_SL(sl_arg) ((strview_t){.data=(sl_arg), .size=sizeof(sl_arg)-1})
 
-//	Assign to a strview_t to make it invalid
+
+/**
+ * @def STRVIEW_INVALID
+ * @brief (macro) An invalid string view.
+ * @note May be used as an initializer or assignment to a strview_t to invalidate it.
+ **********************************************************************************/
 	#define STRVIEW_INVALID		((strview_t){.data = NULL, .size = 0})
 
 //********************************************************************************************************
@@ -42,38 +87,95 @@
 // Public prototypes
 //********************************************************************************************************
 
-//	Return a strview_t from a null terminated const char string.
-//	If the argument is a string literal, cstr_SL() may be used instead, to prevent traversing the string literal to measure it's length
+/**
+ * @brief View a null terminated C string.
+ * @param c_str The C string to view
+ * @return A view of the C string, or STRVIEW_INVALID if c_str is passed NULL.
+ * @note Measures the length of the string at runtime. To avoid this when viewing string literals use instead cstr_SL().
+ * @note Example:
+ * @code{.c}
+ * char some_string[] = "Hello World";
+ * strview_t some_view = cstr(some_string);
+ * @endcode
+  **********************************************************************************/
 	strview_t cstr(const char* c_str);
 
-//	Write a str out to a null terminated char* buffer.
-//	The buffer memory and it's size must be provided by the caller
+/**
+ * @brief Write a view to a null terminated C string.
+ * @param dst The destination address.
+ * @param dst_size The number of bytes available at the destination address.
+ * @param str The source view to write to the destination.
+ * @return The written C string at the destination.
+ * @note Example:
+ * @code{.c}
+ * char some_string[50];
+ * strview_t some_view = cstr_SL("Hello World");
+ * strview_to_cstr(some_string, sizeof(some_string), some_view);
+ * @endcode
+  **********************************************************************************/
 	char* strview_to_cstr(char* dst, size_t dst_size, strview_t str);
-	
-//	Return true if the strview_t is valid.
+
+/**
+ * @brief Test if a view is valid.
+ * @param str The view to test.
+ * @return true if the view is valid, or false if it is not.
+  **********************************************************************************/
 	bool strview_is_valid(strview_t str);
 
-//	Swap strings a and b
+/**
+ * @brief Swap two views.
+ * @note This does not move any data, only the two views are swapped.
+  **********************************************************************************/
 	void strview_swap(strview_t* a, strview_t* b);
 
-//	Return true if the strings match
+/**
+ * @brief Test if the contents of two views match.
+ * @return true if the contents match or if both views are invalid.
+  **********************************************************************************/
 	bool strview_is_match(strview_t str1, strview_t str2);
 
-//	Same as strview_is_match() ignoring case
+/**
+ * @brief Test of the contents of two views match, ignoring case.
+ * @return true if the contents match or if both views are invalid.
+  **********************************************************************************/
 	bool strview_is_match_nocase(strview_t str1, strview_t str2);
 
-/*	Returns true if the content of str2 is found at the beginning of str1
-	Returns true if BOTH strings are invalid */
+/**
+ * @brief Test the starting contents of a view.
+ * @param str1 The view to test.
+ * @param str2 A view of the content we are testing for.
+ * @return true if the contents of str2 is found at the start of str1, or if both views are invalid.
+ * @note Example:
+ * @code{.c}
+ * strview_t target_view = cstr_SL("Hello World");
+ * strview_t keyword_view = cstr_SL("Hello");
+ * bool target_starts_with_greeting = strview_starts_with(target_view, keyword_view);
+ * @endcode
+  **********************************************************************************/
 	bool strview_starts_with(strview_t str1, strview_t str2);
 
-//	Same as strview_starts_with() ignoring case
+/**
+ * @brief Test the starting contents of a view, ignoring case.
+ * @param str1 The view to test.
+ * @param str2 A view of the content we are testing for.
+ * @return true if the contents of str2 is found at the start of str1, or if both views are invalid.
+ * @note Example:
+ * @code{.c}
+ * strview_t target_view = cstr_SL("Hello World");
+ * strview_t keyword_view = cstr_SL("heLLo");
+ * bool target_starts_with_greeting = strview_starts_with_nocase(target_view, keyword_view);
+ * @endcode
+  **********************************************************************************/
 	bool strview_starts_with_nocase(strview_t str1, strview_t str2);
 
-/*	Replaces strcmp()
-	returns >0 if the first non-matching character in str1 is greater (in ASCII) than that of str2.
-	returns <0 if the first non-matching character in str1 is lower   (in ASCII) than that of str2.
-	returns 0 if the strings are equal */
+/**
+ * @brief Alphabetical comparison of two views.
+ * @return >0 if the first non-matching character in str1 is greater than that of str2.
+ * @return <0 if the first non-matching character in str1 is less than that of str2.
+ * @return 0 if the views are equal.
+  **********************************************************************************/
 	int strview_compare(strview_t str1, strview_t str2);
+
 
 /*	Return the sub string indexed by begin->end. end is non-inclusive.
 	Negative values may be used, and will index from the end of the string backwards.

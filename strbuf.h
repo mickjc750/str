@@ -1,10 +1,13 @@
 /**
  * @file strbuf.h
- * A buffer API complementing strview.h
+ * @brief A buffer API complementing strview.h
  * 
  * * Provides functions for allocating buffers on the heap, stack, or static memory.
  * * Provides functions for building and modifying string data.
- * * Able to use custom allocators provided at runtime. Dynamic allocation is not mandatory.
+ * * Able to use custom allocators provided at runtime.
+ * * Dynamic allocation is not mandatory.
+ * * Maintains null termination, so buffer contents may be accessed as a regular C string.
+ * * Able to assign or append formatted text from printf() or prnf()
  * 
  * __strbuf.h__ defines the following __strbuf_t__ type :
  * 
@@ -32,27 +35,25 @@
  * Functions which modify a buffers contents return a view of the resulting buffer contents.
  * If an insert or append operation fails due to insufficient capacity, the buffer will be emptied.
  * 
+ * 
+ * ## Build options
+ *  -DSTRBUF_PROVIDE_PRINTF
+ * 	Provides functions which use vprintf() internally to assign or append formatted text to a buffer.
+ * 
+ * -DSTRBUF_PROVIDE_PRNF
+ * Similar to printf, -but uses an alternative text formatter https://github.com/mickjc750/prnf
+ * 
+ * -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
+ * If you wish to use dynamic memory allocation, but can't be bothered providing an allocator.
+ * 
+ * -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
+ * assert() that the malloc or realloc of the default allocator actually succeeded.
+ * 
+ * -DSTRBUF_CAPACITY_GROW_STEP=<size>
+ * Defaults to 16. This is the minimum size by which the buffer will be expanded when needed.
+ * 
  */
 
-/*
- The following may be added to compiler options:
-
- -DSTRBUF_PROVIDE_PRINTF
-	Provides functions which use vprintf() internally to assign or append formatted text to a buffer.
-
- -DSTRBUF_PROVIDE_PRNF
- 	Similar to printf, -but uses an alternative text formatter https://github.com/mickjc750/prnf
-
- -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
-	If you wish to use dynamic memory allocation, but can't be bothered providing an allocator.
-
- -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
- 	assert() that the malloc or realloc of the default allocator actually succeeded.
-
- -DSTRBUF_CAPACITY_GROW_STEP=<size>
-	Defaults to 16. This is the minimum size by which the buffer will be expanded when needed.
-
-*/
 #ifndef _STRBUF_H_
 	#define _STRBUF_H_
 
@@ -66,8 +67,6 @@
 //********************************************************************************************************
 // Public defines
 //********************************************************************************************************
-
-//	Used for buffers with stack or static storage. See examples/stack-buf and examples/static-buf
 
 /**
  * @def strbuf_space_t(cap)
@@ -160,59 +159,66 @@
          9,8,7,6,5,4,3,2,1,0
 /// @endcond
 
-/*	Use strbuf_cat to concatenate an arbitrary number of strings into a buffer.
-	The buffers contents itself may be used as an argument, in this case a temporary buffer will be allcoated to build the output.
-	This facilitates appending, prepending, or even inserting by using str_sub().
-	A string representing the result is returned. The string returned is always valid providing buf_ptr is not NULL.
-	Example to append to a buffer:  strbuf_cat(&mybuffer, strbuf_view(&mybuffer), str_to_append) */
-
 /**
  * @def strbuf_cat(buf_ptr, ...)
  * @brief (macro) Concatenate an arbitrary number of string views into a buffer.
  * @param buf_ptr The address of a pointer to the buffer.
  * @param ... One or more strview_t to be concatenated.
  * @return A view of the resulting buffer contents.
- * @note If the destination buffer is of a fixed capacity (has no allocator), then ... may not contain views of the destination itself.
+ * @note If the destination buffer is dynamic, then ... arguments may be views within the destination.
  * @note If a buffer of fixed capacity is unable to store the output, it will be emptied.
+ * @note Example:
+ * @code{.c}
+ * strbuf_t* my_buf = strbuf_create(0,NULL);
+ * strbuf_cat(&mybuf, cstr("Hello"), cstr(" World"));
+ * @endcode
  **********************************************************************************/ 
  	#define strbuf_cat(buf_ptr, ...) _strbuf_cat(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 
-/*	Structure for providing the buffer with an allocator.
-	The allocator must return an address that is suitably aligned for any kind of variable, as allocations also contain strbuf_t.
-	When a new allocation is required, ptr_to_free will be NULL and size will be >0
-	When a re-allocation is required,  ptr_to_free will be not be NULL and size will be >0
-	When a de-allocation is required,  ptr_to_free may or may not be NULL, and size will be 0
-	stdlib's realloc handles this perfectly, example:
 
-static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
-{
-	(void)this_allocator; (void)caller_filename; (void)caller_line;
-	void* result;
-	result = realloc(ptr_to_free, size);
-	assert(size==0 || result);	// You need to catch a failed allocation here.
-	return result;
-}
-then:
-	strbuf_allocator_t strbuf_allocator = {.allocator = allocator}; */
-
+/**
+ * @struct strbuf_allocator_t
+ * @brief Structure for providing the buffer with an allocator.
+ * @note Example allocator using realloc:
+ * @code{.c}
+ * static void* my_alloc_func(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
+ * {
+ * 	(void)this_allocator; (void)caller_filename; (void)caller_line;
+ * 	void* result;
+ * 	result = realloc(ptr_to_free, size);
+ * 	assert(size==0 || result);	// You need to catch a failed allocation here.
+ * 	return result;
+ * }
+ * 	strbuf_allocator_t my_alloc = {.allocator = my_alloc_func};
+ * @endcode
+ */
 	typedef struct strbuf_allocator_t
 	{
-		void* app_data;
+		void* app_data; ///< A pointer to some implementation specific data which may be required by the allocator.
+		/**
+		 * @brief Function pointer to the allocator
+		 * @param this_allocator A pointer to the instance of this structure.
+		 * @param ptr_to_free Memory address to free or relocate, or NULL for new allocations.
+		 * @param size Size of the new or re-sized allocation, or 0 if freeing memory.
+		 * @param caller_filename The file calling the allocator.
+		 * @param caller_line The source line calling the allocator.
+		 */
 		void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
 	} strbuf_allocator_t;
 
-
-//	Buffer structure. Allocates and owns the buffer memory.
-//	Maintains null termination, so classic c style (null terminated) strings can be accessed with ->cstr
+/**
+ * @struct strbuf_t
+ * @brief Structure for a buffer instance.
+ * This structure exists in memory before the buffers contents. The buffer is handled by a pointer to this structure, and this pointer may change if the buffer is resized.
+ * Functions which manipulate the buffer accept this pointer by reference.
+ */
 	typedef struct strbuf_t
 	{
-		int size;
-		int capacity;
-		strbuf_allocator_t allocator;
-		char cstr[];
+		int size;						///< Size of the buffers contents.
+		int capacity;					///< Current capacity of the buffer.
+		strbuf_allocator_t allocator;	///< Allocator in use, if available.
+		char cstr[];					///< Beginning of the buffers contents.
 	} strbuf_t;
-
-
 
 //********************************************************************************************************
 // Public prototypes
@@ -220,11 +226,14 @@ then:
 
 /**
  * @brief Create a new buffer.
- * @param initial_capacity The initial capacity of the buffer. This must be <= INT_MAX.
- * @param allocator A pointer to a strbuf_allocator_t which provides tha allocator to use, or NULL to use the default allocator.
+ * @param initial_capacity The initial capacity of the buffer. This must be <= INT_MAX. It may  be 0.
+ * @param allocator A pointer to a strbuf_allocator_t which provides the allocator to use, or NULL to use the default allocator.
  * @return A pointer to the newly created buffer.
  * @note Using the default allocator (malloc/free) requires building with -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
- * @note Building with -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB will also assert that the default allocator succeeded using assert.h
+ * @note Example:
+ * @code{.c}
+ * strbuf_t* my_buf = strbuf_create(0,NULL);
+ * @endcode
   **********************************************************************************/
 	strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator);
 
@@ -236,6 +245,11 @@ then:
  * @note The capacity of the buffer will be less than the memory space provided, by sizeof(strbuf_t)+1.
  * @note The memory must be suitably aligned for a void* using __attribute__ ((aligned)), or by using macro strbuf_space_t().
  * @note The maximum capacity of a buffer is INT_MAX.
+ * @note Example:
+ * @code{.c}
+ * char buf_space[100] __attribute__ ((aligned));
+ * strbuf_t* my_buf = strbuf_create_fixed(buf_space, sizeof(buf_space));
+ * @endcode
   **********************************************************************************/
 	strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);
 
@@ -246,7 +260,7 @@ then:
  * @param ... One or more strview_t to be concatenated.
  * @return A view of the resulting buffer contents.
  * @note This function should be used via the macro strbuf_cat(strbuf_t** buf_ptr, ...) which counts the argument list for you to provide n_args.
- * @note If the destination buffer is of a fixed capacity (has no allocator), then ... may not contain views of the destination itself.
+ * @note If the destination buffer is dynamic, then ... arguments may be views within the destination.
  * @note If a buffer of fixed capacity is unable to store the output, it will be emptied.
  **********************************************************************************/
 	strview_t _strbuf_cat(strbuf_t** buf_ptr, int n_args, ...);
@@ -262,7 +276,12 @@ then:
  * @param buf_ptr The address of a pointer to the buffer.
  * @param c The character to be appended
  * @return A view of the resulting buffer contents.
- **********************************************************************************/
+ * @note Example:
+ * @code{.c}
+ * strbuf_t* my_buf = strbuf_create(0,NULL);
+ * strbuf_append_char(&my_buf, 'X');
+ * @endcode
+  **********************************************************************************/
 	strview_t strbuf_append_char(strbuf_t** buf_ptr, char c);
 
 /**

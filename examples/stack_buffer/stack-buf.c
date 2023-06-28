@@ -69,7 +69,7 @@ static void ex2(strview_t v)
 
 static void ex3(strview_t v)
 {
-	char cbuf[v.size + 1];
+	char cbuf[v.size + 1] __attribute__ ((aligned));
 	strview_to_cstr(cbuf, sizeof(cbuf), v);
 
 	printf("Example 3: assigning contents of passed view \"%s\" to a regular char[] with size determined at runtime\n", cbuf);
