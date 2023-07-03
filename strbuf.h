@@ -49,7 +49,7 @@
  * -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
  * assert() that the malloc or realloc of the default allocator actually succeeded.
  * 
- * -DSTRBUF_CAPACITY_GROW_STEP=<size>
+ * -DSTRBUF_CAPACITY_GROW_STEP=[size]
  * Defaults to 16. This is the minimum size by which the buffer will be expanded when needed.
  * 
  */
