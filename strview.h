@@ -1,6 +1,7 @@
 /**
  * @file strview.h
  * @brief A string view API for navigating and parsing string data.
+ * @author Michael Clift
  * 
  * strview.h declares the type strview_t, which is a pointer+size pair, or a 'view' of some existing string data.
  * 

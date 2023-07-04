@@ -1,6 +1,7 @@
 /**
  * @file strbuf.h
  * @brief A buffer API complementing strview.h
+ * @author Michael Clift
  * 
  * * Provides functions for allocating buffers on the heap, stack, or static memory.
  * * Provides functions for building and modifying string data.
