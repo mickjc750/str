@@ -178,6 +178,27 @@
 
 
 /**
+ * @def strbuf_create(init, strbuf_allocator_t* allocator)
+ * @brief (macro) Create a new buffer.
+ * @param init A size_t for an empty buffer, or strview_t of initial content.
+ * @param allocator A pointer to a strbuf_allocator_t which provides the allocator to use, or NULL to use the default allocator.
+ * @return A pointer to the newly created buffer.
+ * @note If the destination buffer is dynamic, then ... arguments may be views within the destination.
+ * @note If a buffer of fixed capacity is unable to store the output, it will be emptied.
+ * @note Example:
+ * @code{.c}
+ * strbuf_t* my_buf = strbuf_create(0,NULL);
+ * strbuf_t* my_buf = strbuf_create(cstr("Hello"),NULL);
+ * @endcode
+ **********************************************************************************/ 
+	#define strbuf_create(init, alloc) _Generic((init),\
+		size_t:			strbuf_create_empty,\
+		int:			strbuf_create_empty,\
+		strview_t:		strbuf_create_init\
+		)(init, alloc)
+
+
+/**
  * @struct strbuf_allocator_t
  * @brief Structure for providing the buffer with an allocator.
  * @note Example allocator using realloc:
@@ -235,17 +256,30 @@
 	void strbuf_register_default_allocator(strbuf_allocator_t allocator);
 
 /**
- * @brief Create a new buffer.
+ * @brief Create a new empty buffer.
  * @param initial_capacity The initial capacity of the buffer. This must be <= INT_MAX. It may  be 0.
  * @param allocator A pointer to a strbuf_allocator_t which provides the allocator to use, or NULL to use the default allocator.
  * @return A pointer to the newly created buffer.
  * @note Using the default allocator (malloc/free) requires building with -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
  * @note Example:
  * @code{.c}
- * strbuf_t* my_buf = strbuf_create(0,NULL);
+ * strbuf_t* my_buf = strbuf_create_empty(0,NULL);
  * @endcode
   **********************************************************************************/
-	strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator);
+	strbuf_t* strbuf_create_empty(size_t initial_capacity, strbuf_allocator_t* allocator);
+
+/**
+ * @brief Create a new buffer initialised by a strview_t
+ * @param initial_content The initial content of the buffer.
+ * @param allocator A pointer to a strbuf_allocator_t which provides the allocator to use, or NULL to use the default allocator.
+ * @return A pointer to the newly created buffer.
+ * @note Using the default allocator (malloc/free) requires building with -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
+ * @note Example:
+ * @code{.c}
+ * strbuf_t* my_buf = strbuf_create_init(0,NULL);
+ * @endcode
+  **********************************************************************************/
+	strbuf_t* strbuf_create_init(strview_t initial_content, strbuf_allocator_t* allocator);
 
 /**
  * @brief Create a buffer with a fixed capacity from the memory address and size provided.

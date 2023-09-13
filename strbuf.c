@@ -82,7 +82,7 @@ void strbuf_register_default_allocator(strbuf_allocator_t allocator)
 	default_allocator.app_data = allocator.app_data;
 }
 
-strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator)
+strbuf_t* strbuf_create_empty(size_t initial_capacity, strbuf_allocator_t* allocator)
 {
 	strbuf_t* result;
 	
@@ -91,6 +91,23 @@ strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator)
 
 	if(allocator->allocator && initial_capacity <= INT_MAX)
 		result = create_buf((int)initial_capacity, *allocator);
+	else
+		result = NULL;
+	return result;
+}
+
+strbuf_t* strbuf_create_init(strview_t initial_content, strbuf_allocator_t* allocator)
+{
+	strbuf_t* result;
+	
+	if(!allocator)
+		allocator = &default_allocator;
+
+	if(allocator->allocator)
+	{
+		result = create_buf(initial_content.size, *allocator);
+		insert_strview_into_buf(&result, 0, initial_content);
+	}
 	else
 		result = NULL;
 	return result;
