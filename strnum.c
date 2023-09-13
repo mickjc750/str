@@ -71,7 +71,7 @@
 // Public functions
 //********************************************************************************************************
 
-int strnum_uchar(unsigned char* dst, strview_t* src, int options)
+int strnum_consume_uchar(unsigned char* dst, strview_t* src, int options)
 {
 	int err;
 	unsigned long long val;
@@ -83,7 +83,7 @@ int strnum_uchar(unsigned char* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_ushort(unsigned short* dst, strview_t* src, int options)
+int strnum_consume_ushort(unsigned short* dst, strview_t* src, int options)
 {
 	int err;
 	unsigned long long val;
@@ -95,7 +95,7 @@ int strnum_ushort(unsigned short* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_uint(unsigned int* dst, strview_t* src, int options)
+int strnum_consume_uint(unsigned int* dst, strview_t* src, int options)
 {
 	int err;
 	unsigned long long val;
@@ -107,7 +107,7 @@ int strnum_uint(unsigned int* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_ulong(unsigned long* dst, strview_t* src, int options)
+int strnum_consume_ulong(unsigned long* dst, strview_t* src, int options)
 {
 	int err;
 	unsigned long long val;
@@ -119,12 +119,12 @@ int strnum_ulong(unsigned long* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_ullong(unsigned long long* dst, strview_t* src, int options)
+int strnum_consume_ullong(unsigned long long* dst, strview_t* src, int options)
 {
 	return consume_unsigned(dst, src, options, ULLONG_MAX);
 }
 
-int strnum_char(char* dst, strview_t* src, int options)
+int strnum_consume_char(char* dst, strview_t* src, int options)
 {
 	int err;
 	long long val;
@@ -136,7 +136,7 @@ int strnum_char(char* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_short(short* dst, strview_t* src, int options)
+int strnum_consume_short(short* dst, strview_t* src, int options)
 {
 	int err;
 	long long val;
@@ -148,7 +148,7 @@ int strnum_short(short* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_int(int* dst, strview_t* src, int options)
+int strnum_consume_int(int* dst, strview_t* src, int options)
 {
 	int err;
 	long long val;
@@ -160,7 +160,7 @@ int strnum_int(int* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_long(long* dst, strview_t* src, int options)
+int strnum_consume_long(long* dst, strview_t* src, int options)
 {
 	int err;
 	long long val;
@@ -172,13 +172,139 @@ int strnum_long(long* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_llong(long long* dst, strview_t* src, int options)
+int strnum_consume_llong(long long* dst, strview_t* src, int options)
 {
 	return consume_signed(dst, src, options, LLONG_MIN, LLONG_MAX);
 }
 
+int8_t strnum_i8(strview_t src, int8_t dfault, int options)
+{
+	long long v;
+	int err = consume_signed(&v, &src, options, INT8_MIN, INT8_MAX);
+	return err ? dfault : (int8_t)v;
+}
+
+int16_t strnum_i16(strview_t src, int16_t dfault, int options)
+{
+	long long v;
+	int err = consume_signed(&v, &src, options, INT16_MIN, INT16_MAX);
+	return err ? dfault : (int16_t)v;
+}
+
+int32_t strnum_i32(strview_t src, int32_t dfault, int options)
+{
+	long long v;
+	int err = consume_signed(&v, &src, options, INT32_MIN, INT32_MAX);
+	return err ? dfault : (int32_t)v;
+}
+
+int64_t strnum_i64(strview_t src, int64_t dfault, int options)
+{
+	long long v;
+	int err = consume_signed(&v, &src, options, INT64_MIN, INT64_MAX);
+	return err ? dfault : (int64_t)v;
+}
+
+uint8_t strnum_u8(strview_t src, uint8_t dfault, int options)
+{
+	unsigned long long v;
+	int err = consume_unsigned(&v, &src, options, UINT8_MAX);
+	return err ? dfault : (uint8_t)v;
+}
+
+uint16_t strnum_u16(strview_t src, uint16_t dfault, int options)
+{
+	unsigned long long v;
+	int err = consume_unsigned(&v, &src, options, UINT16_MAX);
+	return err ? dfault : (uint16_t)v;
+}
+
+uint32_t strnum_u32(strview_t src, uint32_t dfault, int options)
+{
+	unsigned long long v;
+	int err = consume_unsigned(&v, &src, options, UINT32_MAX);
+	return err ? dfault : (uint32_t)v;
+}
+
+uint64_t strnum_u64(strview_t src, uint64_t dfault, int options)
+{
+	unsigned long long v;
+	int err = consume_unsigned(&v, &src, options, UINT64_MAX);
+	return err ? dfault : (uint64_t)v;
+}
+
+char strnum_char(strview_t src, char dfault, int options)
+{
+	long long v;
+	int err = consume_signed(&v, &src, options, CHAR_MIN, CHAR_MAX);
+	return err ? dfault : (char)v;
+}
+
+short strnum_short(strview_t src, short dfault, int options)
+{
+	long long v;
+	int err = consume_signed(&v, &src, options, SHRT_MIN, SHRT_MAX);
+	return err ? dfault : (short)v;
+}
+
+int strnum_int(strview_t src, int dfault, int options)
+{
+	long long v;
+	int err = consume_signed(&v, &src, options, INT_MIN, INT_MAX);
+	return err ? dfault : (int)v;
+}
+
+long strnum_long(strview_t src, long dfault, int options)
+{
+	long long v;
+	int err = consume_signed(&v, &src, options, LONG_MIN, LONG_MAX);
+	return err ? dfault : (long)v;
+}
+
+long long strnum_llong(strview_t src, long long dfault, int options)
+{
+	long long v;
+	int err = consume_signed(&v, &src, options, LLONG_MIN, LLONG_MAX);
+	return err ? dfault : (long long)v;
+}
+
+unsigned char strnum_uchar(strview_t src, unsigned char dfault, int options)
+{
+	unsigned long long v;
+	int err = consume_unsigned(&v, &src, options, UCHAR_MAX);
+	return err ? dfault : (unsigned char)v;
+}
+
+unsigned short strnum_ushort(strview_t src, unsigned short dfault, int options)
+{
+	unsigned long long v;
+	int err = consume_unsigned(&v, &src, options, USHRT_MAX);
+	return err ? dfault : (unsigned short)v;
+}
+
+unsigned int strnum_uint(strview_t src, unsigned int dfault, int options)
+{
+	unsigned long long v;
+	int err = consume_unsigned(&v, &src, options, UINT_MAX);
+	return err ? dfault : (unsigned int)v;
+}
+
+unsigned long strnum_ulong(strview_t src, unsigned long dfault, int options)
+{
+	unsigned long long v;
+	int err = consume_unsigned(&v, &src, options, ULONG_MAX);
+	return err ? dfault : (unsigned long)v;
+}
+
+unsigned long long strnum_ullong(strview_t src, unsigned long long dfault, int options)
+{
+	unsigned long long v;
+	int err = consume_unsigned(&v, &src, options, ULLONG_MAX);
+	return err ? dfault : (unsigned long long)v;
+}
+
 #ifndef STRNUM_NOFLOAT
-int strnum_float(float* dst, strview_t* src, int options)
+int strnum_consume_float(float* dst, strview_t* src, int options)
 {
 	int err = 0;
 	float value = 0.0;
@@ -224,7 +350,7 @@ int strnum_float(float* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_double(double* dst, strview_t* src, int options)
+int strnum_consume_double(double* dst, strview_t* src, int options)
 {
 	int err = 0;
 	double value;
@@ -270,7 +396,7 @@ int strnum_double(double* dst, strview_t* src, int options)
 	return err;
 }
 
-int strnum_ldouble(long double* dst, strview_t* src, int options)
+int strnum_consume_ldouble(long double* dst, strview_t* src, int options)
 {
 	int err = 0;
 	long double value;
@@ -315,6 +441,28 @@ int strnum_ldouble(long double* dst, strview_t* src, int options)
 
 	return err;
 }
+
+float strnum_float(strview_t src, float dfault, int options)
+{
+	float v;
+	int err = strnum_value(&v, &src, options);
+	return err ? dfault : v;
+}
+
+double strnum_double(strview_t src, double dfault, int options)
+{
+	double v;
+	int err = strnum_value(&v, &src, options);
+	return err ? dfault : v;
+}
+
+long double strnum_ldouble(strview_t src, long double dfault, int options)
+{
+	long double v;
+	int err = strnum_value(&v, &src, options);
+	return err ? dfault : v;
+}
+
 #endif
 
 //********************************************************************************************************
@@ -389,7 +537,7 @@ static int consume_exponent(float_components_t* fc)
 	int err = 0;
 	strview_t exp_view;
 	exp_view = strview_sub(fc->num, 1, INT_MAX);
-	err = strnum_int(&fc->exp_value, &exp_view, STRNUM_NOSPACE | STRNUM_NOBX);
+	err = strnum_consume_int(&fc->exp_value, &exp_view, STRNUM_NOSPACE | STRNUM_NOBX);
 	fc->got_exponent = (err == 0);
 	if(fc->got_exponent)
 		fc->num = exp_view;
