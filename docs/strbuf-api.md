@@ -74,6 +74,7 @@ As mybuffer is a pointer, members of the strbuf_t may be accessed using the arro
 # Providing an allocator for strbuf_create().
 
  **strbuf_create()** *may* be passed an allocator. If you just want strbuf_create() to use stdlib's malloc and free, then simply add -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB to your compiler options, and pass a NULL to the allocator parameter of strbuf_create(). If you want to check that stdlib's allocation/resize actually succeeded, you can also add -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB which uses regular assert() to check this.
+ If you don't want to use stdlib's malloc and free, and also don't want to pass your custom allocator to every occurrence of strbuf_create(), then you can register a default allocator at the start of your application using **strbuf_register_default_allocator(strbuf_allocator_t allocator);** 
 
  The following __strbuf_allocator_t__ type is defined by __strbuf.h__
 
@@ -161,8 +162,10 @@ With the exception of strbuf_cat(), all buffer operations can source data from t
 
 &nbsp;
 ## `strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator);`
- Create and return the address of a strbuf_t.
- If STRBUF_DEFAULT_ALLOCATOR_STDLIB is defined, then allocator may be NULL and malloc/free will be used.
+## `strbuf_t* strbuf_create(strview_t initial_content, strbuf_allocator_t* allocator);`
+ A generic macro, which creates and returns the address of an empty buffer of initial_capacity, or a buffer initialized with initial_content.
+
+ allocator may be NULL to use malloc/free (requires STRBUF_DEFAULT_ALLOCATOR_STDLIB) or a default allocator registered with strbuf_register_default_allocator()
 
 &nbsp;
 ## `strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);`

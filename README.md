@@ -24,7 +24,7 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 
  This project aims to implement a convenient and intuitive approach to string handling, described in a talk by Luca Sas in the above mentioned YouTube video.
 
- The core ideas are:
+ The core ideas for strview.h are:
  * Separating the ownership of a string (which can modify/build strings) from the access or view of strings (navigating/splitting/trimming).
  * Returning strings by value, to avoid pointers.
  * Ditching the requirement for null termination.
@@ -98,6 +98,16 @@ To understand this approach to string handling, and the purpose of each, it help
 	title_set(title_view);	// pass the view to a function
 
  If the receiver of a strview_t wishes to guarantee the existence of the data after it returns, then it should assign it to its own buffer.
+
+ In many cases you may wish to pass a strview_t to an stdlib function expecting a regular const char*. The content of a strview_t can be assigned to a buffer on creation. strbuf_create() is a generic macro which can also accept a strview_t instead of a size, to initialize the buffers contents.
+
+	int myfunc(strview_t filename)
+	{
+		strbuf_t* mybuf= strbuf_create(filename, NULL);
+		int fn = open(mybuf->cstr, O_RDWR);
+		strbuf_destroy(&mybuf);
+		return fn;
+	}
 
 &nbsp;
 # Use of regular C strings and string literals with functions that take a strview_t

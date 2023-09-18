@@ -22,12 +22,47 @@ The return value is 0 on success, ERANGE if the value is out of range for the de
 
 A test application is provided [/examples/testnum/testnum.c](/examples/testnum/testnum.c) , which allows typing in a number, and seeing the outcome for each number type.
 
+&nbsp;
+&nbsp;
+
+### An alternate set of functions is also available, with more convenient semantics at the expense of error checking:
+
+&nbsp;
+ The below functions return the converted value and do not modify the source view. They return a default value for invalid or out of range inputs.
+
+####	`int8_t strnum_i8(strview_t src, int8_t dfault, int options);`
+####	`int16_t strnum_i16(strview_t src, int16_t dfault, int options);`
+####	`int32_t strnum_i32(strview_t src, int32_t dfault, int options);`
+####	`int64_t strnum_i64(strview_t src, int64_t dfault, int options);`
+####	`uint8_t strnum_u8(strview_t src, uint8_t dfault, int options);`
+####	`uint16_t strnum_u16(strview_t src, uint16_t dfault, int options);`
+####	`uint32_t strnum_u32(strview_t src, uint32_t dfault, int options);`
+####	`uint64_t strnum_u64(strview_t src, uint64_t dfault, int options);`
+####	`unsigned char strnum_uchar(strview_t src, unsigned char dfault, int options);`
+####	`unsigned short strnum_ushort(strview_t src, unsigned short dfault, int options);`
+####	`unsigned int strnum_uint(strview_t src, unsigned int dfault, int options);`
+####	`unsigned long strnum_ulong(strview_t src, unsigned long dfault, int options);`
+####	`unsigned long long strnum_ullong(strview_t src, unsigned long long dfault, int options);`
+####	`char strnum_char(strview_t src, char dfault, int options);`
+####	`short strnum_short(strview_t src, short dfault, int options);`
+####	`int strnum_int(strview_t src, int dfault, int options);`
+####	`long strnum_long(strview_t src, long dfault, int options);`
+####	`long long strnum_llong(strview_t src, long long dfault, int options);`
+####	`float strnum_float(strview_t src, float dfault, int options);`
+####	`double strnum_double(strview_t src, double dfault, int options);`
+####	`long double strnum_ldouble(strview_t src, long double dfault, int options);`
+
 
 &nbsp;
 # Options
 
 The options parameter may be 0, or one or more of the following flags
 
+&nbsp;
+&nbsp;
+## __STRNUM_DEFAULT__
+
+ Default behavior. Same as 0.
 
 &nbsp;
 ## __STRNUM_NOBX__
