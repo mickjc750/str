@@ -47,6 +47,7 @@
 	TEST test_strbuf_create_using_malloc(void);
 	TEST test_strbuf_create_using_allocator(void);
 	TEST test_strbuf_create_static(void);
+	TEST test_strbuf_create_init(void);
 	TEST test_strbuf_strcat(void);
 	TEST test_strbuf_shrink(void);
 	TEST test_strbuf_printf(void);
@@ -118,6 +119,7 @@ static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_f
 SUITE(suite_strbuf)
 {
 	RUN_TEST(test_strbuf_create_using_malloc);
+	RUN_TEST(test_strbuf_create_init);
 	RUN_TEST(test_strbuf_create_using_allocator);
 	RUN_TEST(test_strbuf_create_static);
 	RUN_TEST(test_strbuf_strcat);
@@ -182,6 +184,23 @@ TEST test_strbuf_create_using_malloc(void)
 
 	PASS();
 	#undef INITIAL_BUF_CAPACITY
+}
+
+TEST test_strbuf_create_init(void)
+{
+	#define TEST_STRING	"The quick brown fox jumped over the lazy dog"
+	strbuf_t* buf;
+	buf = strbuf_create(cstr(TEST_STRING), NULL);
+
+	ASSERT(buf);
+	ASSERT(buf->cstr);
+	ASSERT(buf->size == sizeof(TEST_STRING)-1);
+	ASSERT(buf->cstr[sizeof(TEST_STRING)-1] == 0);
+	strbuf_destroy(&buf);
+	ASSERT(!buf);
+
+	PASS();
+	#undef TEST_STRING
 }
 
 TEST test_strbuf_create_using_allocator(void)
