@@ -119,16 +119,19 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 # Trimming
 
 &nbsp;
-## `strview_t strview_trim(strview_t str, strview_t chars_to_trim);`
+## `strview_t strview_trim(strview_t str, chars_to_trim);`
  Return a strview_t with the start and end trimmed of all characters present in **chars_to_trim**.
+ This is a generic macro which accepts either a string literal or strview_t as **chars_to_trim**
 
 &nbsp;
-## `strview_t strview_trim_start(strview_t str, strview_t chars_to_trim);`
+## `strview_t strview_trim_start(strview_t str, chars_to_trim);`
  Return a strview_t with the start trimmed of all characters present in **chars_to_trim**.
+ This is a generic macro which accepts either a string literal or strview_t as **chars_to_trim**
 
 &nbsp;
-## `strview_t strview_trim_end(strview_t str, strview_t chars_to_trim);`
+## `strview_t strview_trim_end(strview_t str, chars_to_trim);`
  Return a strview_t with the end trimmed of all characters present in **chars_to_trim**.
+ This is a generic macro which accepts either a string literal or strview_t as **chars_to_trim**
 
 &nbsp;
 &nbsp;
