@@ -481,7 +481,7 @@ static int process_float_components(float_components_t* fc)
 
 	//consume whitespace
 	if(!err && !(fc->options & STRNUM_NOSPACE))
-		fc->num = strview_trim_start(fc->num, cstr(" "));
+		fc->num = strview_trim_start(fc->num, " ");
 
 	//consume sign
 	if(!err && !(fc->options & STRNUM_NOSIGN))
@@ -505,7 +505,7 @@ static int process_float_components(float_components_t* fc)
 	};
 
 	//consume exponent
-	if(!err && !fc->special_value && !(fc->options & STRNUM_NOEXP) && strview_starts_with_nocase(fc->num, cstr("E")))
+	if(!err && !fc->special_value && !(fc->options & STRNUM_NOEXP) && strview_starts_with_nocase(fc->num, "E"))
 		err = consume_exponent(fc);
 
 	return err;
@@ -514,17 +514,17 @@ static int process_float_components(float_components_t* fc)
 static float consume_float_special(float_components_t* fc)
 {
 	float value = 0.0;
-	if(strview_starts_with_nocase(fc->num, cstr("infinty")))
+	if(strview_starts_with_nocase(fc->num, "infinty"))
 	{
 		value = INFINITY;
 		fc->num = strview_sub(fc->num, strlen("infinity"), INT_MAX);
 	}
-	else if(strview_starts_with_nocase(fc->num, cstr("inf")))
+	else if(strview_starts_with_nocase(fc->num, "inf"))
 	{
 		value = INFINITY;
 		fc->num = strview_sub(fc->num, strlen("inf"), INT_MAX);
 	}
-	else if(strview_starts_with_nocase(fc->num, cstr("nan")))
+	else if(strview_starts_with_nocase(fc->num, "nan"))
 	{
 		value = NAN;
 		fc->num = strview_sub(fc->num, strlen("nan"), INT_MAX);
@@ -557,7 +557,7 @@ static int consume_exponent(float_components_t* fc)
 		result += (typ)ull;														\
 		result *= powfunc(10, integral_digits.size);							\
 	};																			\
-	fractional_digits = strview_trim_end(fractional_digits, cstr("0"));			\
+	fractional_digits = strview_trim_end(fractional_digits, "0");				\
 	while(fractional_digits.size)												\
 	{																			\
 		fractional_power -= fractional_digits.size;								\
@@ -609,7 +609,7 @@ static int consume_signed(long long* dst, strview_t* src, int options, long long
 
 	//consume whitespace
 	if(!err && !(options & STRNUM_NOSPACE))
-		num = strview_trim_start(num, cstr(" "));
+		num = strview_trim_start(num, " ");
 
 	//consume sign
 	if(!err && !(options & STRNUM_NOSIGN))
@@ -674,7 +674,7 @@ static int consume_unsigned(unsigned long long* dst, strview_t* src, int options
 
 	//consume whitespace
 	if(!err && !(options & STRNUM_NOSPACE))
-		num = strview_trim_start(num, cstr(" "));
+		num = strview_trim_start(num, " ");
 
 	//consume base prefix and digits
 	if(!err)
@@ -705,12 +705,12 @@ static void consume_base_prefix(int* base, strview_t* src, int options)
 
 	if(!(options & STRNUM_NOBX))
 	{
-		if(!(options & STRNUM_BASE_HEX) && strview_is_match_nocase(base_prefix, cstr("0b")))
+		if(!(options & STRNUM_BASE_HEX) && strview_is_match_nocase(base_prefix, "0b"))
 		{
 			*src = strview_sub(*src, BASE_PREFIX_LEN, INT_MAX);
 			*base = 2;
 		}
-		else if(!(options & STRNUM_BASE_BIN) && strview_is_match_nocase(base_prefix, cstr("0x")))
+		else if(!(options & STRNUM_BASE_BIN) && strview_is_match_nocase(base_prefix, "0x"))
 		{
 			*src = strview_sub(*src, BASE_PREFIX_LEN, INT_MAX);
 			*base = 16;
@@ -766,7 +766,7 @@ static int consume_decimal_digits(unsigned long long* dst, strview_t* str)
 
 	if(!err)
 	{
-		*str = strview_trim_start(*str, cstr("0"));
+		*str = strview_trim_start(*str, "0");
 		while(str->size && isdigit(str->data[0]) && res_ui < UI_LIMIT)
 		{
 			res_ui *= 10;
@@ -815,7 +815,7 @@ static int consume_hex_digits(unsigned long long* dst, strview_t* str)
 	if(str->size && isxdigit(str->data[0]))
 	{
 		err = 0;
-		*str = strview_trim_start(*str, cstr("0"));
+		*str = strview_trim_start(*str, "0");
 	}
 	else
 		err = EINVAL;
@@ -845,7 +845,7 @@ static int consume_bin_digits(unsigned long long* dst, strview_t* str)
 	if(str->size && isbdigit(str->data[0]))
 	{
 		err = 0;
-		*str = strview_trim_start(*str, cstr("0"));
+		*str = strview_trim_start(*str, "0");
 	}
 	else
 		err = EINVAL;
