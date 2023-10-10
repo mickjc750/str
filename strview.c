@@ -144,7 +144,12 @@ strview_t strview_sub(strview_t str, int begin, int end)
 	return result;
 }
 
-strview_t strview_trim_start(strview_t str, strview_t chars_to_trim)
+strview_t strview_trim_start_cstr(strview_t str, const char* chars_to_trim)
+{
+	return strview_trim_start_strview(str, cstr(chars_to_trim));
+}
+
+strview_t strview_trim_start_strview(strview_t str, strview_t chars_to_trim)
 {
 	while(str.size && contains_char(chars_to_trim, *str.data, CASE_SENSETIVE))
 	{
@@ -155,7 +160,12 @@ strview_t strview_trim_start(strview_t str, strview_t chars_to_trim)
 	return str;
 }
 
-strview_t strview_trim_end(strview_t str, strview_t chars_to_trim)
+strview_t strview_trim_end_cstr(strview_t str, const char* chars_to_trim)
+{
+	return strview_trim_end_strview(str, cstr(chars_to_trim));
+}
+
+strview_t strview_trim_end_strview(strview_t str, strview_t chars_to_trim)
 {
 	while(str.size && contains_char(chars_to_trim, str.data[str.size-1], CASE_SENSETIVE))
 		str.size--;
@@ -163,10 +173,15 @@ strview_t strview_trim_end(strview_t str, strview_t chars_to_trim)
 	return str;
 }
 
-strview_t strview_trim(strview_t str, strview_t chars_to_trim)
+strview_t strview_trim_cstr(strview_t str, const char* chars_to_trim)
 {
-	str = strview_trim_start(str, chars_to_trim);
-	str = strview_trim_end(str, chars_to_trim);
+	return strview_trim_strview(str, cstr(chars_to_trim));
+}
+
+strview_t strview_trim_strview(strview_t str, strview_t chars_to_trim)
+{
+	str = strview_trim_start_strview(str, chars_to_trim);
+	str = strview_trim_end_strview(str, chars_to_trim);
 	return str;
 }
 
