@@ -670,6 +670,8 @@ TEST test_strview_is_match(void)
 {
 	ASSERT(strview_is_match(cstr("Hello"), cstr("Hello")));
 	ASSERT(strview_is_match(STRVIEW_INVALID, STRVIEW_INVALID));
+	ASSERT(strview_is_match(cstr("Hello"), "Hello"));
+	ASSERT(strview_is_match(STRVIEW_INVALID, (const char*)NULL));
 
 	ASSERT(!strview_is_match(cstr("Hello"), cstr("HellO")));
 	ASSERT(!strview_is_match(cstr("Hello"), cstr("Hell")));
@@ -685,6 +687,11 @@ TEST test_strview_is_match_nocase(void)
 	ASSERT(strview_is_match_nocase(STRVIEW_INVALID, STRVIEW_INVALID));
 	ASSERT(strview_is_match_nocase(cstr("Hello"), cstr("HellO")));
 	ASSERT(strview_is_match_nocase(cstr("Hello"), cstr("hello")));
+
+	ASSERT(strview_is_match_nocase(cstr("Hello"), "Hello"));
+	ASSERT(strview_is_match_nocase(STRVIEW_INVALID, (const char*)NULL));
+	ASSERT(strview_is_match_nocase(cstr("Hello"), "HellO"));
+	ASSERT(strview_is_match_nocase(cstr("Hello"), "hello"));
 
 	ASSERT(!strview_is_match_nocase(cstr("Hello"), cstr("Hell")));
 	ASSERT(!strview_is_match_nocase(cstr("Hell"), cstr("Hello")));
@@ -733,6 +740,19 @@ TEST test_strview_trim_start(void)
 	str2 = strview_trim_start(str1, STRVIEW_INVALID);	//trim nothing
 	ASSERT(!memcmp("/.;/hello;./;.", str2.data, str2.size));
 
+	str1 = cstr("/.;/hello;./;.");
+	str2 = strview_trim_start(str1, ";./");
+	ASSERT(!memcmp("hello;./;.", str2.data, str2.size));
+
+	str2 = strview_trim_start(str1, "/;");
+	ASSERT(!memcmp(".;/hello;./;.", str2.data, str2.size));
+
+	str2 = strview_trim_start(str1, "/");
+	ASSERT(!memcmp(".;/hello;./;.", str2.data, str2.size));
+
+	str2 = strview_trim_start(str1, "");				//trim nothing
+	ASSERT(!memcmp("/.;/hello;./;.", str2.data, str2.size));
+
 	PASS();
 }
 
@@ -756,6 +776,19 @@ TEST test_strview_trim_end(void)
 	str2 = strview_trim_end(str1, STRVIEW_INVALID);	//trim nothing
 	ASSERT(!memcmp("/.;/hello;./;.", str2.data, str2.size));
 
+	str1 = cstr("/.;/hello;./;.");
+	str2 = strview_trim_end(str1, ";./");
+	ASSERT(!memcmp("/.;/hello", str2.data, str2.size));
+
+	str2 = strview_trim_end(str1, ";.");
+	ASSERT(!memcmp("/.;/hello;./", str2.data, str2.size));
+
+	str2 = strview_trim_end(str1, ";");
+	ASSERT(!memcmp("/.;/hello;./;.", str2.data, str2.size));
+
+	str2 = strview_trim_end(str1, "");	//trim nothing
+	ASSERT(!memcmp("/.;/hello;./;.", str2.data, str2.size));
+
 	PASS();
 }
 
@@ -764,8 +797,12 @@ TEST test_strview_trim(void)
 	strview_t str1, str2;
 
 	str1 = cstr("123hello321");
-	str2 = strview_trim_end(str1, cstr("132"));
-	ASSERT(!memcmp("123hello", str2.data, str2.size));
+	str2 = strview_trim(str1, cstr("132"));
+	ASSERT(!memcmp("hello", str2.data, str2.size));
+
+	str1 = cstr("123hello321");
+	str2 = strview_trim(str1, "132");
+	ASSERT(!memcmp("hello", str2.data, str2.size));
 	PASS();
 }
 

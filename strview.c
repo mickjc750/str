@@ -63,14 +63,24 @@ void strview_swap(strview_t* a, strview_t* b)
 	*b = tmp;
 }
 
-bool strview_is_match(strview_t str1, strview_t str2)
+bool strview_is_match_strview(strview_t str1, strview_t str2)
 {
 	return (str1.size == str2.size) && (str1.data == str2.data || !memcmp(str1.data, str2.data, str1.size));
 }
 
-bool strview_is_match_nocase(strview_t str1, strview_t str2)
+bool strview_is_match_cstr(strview_t str1, const char* str2)
+{
+	return strview_is_match_strview(str1, cstr(str2));
+}
+
+bool strview_is_match_nocase_strview(strview_t str1, strview_t str2)
 {
 	return (str1.size == str2.size) && (str1.data == str2.data || !memcmp_nocase(str1.data, str2.data, str1.size));
+}
+
+bool strview_is_match_nocase_cstr(strview_t str1, const char* str2)
+{
+	return strview_is_match_nocase_strview(str1, cstr(str2));
 }
 
 bool strview_starts_with(strview_t str1, strview_t str2)

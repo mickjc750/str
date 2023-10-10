@@ -48,6 +48,7 @@
   **********************************************************************************/ 
 	#define PRIstrarg(arg)	((arg).size),((arg).data)
 
+
 /**
  * @struct strview_t
  * @brief A view of some string data
@@ -82,10 +83,38 @@
 
 
 /**
+ * @def  strview_is_match(strview_t str1, str2);
+ * @brief (macro) Test if the contents of str1 matches the contents of str2.
+ * @param str1 A view to compare against str2.
+ * @param str2 Either a strview_t or a C string to compare against str1.
+ * @return true if the contents match.
+   **********************************************************************************/
+	#define strview_is_match(str1, str2) _Generic((str2),\
+		const char*:	strview_is_match_cstr,\
+		char*:			strview_is_match_cstr,\
+		strview_t:		strview_is_match_strview\
+		)(str1, str2)
+
+
+/**
+ * @def  strview_is_match_nocase(strview_t str1, str2);
+ * @brief (macro) Test if the contents of str1 matches the contents of str2.
+ * @param str1 A view to compare against str2.
+ * @param str2 Either a C string or a view to compare against str1.
+ * @return true if the contents match.
+   **********************************************************************************/
+	#define strview_is_match_nocase(str1, str2) _Generic((str2),\
+		const char*:	strview_is_match_nocase_cstr,\
+		char*:			strview_is_match_nocase_cstr,\
+		strview_t:		strview_is_match_nocase_strview\
+		)(str1, str2)
+
+
+/**
  * @def strview_trim(strview_t str, chars_to_trim);
  * @brief (macro) Trim both ends of a view.
  * @param str The source view.
- * @param chars_to_trim A string literal OR a view of all the characters to be trimmed from the source.
+ * @param chars_to_trim A C string OR a view of all the characters to be trimmed from the source.
  * @return The trimmed view.
  * @note Example:
  * @code{.c}
@@ -106,7 +135,7 @@
  * @def strview_trim_start(strview_t str, chars_to_trim);
  * @brief Trim the start of a view.
  * @param str The source view.
- * @param chars_to_trim A string literal OR a view of all the characters to be trimmed from the source.
+ * @param chars_to_trim A C string OR a view of all the characters to be trimmed from the source.
  * @return The trimmed view.
  * @note Example:
  * @code{.c}
@@ -196,14 +225,30 @@
 /**
  * @brief Test if the contents of two views match.
  * @return true if the contents match or if both views are invalid.
+ * @note Use via macro strview_is_match()
   **********************************************************************************/
-	bool strview_is_match(strview_t str1, strview_t str2);
+	bool strview_is_match_strview(strview_t str1, strview_t str2);
+
+/**
+ * @brief Test if the contents of a view matches the contents of a c string.
+ * @return true if the contents match or if both views are invalid.
+ * @note Use via macro strview_is_match()
+  **********************************************************************************/
+	bool strview_is_match_cstr(strview_t str1, const char* str2);
 
 /**
  * @brief Test of the contents of two views match, ignoring case.
  * @return true if the contents match or if both views are invalid.
+ * @note Use via macro strview_is_match_nocase()
   **********************************************************************************/
-	bool strview_is_match_nocase(strview_t str1, strview_t str2);
+	bool strview_is_match_nocase_strview(strview_t str1, strview_t str2);
+
+/**
+ * @brief Test if the contents of a view matches the contents of a c string, ignoring case.
+ * @return true if the contents match or if both views are invalid.
+ * @note Use via macro strview_is_match_nocase()
+  **********************************************************************************/
+	bool strview_is_match_nocase_cstr(strview_t str1, const char* str2);
 
 /**
  * @brief Test the starting contents of a view.
