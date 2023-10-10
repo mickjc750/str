@@ -96,10 +96,10 @@
  * @endcode
  * **********************************************************************************/
 	#define strview_trim(str, chars_to_trim) _Generic((chars_to_trim),\
-		const char*:	strview_trim_strview(str, cstr(chars_to_trim)),\
-		char*:			strview_trim_strview(str, cstr(chars_to_trim)),\
-		strview_t:		strview_trim_strview(str, chars_to_trim)\
-		)
+		const char*:	strview_trim_cstr,\
+		char*:			strview_trim_cstr,\
+		strview_t:		strview_trim_strview\
+		)(str, chars_to_trim)
 
 
 /**
@@ -117,10 +117,10 @@
  * @endcode
  * **********************************************************************************/
 	#define strview_trim_start(str, chars_to_trim) _Generic((chars_to_trim),\
-		const char*:	strview_trim_start_strview(str, cstr(chars_to_trim)),\
-		char*:			strview_trim_start_strview(str, cstr(chars_to_trim)),\
-		strview_t:		strview_trim_start_strview(str, chars_to_trim)\
-		)
+		const char*:	strview_trim_start_cstr,\
+		char*:			strview_trim_start_cstr,\
+		strview_t:		strview_trim_start_strview\
+		)(str, chars_to_trim)
 
 
 /**
@@ -138,10 +138,10 @@
  * @endcode
  * **********************************************************************************/
 	#define strview_trim_end(str, chars_to_trim) _Generic((chars_to_trim),\
-		const char*:	strview_trim_end_strview(str, cstr(chars_to_trim)),\
-		char*:			strview_trim_end_strview(str, cstr(chars_to_trim)),\
-		strview_t:		strview_trim_end_strview(str, chars_to_trim)\
-		)
+		const char*:	strview_trim_end_cstr,\
+		char*:			strview_trim_end_cstr,\
+		strview_t:		strview_trim_end_strview\
+		)(str, chars_to_trim)
 
 
 //********************************************************************************************************
@@ -283,6 +283,33 @@
  * @note Use via macro strview_trim_end():
  * **********************************************************************************/
 	strview_t strview_trim_end_strview(strview_t str, strview_t chars_to_trim);
+
+/**
+ * @brief Trim both ends of a view.
+ * @param str The source view.
+ * @param chars_to_trim A C string containing all of the characters to be trimmed from the source.
+ * @return The trimmed view.
+ * @note Use via macro strview_trim()
+ * **********************************************************************************/
+	strview_t strview_trim_cstr(strview_t str, const char* chars_to_trim);
+
+/**
+ * @brief Trim the start of a view.
+ * @param str The source view.
+ * @param chars_to_trim A C string containing all of the characters to be trimmed from the source.
+ * @return The trimmed view.
+ * @note Use via macro strview_trim_start():
+ * **********************************************************************************/
+	strview_t strview_trim_start_cstr(strview_t str, const char* chars_to_trim);
+
+/**
+ * @brief Trim the end of a view.
+ * @param str The source view.
+ * @param chars_to_trim A C string containing all of the characters to be trimmed from the source.
+ * @return The trimmed view.
+ * @note Use via macro strview_trim_end():
+ * **********************************************************************************/
+	strview_t strview_trim_end_cstr(strview_t str, const char* chars_to_trim);
 
 /**
  * @brief Find first needle in haystack.
