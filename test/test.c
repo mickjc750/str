@@ -707,6 +707,13 @@ TEST test_strview_starts_with(void)
 	ASSERT(!strview_starts_with(cstr("Hello.."), cstr("Hello...")));
 	ASSERT(!strview_starts_with(cstr("Hello"), STRVIEW_INVALID));
 	ASSERT(!strview_starts_with(STRVIEW_INVALID, cstr("Hello")));
+
+	ASSERT(strview_starts_with(cstr("Hello..."), "Hello"));
+	ASSERT(strview_starts_with(STRVIEW_INVALID, (const char*)NULL));
+	ASSERT(!strview_starts_with(cstr("Hello.."), "Hello..."));
+	ASSERT(!strview_starts_with(cstr("Hello"), (const char*)NULL));
+	ASSERT(!strview_starts_with(STRVIEW_INVALID, "Hello"));
+
 	PASS();
 }
 
@@ -717,6 +724,13 @@ TEST test_strview_starts_with_nocase(void)
 	ASSERT(!strview_starts_with_nocase(cstr("Hello.."), cstr("Hello...")));
 	ASSERT(!strview_starts_with_nocase(cstr("Hello"), STRVIEW_INVALID));
 	ASSERT(!strview_starts_with_nocase(STRVIEW_INVALID, cstr("Hello")));
+
+	ASSERT(strview_starts_with_nocase(cstr("hELlo..."), "Hello"));
+	ASSERT(strview_starts_with_nocase(STRVIEW_INVALID, (const char*)NULL));
+	ASSERT(!strview_starts_with_nocase(cstr("Hello.."), "Hello..."));
+	ASSERT(!strview_starts_with_nocase(cstr("Hello"), (const char*)NULL));
+	ASSERT(!strview_starts_with_nocase(STRVIEW_INVALID, "Hello"));
+
 	PASS();
 }
 

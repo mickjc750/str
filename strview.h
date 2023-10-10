@@ -111,6 +111,48 @@
 
 
 /**
+ * @def  strview_starts_with(strview_t str1, str2)
+ * @brief (macro) Test the starting contents of a view.
+ * @param str1 The view to test.
+ * @param str2 Either a C string, or a view of the content we are testing for.
+ * @return true if the contents of str2 is found at the start of str1, or if both views are invalid.
+ * @note Example:
+ * @code{.c}
+ * strview_t target_view = cstr_SL("Hello World");
+ * bool target_starts_with_greeting = strview_starts_with(target_view, cstr("Hello"));	//returns true
+ * OR
+ * bool target_starts_with_greeting = strview_starts_with(target_view, "Hello");		//returns true
+ * @endcode
+  **********************************************************************************/
+	#define strview_starts_with(str1, str2) _Generic((str2),\
+		const char*:	strview_starts_with_cstr,\
+		char*:			strview_starts_with_cstr,\
+		strview_t:		strview_starts_with_strview\
+		)(str1, str2)
+
+
+/**
+ * @def  strview_starts_with_nocase(strview_t str1, str2)
+ * @brief (macro) Test the starting contents of a view, ignoring case.
+ * @param str1 The view to test.
+ * @param str2 Either a C string, or a view of the content we are testing for.
+ * @return true if the contents of str2 is found at the start of str1 ignoring case, or if both views are invalid.
+ * @note Example:
+ * @code{.c}
+ * strview_t target_view = cstr_SL("Hello World");
+ * bool target_starts_with_greeting = strview_starts_with_nocase(target_view, cstr("HELLO"));	//returns true
+ * OR
+ * bool target_starts_with_greeting = strview_starts_with_nocase(target_view, "HELLO");		//returns true
+ * @endcode
+  **********************************************************************************/
+	#define strview_starts_with_nocase(str1, str2) _Generic((str2),\
+		const char*:	strview_starts_with_nocase_cstr,\
+		char*:			strview_starts_with_nocase_cstr,\
+		strview_t:		strview_starts_with_nocase_strview\
+		)(str1, str2)
+
+
+/**
  * @def strview_trim(strview_t str, chars_to_trim);
  * @brief (macro) Trim both ends of a view.
  * @param str The source view.
@@ -252,31 +294,31 @@
 
 /**
  * @brief Test the starting contents of a view.
- * @param str1 The view to test.
- * @param str2 A view of the content we are testing for.
  * @return true if the contents of str2 is found at the start of str1, or if both views are invalid.
- * @note Example:
- * @code{.c}
- * strview_t target_view = cstr_SL("Hello World");
- * strview_t keyword_view = cstr_SL("Hello");
- * bool target_starts_with_greeting = strview_starts_with(target_view, keyword_view);
- * @endcode
+ * @note Use via macro strview_starts_with()
   **********************************************************************************/
-	bool strview_starts_with(strview_t str1, strview_t str2);
+	bool strview_starts_with_cstr(strview_t str1, const char* str2);
+
+/**
+ * @brief Test the starting contents of a view.
+ * @return true if the contents of str2 is found at the start of str1, or if both views are invalid.
+ * @note Use via macro strview_starts_with()
+  **********************************************************************************/
+	bool strview_starts_with_strview(strview_t str1, strview_t str2);
 
 /**
  * @brief Test the starting contents of a view, ignoring case.
- * @param str1 The view to test.
- * @param str2 A view of the content we are testing for.
  * @return true if the contents of str2 is found at the start of str1, or if both views are invalid.
- * @note Example:
- * @code{.c}
- * strview_t target_view = cstr_SL("Hello World");
- * strview_t keyword_view = cstr_SL("heLLo");
- * bool target_starts_with_greeting = strview_starts_with_nocase(target_view, keyword_view);
- * @endcode
+ * @note Use via macro strview_starts_with_nocase()
   **********************************************************************************/
-	bool strview_starts_with_nocase(strview_t str1, strview_t str2);
+	bool strview_starts_with_nocase_cstr(strview_t str1, const char* str2);
+
+/**
+ * @brief Test the starting contents of a view, ignoring case.
+ * @return true if the contents of str2 is found at the start of str1, or if both views are invalid.
+ * @note Use via macro strview_starts_with_nocase()
+  **********************************************************************************/
+	bool strview_starts_with_nocase_strview(strview_t str1, strview_t str2);
 
 /**
  * @brief Alphabetical comparison of two views.

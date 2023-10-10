@@ -83,7 +83,7 @@ bool strview_is_match_nocase_cstr(strview_t str1, const char* str2)
 	return strview_is_match_nocase_strview(str1, cstr(str2));
 }
 
-bool strview_starts_with(strview_t str1, strview_t str2)
+bool strview_starts_with_strview(strview_t str1, strview_t str2)
 {
 	bool result;
 
@@ -95,7 +95,12 @@ bool strview_starts_with(strview_t str1, strview_t str2)
 	return result;
 }
 
-bool strview_starts_with_nocase(strview_t str1, strview_t str2)
+bool strview_starts_with_cstr(strview_t str1, const char* str2)
+{
+	return strview_starts_with_strview(str1, cstr(str2));
+}
+
+bool strview_starts_with_nocase_strview(strview_t str1, strview_t str2)
 {
 	bool result;
 
@@ -105,6 +110,11 @@ bool strview_starts_with_nocase(strview_t str1, strview_t str2)
 		result = (str1.size >= str2.size) && (str1.data == str2.data || !memcmp_nocase(str1.data, str2.data, str2.size));
 
 	return result;
+}
+
+bool strview_starts_with_nocase_cstr(strview_t str1, const char* str2)
+{
+	return strview_starts_with_nocase_strview(str1, cstr(str2));
 }
 
 int strview_compare(strview_t str1, strview_t str2)

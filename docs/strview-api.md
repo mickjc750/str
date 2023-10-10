@@ -107,13 +107,14 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
  A replacement for strcmp(). Used for alphabetizing strings. May also be used instead of **strview_is_match()**, although keep in mind that it will return 0 if it compares an invalid string to a valid string of length 0. (Where **strview_is_match()** would return false if only one string is invalid.)
 
 &nbsp;
-## `bool strview_starts_with(strview_t str1, strview_t str2);`
+## `bool strview_starts_with(strview_t str1, str2);`
  Similar to strview_is_match() but allows for trailing data in str1. Returns true if the content of str2 is found at the beginning of str1. Also Returns true if BOTH strings are invalid.
+ This is a generic macro which accepts either a C string or strview_t as **str2**
 
 &nbsp;
-## `bool strview_starts_with_nocase(strview_t str1, strview_t str2);`
+## `bool strview_starts_with_nocase(strview_t str1, str2);`
  Same as strview_starts_with(), ignoring case.
-
+ This is a generic macro which accepts either a C string or strview_t as **str2**
 &nbsp;
 &nbsp;
 # Trimming
@@ -121,17 +122,17 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 &nbsp;
 ## `strview_t strview_trim(strview_t str, chars_to_trim);`
  Return a strview_t with the start and end trimmed of all characters present in **chars_to_trim**.
- This is a generic macro which accepts either a string literal or strview_t as **chars_to_trim**
+ This is a generic macro which accepts either a C string or strview_t as **chars_to_trim**
 
 &nbsp;
 ## `strview_t strview_trim_start(strview_t str, chars_to_trim);`
  Return a strview_t with the start trimmed of all characters present in **chars_to_trim**.
- This is a generic macro which accepts either a string literal or strview_t as **chars_to_trim**
+ This is a generic macro which accepts either a C string or strview_t as **chars_to_trim**
 
 &nbsp;
 ## `strview_t strview_trim_end(strview_t str, chars_to_trim);`
  Return a strview_t with the end trimmed of all characters present in **chars_to_trim**.
- This is a generic macro which accepts either a string literal or strview_t as **chars_to_trim**
+ This is a generic macro which accepts either a C string or strview_t as **chars_to_trim**
 
 &nbsp;
 &nbsp;
