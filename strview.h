@@ -80,6 +80,70 @@
  **********************************************************************************/
 	#define STRVIEW_INVALID		((strview_t){.data = NULL, .size = 0})
 
+
+/**
+ * @def strview_trim(strview_t str, chars_to_trim);
+ * @brief (macro) Trim both ends of a view.
+ * @param str The source view.
+ * @param chars_to_trim A string literal OR a view of all the characters to be trimmed from the source.
+ * @return The trimmed view.
+ * @note Example:
+ * @code{.c}
+ * strview_t source_view = cstr_SL(" ._THIS. _");
+ * strview_t trimmed_view = strview_trim(source_view, cstr(" ._")); // return view "THIS"
+ * OR
+ * strview_t trimmed_view = strview_trim(source_view, " ._"); // return view "THIS"
+ * @endcode
+ * **********************************************************************************/
+	#define strview_trim(str, chars_to_trim) _Generic((chars_to_trim),\
+		const char*:	strview_trim_strview(str, cstr(chars_to_trim)),\
+		char*:			strview_trim_strview(str, cstr(chars_to_trim)),\
+		strview_t:		strview_trim_strview(str, chars_to_trim)\
+		)
+
+
+/**
+ * @def strview_trim_start(strview_t str, chars_to_trim);
+ * @brief Trim the start of a view.
+ * @param str The source view.
+ * @param chars_to_trim A string literal OR a view of all the characters to be trimmed from the source.
+ * @return The trimmed view.
+ * @note Example:
+ * @code{.c}
+ * strview_t source_view = cstr_SL(" ._THIS");
+ * strview_t trimmed_view = strview_trim_start(source_view, cstr(" ._")); // return view "THIS"
+ * OR
+ * strview_t trimmed_view = strview_trim_start(source_view, " ._"); // return view "THIS"
+ * @endcode
+ * **********************************************************************************/
+	#define strview_trim_start(str, chars_to_trim) _Generic((chars_to_trim),\
+		const char*:	strview_trim_start_strview(str, cstr(chars_to_trim)),\
+		char*:			strview_trim_start_strview(str, cstr(chars_to_trim)),\
+		strview_t:		strview_trim_start_strview(str, chars_to_trim)\
+		)
+
+
+/**
+ * @def strview_trim_end(strview_t str, chars_to_trim);
+ * @brief Trim the start of a view.
+ * @param str The source view.
+ * @param chars_to_trim A string literal OR a view of all the characters to be trimmed from the source.
+ * @return The trimmed view.
+ * @note Example:
+ * @code{.c}
+ * strview_t source_view = cstr_SL("THIS ._");
+ * strview_t trimmed_view = strview_trim_end(source_view, cstr(" ._")); // return view "THIS"
+ * OR
+ * strview_t trimmed_view = strview_trim_end(source_view, " ._"); // return view "THIS"
+ * @endcode
+ * **********************************************************************************/
+	#define strview_trim_end(str, chars_to_trim) _Generic((chars_to_trim),\
+		const char*:	strview_trim_end_strview(str, cstr(chars_to_trim)),\
+		char*:			strview_trim_end_strview(str, cstr(chars_to_trim)),\
+		strview_t:		strview_trim_end_strview(str, chars_to_trim)\
+		)
+
+
 //********************************************************************************************************
 // Public variables
 //********************************************************************************************************
@@ -198,39 +262,27 @@
  * @param str The source view.
  * @param chars_to_trim A view containing all of the characters to be trimmed from the source.
  * @return The trimmed view.
- * @note Example:
- * @code{.c}
- * strview_t source_view = cstr_SL(" ._THIS. _");
- * strview_t trimmed_view = strview_trim(source_view, cstr(" ._")); // view THIS
- * @endcode
+ * @note Use via macro strview_trim()
  * **********************************************************************************/
-	strview_t strview_trim(strview_t str, strview_t chars_to_trim);
+	strview_t strview_trim_strview(strview_t str, strview_t chars_to_trim);
 
 /**
  * @brief Trim the start of a view.
  * @param str The source view.
  * @param chars_to_trim A view containing all of the characters to be trimmed from the source.
  * @return The trimmed view.
- * @note Example:
- * @code{.c}
- * strview_t source_view = cstr_SL(" ._THIS");
- * strview_t trimmed_view = strview_trim_start(source_view, cstr(" ._")); // view THIS
- * @endcode
+ * @note Use via macro strview_trim_start():
  * **********************************************************************************/
-	strview_t strview_trim_start(strview_t str, strview_t chars_to_trim);
+	strview_t strview_trim_start_strview(strview_t str, strview_t chars_to_trim);
 
 /**
  * @brief Trim the end of a view.
  * @param str The source view.
  * @param chars_to_trim A view containing all of the characters to be trimmed from the source.
  * @return The trimmed view.
- * @note Example:
- * @code{.c}
- * strview_t source_view = cstr_SL("THIS. _");
- * strview_t trimmed_view = strview_trim_end(source_view, cstr(" ._")); // view THIS
- * @endcode
+ * @note Use via macro strview_trim_end():
  * **********************************************************************************/
-	strview_t strview_trim_end(strview_t str, strview_t chars_to_trim);
+	strview_t strview_trim_end_strview(strview_t str, strview_t chars_to_trim);
 
 /**
  * @brief Find first needle in haystack.
