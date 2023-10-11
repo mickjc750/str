@@ -21,8 +21,8 @@
 
 	static bool contains_char(strview_t str, char c, bool case_sensetive);
 
-	static strview_t split_first_delimiter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
-	static strview_t split_last_delimiter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
+	static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool case_sensetive);
+	static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool case_sensetive);
 	static strview_t split_index(strview_t* strview_ptr, int index);
 
 	static int memcmp_nocase(const char* a, const char* b, size_t size);
@@ -265,64 +265,64 @@ strview_t strview_find_last_cstr(strview_t haystack, const char* needle)
 	return strview_find_last_strview(haystack, cstr(needle));
 }
 
-strview_t strview_split_first_delimiter_strview(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_first_delim_strview(strview_t* strview_ptr, strview_t delims)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_first_delimiter(strview_ptr, delimiters, CASE_SENSETIVE);
+		result = split_first_delim(strview_ptr, delims, CASE_SENSETIVE);
 
 	return result;
 }
 
-strview_t strview_split_first_delimiter_cstr(strview_t* strview_ptr, const char* delimiters)
+strview_t strview_split_first_delim_cstr(strview_t* strview_ptr, const char* delims)
 {
-	return strview_split_first_delimiter_strview(strview_ptr, cstr(delimiters));
+	return strview_split_first_delim_strview(strview_ptr, cstr(delims));
 }
 
-strview_t strview_split_first_delimiter_nocase_strview(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_first_delim_nocase_strview(strview_t* strview_ptr, strview_t delims)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_first_delimiter(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
+		result = split_first_delim(strview_ptr, delims, NOT_CASE_SENSETIVE);
 
 	return result;
 }
 
-strview_t strview_split_first_delimiter_nocase_cstr(strview_t* strview_ptr, const char* delimiters)
+strview_t strview_split_first_delim_nocase_cstr(strview_t* strview_ptr, const char* delims)
 {
-	return strview_split_first_delimiter_nocase_strview(strview_ptr, cstr(delimiters));
+	return strview_split_first_delim_nocase_strview(strview_ptr, cstr(delims));
 }
 
-strview_t strview_split_last_delimiter_strview(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_last_delim_strview(strview_t* strview_ptr, strview_t delims)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_last_delimiter(strview_ptr, delimiters, CASE_SENSETIVE);
+		result = split_last_delim(strview_ptr, delims, CASE_SENSETIVE);
 
 	return result;
 }
 
-strview_t strview_split_last_delimiter_cstr(strview_t* strview_ptr, const char* delimiters)
+strview_t strview_split_last_delim_cstr(strview_t* strview_ptr, const char* delims)
 {
-	return strview_split_last_delimiter_strview(strview_ptr, cstr(delimiters));
+	return strview_split_last_delim_strview(strview_ptr, cstr(delims));
 }
 
-strview_t strview_split_last_delimiter_nocase_strview(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_last_delim_nocase_strview(strview_t* strview_ptr, strview_t delims)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_last_delimiter(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
+		result = split_last_delim(strview_ptr, delims, NOT_CASE_SENSETIVE);
 
 	return result;
 }
 
-strview_t strview_split_last_delimiter_nocase_cstr(strview_t* strview_ptr, const char* delimiters)
+strview_t strview_split_last_delim_nocase_cstr(strview_t* strview_ptr, const char* delims)
 {
-	return strview_split_last_delimiter_nocase_strview(strview_ptr, cstr(delimiters));
+	return strview_split_last_delim_nocase_strview(strview_ptr, cstr(delims));
 }
 
 strview_t strview_split_index(strview_t* strview_ptr, int index)
@@ -358,7 +358,7 @@ strview_t strview_split_line(strview_t* strview_ptr, char* eol)
 				strview_pop_first_char(&src);
 		};
 
-		result = strview_split_first_delimiter(&src, cstr("\r\n"));
+		result = strview_split_first_delim(&src, cstr("\r\n"));
 
 		if(strview_is_valid(src))	//a line ending was found
 		{
@@ -444,7 +444,7 @@ static int memcmp_nocase(const char* a, const char* b, size_t size)
 	return result;
 }
 
-static strview_t split_first_delimiter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
+static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool case_sensetive)
 {
 	strview_t result;
 	bool found = false;
@@ -452,12 +452,12 @@ static strview_t split_first_delimiter(strview_t* strview_ptr, strview_t delimit
 	
 	ptr = strview_ptr->data;
 
-	if(strview_ptr->data && delimiters.data)
+	if(strview_ptr->data && delims.data)
 	{
-		// try to find the delimiter
+		// try to find the delim
 		while(ptr != &strview_ptr->data[strview_ptr->size] && !found)
 		{
-			found = contains_char(delimiters, *ptr, case_sensetive);
+			found = contains_char(delims, *ptr, case_sensetive);
 			ptr += !found;
 		};
 	};
@@ -469,9 +469,9 @@ static strview_t split_first_delimiter(strview_t* strview_ptr, strview_t delimit
 		strview_ptr->data = ptr;
 		strview_ptr->size -= result.size;
 
-		// at this stage, the remainder still includes the delimiter
+		// at this stage, the remainder still includes the delim
 		strview_ptr->size--;
-		if(strview_ptr->size)	//only point to the character after the delimiter if there is one
+		if(strview_ptr->size)	//only point to the character after the delim if there is one
 			strview_ptr->data++;
 	}
 	else
@@ -483,19 +483,19 @@ static strview_t split_first_delimiter(strview_t* strview_ptr, strview_t delimit
 	return result;
 }
 
-static strview_t split_last_delimiter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
+static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool case_sensetive)
 {
 	strview_t result;
 	bool found = false;
 	const char* ptr;
 
-	if(strview_ptr->data && strview_ptr->size && delimiters.data)
+	if(strview_ptr->data && strview_ptr->size && delims.data)
 	{
-		// starting from the last character, try to find the delimiter backwards
+		// starting from the last character, try to find the delim backwards
 		ptr = &strview_ptr->data[strview_ptr->size-1];
 		while(ptr != strview_ptr->data-1 && !found)
 		{
-			found = contains_char(delimiters, *ptr, case_sensetive);
+			found = contains_char(delims, *ptr, case_sensetive);
 			ptr -= !found;
 		};
 	};
@@ -506,10 +506,10 @@ static strview_t split_last_delimiter(strview_t* strview_ptr, strview_t delimite
 		result.size = &strview_ptr->data[strview_ptr->size] - ptr;
 		strview_ptr->size -= result.size;
 
-		// at this stage, the result still starts with the delimiter
+		// at this stage, the result still starts with the delim
 		result.size--;
 		if(result.size)
-			result.data++; //only point to the the character after the delimiter if there is one
+			result.data++; //only point to the the character after the delim if there is one
 	}
 	else
 	{

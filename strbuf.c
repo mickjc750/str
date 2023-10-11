@@ -53,7 +53,7 @@
 #endif
 
 #ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
-	static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
 	static strbuf_allocator_t default_allocator = (strbuf_allocator_t){.allocator=allocfunc_stdlib, .app_data=NULL};
 #else
 	static strbuf_allocator_t default_allocator = (strbuf_allocator_t){.allocator=NULL, .app_data=NULL};
@@ -64,9 +64,9 @@
 //********************************************************************************************************
 
 #ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
-static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
+static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size)
 {
-	(void)this_allocator; (void)caller_filename; (void)caller_line;
+	(void)this_allocator;
 	void* result;
 	result = realloc(ptr_to_free, size);
 	#ifdef STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
@@ -542,7 +542,7 @@ static strbuf_t* create_buf(int initial_capacity, strbuf_allocator_t allocator)
 
 	if(initial_capacity <= INT_MAX)
 	{
-		buf = allocator.allocator(&allocator, NULL, sizeof(strbuf_t)+initial_capacity+1,  __FILE__, __LINE__);
+		buf = allocator.allocator(&allocator, NULL, sizeof(strbuf_t)+initial_capacity+1);
 		buf->capacity = initial_capacity;
 		buf->allocator = allocator;
 		empty_buf(buf);
@@ -684,7 +684,7 @@ static void destroy_buf(strbuf_t** buf_ptr)
 {
 	strbuf_t* buf = *buf_ptr;
 	if(buf_is_dynamic(buf))
-		buf->allocator.allocator(&buf->allocator, buf, 0, __FILE__, __LINE__);
+		buf->allocator.allocator(&buf->allocator, buf, 0);
 	*buf_ptr = NULL;
 }
 
@@ -699,7 +699,7 @@ static void change_buf_capacity(strbuf_t** buf_ptr, int new_capacity)
 
 		if(new_capacity != buf->capacity)
 		{
-			buf = buf->allocator.allocator(&buf->allocator, buf, sizeof(strbuf_t)+new_capacity+1, __FILE__, __LINE__);
+			buf = buf->allocator.allocator(&buf->allocator, buf, sizeof(strbuf_t)+new_capacity+1);
 			buf->capacity = new_capacity;
 		};
 	};

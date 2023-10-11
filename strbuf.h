@@ -222,10 +222,8 @@
 		 * @param this_allocator A pointer to the instance of this structure.
 		 * @param ptr_to_free Memory address to free or relocate, or NULL for new allocations.
 		 * @param size Size of the new or re-sized allocation, or 0 if freeing memory.
-		 * @param caller_filename The file calling the allocator.
-		 * @param caller_line The source line calling the allocator.
 		 */
-		void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+		void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
 	} strbuf_allocator_t;
 
 /**

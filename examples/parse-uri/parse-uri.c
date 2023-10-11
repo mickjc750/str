@@ -146,17 +146,17 @@ static struct uri_struct parse_uri(strview_t uri)
 
 	if(strview_is_valid(strview_find_first(uri, cstr("://"))))
 	{
-		result.scheme = strview_split_first_delimiter(&uri, cstr(":"));
+		result.scheme = strview_split_first_delim(&uri, cstr(":"));
 		uri = strview_sub(uri, 2, INT_MAX);
 	};
 
-	result.user = strview_split_first_delimiter(&uri, cstr("@"));
+	result.user = strview_split_first_delim(&uri, cstr("@"));
 	if(!strview_is_valid(uri))
 		strview_swap(&result.user, &uri);
 
 	if(!strview_is_valid(strview_find_first(uri, cstr(":"))))
 	{
-		tmp = strview_split_first_delimiter(&uri, cstr("/"));
+		tmp = strview_split_first_delim(&uri, cstr("/"));
 		if(strview_is_valid(uri))
 		{
 			result.path = uri;
@@ -167,14 +167,14 @@ static struct uri_struct parse_uri(strview_t uri)
 	}
 	else
 	{
-		tmp = strview_split_first_delimiter(&uri, cstr(":"));
+		tmp = strview_split_first_delim(&uri, cstr(":"));
 		if(!strview_is_valid(uri))
 			strview_swap(&tmp, &uri);
 		if(uri.size && isdigit(uri.data[0]))
 		{
 			result.host = tmp;
 
-			tmp = strview_split_first_delimiter(&uri, cstr("/"));
+			tmp = strview_split_first_delim(&uri, cstr("/"));
 			result.port = tmp;
 			if(strview_is_valid(uri))
 				result.path = uri;

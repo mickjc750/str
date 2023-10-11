@@ -25,7 +25,7 @@
 // Private prototypes
 //********************************************************************************************************
 
-	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
 
 //********************************************************************************************************
 // Public functions
@@ -61,9 +61,9 @@ int main(int argc, const char* argv[])
 // Private functions
 //********************************************************************************************************
 
-static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
+static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size)
 {
-	(void)this_allocator; (void)caller_filename; (void)caller_line;
+	(void)this_allocator;
 	void* result;
 	result = realloc(ptr_to_free, size);
 	assert(size==0 || result);	// You need to catch a failed allocation here.

@@ -258,81 +258,81 @@
 
 
 /**
- * @def strview_split_first_delimiter(strview_t* src, delimiters);
- * @brief (macro) Split view by delimiters.
+ * @def strview_split_first_delim(strview_t* src, delims);
+ * @brief (macro) Split view by delims.
  * @param src The address of the view to split.
- * @param delimiters A view or a C string of the delimiter character/s.
- * @return A view up to, but not including, the first delimiter found.
- * @note The returned view and the delimiter itself is removed from the source view.
- * @note If there are no delimiters, the entire source will be returned, and the source view becomes invalid.
+ * @param delims A view or a C string of the delim character/s.
+ * @return A view up to, but not including, the first delim found.
+ * @note The returned view and the delim itself is removed from the source view.
+ * @note If there are no delims, the entire source will be returned, and the source view becomes invalid.
  * @note Example:
  * @code{.c}
  *  strview_t date_view = cstr("2023/07/03");
- *  strview_t year_view  = strview_split_first_delimiter(&date_view, cstr("/"));
- *  strview_t month_view = strview_split_first_delimiter(&date_view, cstr("/"));
- *  strview_t day_view   = strview_split_first_delimiter(&date_view, cstr("/"));
+ *  strview_t year_view  = strview_split_first_delim(&date_view, cstr("/"));
+ *  strview_t month_view = strview_split_first_delim(&date_view, cstr("/"));
+ *  strview_t day_view   = strview_split_first_delim(&date_view, cstr("/"));
  * @endcode
  * *********************************************************************************/
-	#define strview_split_first_delimiter(src, delimiters) _Generic((delimiters),\
-		const char*:	strview_split_first_delimiter_cstr,\
-		char*:			strview_split_first_delimiter_cstr,\
-		strview_t:		strview_split_first_delimiter_strview\
-		)(src, delimiters)
+	#define strview_split_first_delim(src, delims) _Generic((delims),\
+		const char*:	strview_split_first_delim_cstr,\
+		char*:			strview_split_first_delim_cstr,\
+		strview_t:		strview_split_first_delim_strview\
+		)(src, delims)
 
 
 /**
- * @def strview_split_first_delimiter_nocase(strview_t* src, delimiters);
- * @brief (macro) Split view by delimiters, ignoring case.
+ * @def strview_split_first_delim_nocase(strview_t* src, delims);
+ * @brief (macro) Split view by delims, ignoring case.
  * @param src The address of the view to split.
- * @param delimiters A view or a C string of the delimiter character/s, these are not case sensetive.
- * @return A view up to, but not including, the first delimiter found.
- * @note The returned view and the delimiter itself is removed from the source view.
- * @note If there are no delimiters, the entire source will be returned, and the source view becomes invalid.
+ * @param delims A view or a C string of the delim character/s, these are not case sensetive.
+ * @return A view up to, but not including, the first delim found.
+ * @note The returned view and the delim itself is removed from the source view.
+ * @note If there are no delims, the entire source will be returned, and the source view becomes invalid.
  * *********************************************************************************/
-	#define strview_split_first_delimiter_nocase(src, delimiters) _Generic((delimiters),\
-		const char*:	strview_split_first_delimiter_nocase_cstr,\
-		char*:			strview_split_first_delimiter_nocase_cstr,\
-		strview_t:		strview_split_first_delimiter_nocase_strview\
-		)(src, delimiters)
+	#define strview_split_first_delim_nocase(src, delims) _Generic((delims),\
+		const char*:	strview_split_first_delim_nocase_cstr,\
+		char*:			strview_split_first_delim_nocase_cstr,\
+		strview_t:		strview_split_first_delim_nocase_strview\
+		)(src, delims)
 
 
 /**
- * @def strview_split_last_delimiter(strview_t* src, delimiters);
- * @brief (macro) Split view by last delimiter.
+ * @def strview_split_last_delim(strview_t* src, delims);
+ * @brief (macro) Split view by last delim.
  * @param src The address of the view to split.
- * @param delimiters A view or a C string of the delimiter character/s.
- * @return A view from, but not including, the last delimiter found.
- * @note The returned view and the delimiter itself is removed from the source view.
- * @note If there are no delimiters, the entire source will be returned, and the source view becomes invalid.
+ * @param delims A view or a C string of the delim character/s.
+ * @return A view from, but not including, the last delim found.
+ * @note The returned view and the delim itself is removed from the source view.
+ * @note If there are no delims, the entire source will be returned, and the source view becomes invalid.
  * @note Example:
  * @code{.c}
  *  strview_t date_view = cstr("2023/07/03");
- *  strview_t day_view   = strview_split_first_delimiter(&date_view, "/");
- *  strview_t month_view = strview_split_first_delimiter(&date_view, "/");
- *  strview_t year_view  = strview_split_first_delimiter(&date_view, "/");
+ *  strview_t day_view   = strview_split_first_delim(&date_view, "/");
+ *  strview_t month_view = strview_split_first_delim(&date_view, "/");
+ *  strview_t year_view  = strview_split_first_delim(&date_view, "/");
  * @endcode
  * *********************************************************************************/
-	#define strview_split_last_delimiter(src, delimiters) _Generic((delimiters),\
-		const char*:	strview_split_last_delimiter_cstr,\
-		char*:			strview_split_last_delimiter_cstr,\
-		strview_t:		strview_split_last_delimiter_strview\
-		)(src, delimiters)
+	#define strview_split_last_delim(src, delims) _Generic((delims),\
+		const char*:	strview_split_last_delim_cstr,\
+		char*:			strview_split_last_delim_cstr,\
+		strview_t:		strview_split_last_delim_strview\
+		)(src, delims)
 
 
 /**
- * @def strview_split_last_delimiter_nocase(strview_t* src, delimiters);
- * @brief (macro) Split view by last delimiter, ignoring case.
+ * @def strview_split_last_delim_nocase(strview_t* src, delims);
+ * @brief (macro) Split view by last delim, ignoring case.
  * @param src The address of the view to split.
- * @param delimiters A view or a C string of the delimiter character/s, these are not case sensetive.
- * @return A view from, but not including, the last delimiter found.
- * @note The returned view and the delimiter itself is removed from the source view.
- * @note If there are no delimiters, the entire source will be returned, and the source view becomes invalid.
+ * @param delims A view or a C string of the delim character/s, these are not case sensetive.
+ * @return A view from, but not including, the last delim found.
+ * @note The returned view and the delim itself is removed from the source view.
+ * @note If there are no delims, the entire source will be returned, and the source view becomes invalid.
  * *********************************************************************************/
-	#define strview_split_last_delimiter_nocase(src, delimiters) _Generic((delimiters),\
-		const char*:	strview_split_last_delimiter_nocase_cstr,\
-		char*:			strview_split_last_delimiter_nocase_cstr,\
-		strview_t:		strview_split_last_delimiter_nocase_strview\
-		)(src, delimiters)
+	#define strview_split_last_delim_nocase(src, delims) _Generic((delims),\
+		const char*:	strview_split_last_delim_nocase_cstr,\
+		char*:			strview_split_last_delim_nocase_cstr,\
+		strview_t:		strview_split_last_delim_nocase_strview\
+		)(src, delims)
 
 
 //********************************************************************************************************
@@ -555,83 +555,83 @@
 	strview_t strview_find_last_cstr(strview_t haystack, const char* needle);
 
 /**
- * @brief Split view by delimiters.
+ * @brief Split view by delims.
  * @param src The address of the view to split.
- * @param delimiters A view of the delimiter character/s.
- * @return A view up to, but not including, the first delimiter found.
- * @note Use via macro strview_split_first_delimiter()
+ * @param delims A view of the delim character/s.
+ * @return A view up to, but not including, the first delim found.
+ * @note Use via macro strview_split_first_delim()
  * *********************************************************************************/
-	strview_t strview_split_first_delimiter_strview(strview_t* src, strview_t delimiters);
+	strview_t strview_split_first_delim_strview(strview_t* src, strview_t delims);
 
 
 /**
- * @brief Split view by delimiters.
+ * @brief Split view by delims.
  * @param src The address of the view to split.
- * @param delimiters A view of the delimiter character/s.
- * @return A view up to, but not including, the first delimiter found.
- * @note Use via macro strview_split_first_delimiter()
+ * @param delims A view of the delim character/s.
+ * @return A view up to, but not including, the first delim found.
+ * @note Use via macro strview_split_first_delim()
  * *********************************************************************************/
-	strview_t strview_split_first_delimiter_cstr(strview_t* src, const char* delimiters);
+	strview_t strview_split_first_delim_cstr(strview_t* src, const char* delims);
 
 
 /**
- * @brief Split view by delimiters, ignoring case.
+ * @brief Split view by delims, ignoring case.
  * @param src The address of the view to split.
- * @param delimiters A view of the delimiter character/s, these are not case sensetive.
- * @return A view up to, but not including, the first delimiter found.
- * @note Use via macro strview_split_first_delimiter_nocase()
+ * @param delims A view of the delim character/s, these are not case sensetive.
+ * @return A view up to, but not including, the first delim found.
+ * @note Use via macro strview_split_first_delim_nocase()
  * *********************************************************************************/
-	strview_t strview_split_first_delimiter_nocase_strview(strview_t* src, strview_t delimiters);
+	strview_t strview_split_first_delim_nocase_strview(strview_t* src, strview_t delims);
 
 
 /**
- * @brief Split view by delimiters, ignoring case.
+ * @brief Split view by delims, ignoring case.
  * @param src The address of the view to split.
- * @param delimiters A view of the delimiter character/s, these are not case sensetive.
- * @return A view up to, but not including, the first delimiter found.
- * @note Use via macro strview_split_first_delimiter_nocase()
+ * @param delims A view of the delim character/s, these are not case sensetive.
+ * @return A view up to, but not including, the first delim found.
+ * @note Use via macro strview_split_first_delim_nocase()
  * *********************************************************************************/
-	strview_t strview_split_first_delimiter_nocase_cstr(strview_t* src, const char* delimiters);
+	strview_t strview_split_first_delim_nocase_cstr(strview_t* src, const char* delims);
 
 
 /**
- * @brief Split view by last delimiter.
+ * @brief Split view by last delim.
  * @param src The address of the view to split.
- * @param delimiters A view of the delimiter character/s.
- * @return A view from, but not including, the last delimiter found.
- * @note Use via macro strview_split_last_delimiter()
+ * @param delims A view of the delim character/s.
+ * @return A view from, but not including, the last delim found.
+ * @note Use via macro strview_split_last_delim()
  * *********************************************************************************/
-	strview_t strview_split_last_delimiter_strview(strview_t* src, strview_t delimiters);
+	strview_t strview_split_last_delim_strview(strview_t* src, strview_t delims);
 
 
 /**
- * @brief Split view by last delimiter.
+ * @brief Split view by last delim.
  * @param src The address of the view to split.
- * @param delimiters A view of the delimiter character/s.
- * @return A view from, but not including, the last delimiter found.
- * @note Use via macro strview_split_last_delimiter()
+ * @param delims A view of the delim character/s.
+ * @return A view from, but not including, the last delim found.
+ * @note Use via macro strview_split_last_delim()
  * *********************************************************************************/
-	strview_t strview_split_last_delimiter_cstr(strview_t* src, const char* delimiters);
+	strview_t strview_split_last_delim_cstr(strview_t* src, const char* delims);
 
 
 /**
- * @brief Split view by last delimiter, ignoring case.
+ * @brief Split view by last delim, ignoring case.
  * @param src The address of the view to split.
- * @param delimiters A view of the delimiter character/s, these are not case sensetive.
- * @return A view from, but not including, the last delimiter found.
- * @note Use via macro strview_split_last_delimiter_nocase()
+ * @param delims A view of the delim character/s, these are not case sensetive.
+ * @return A view from, but not including, the last delim found.
+ * @note Use via macro strview_split_last_delim_nocase()
  * *********************************************************************************/
-	strview_t strview_split_last_delimiter_nocase_strview(strview_t* src, strview_t delimiters);
+	strview_t strview_split_last_delim_nocase_strview(strview_t* src, strview_t delims);
 
 
 /**
- * @brief Split view by last delimiter, ignoring case.
+ * @brief Split view by last delim, ignoring case.
  * @param src The address of the view to split.
- * @param delimiters A view of the delimiter character/s, these are not case sensetive.
- * @return A view from, but not including, the last delimiter found.
- * @note Use via macro strview_split_last_delimiter_nocase()
+ * @param delims A view of the delim character/s, these are not case sensetive.
+ * @return A view from, but not including, the last delim found.
+ * @note Use via macro strview_split_last_delim_nocase()
  * *********************************************************************************/
-	strview_t strview_split_last_delimiter_nocase_cstr(strview_t* src, const char* delimiters);
+	strview_t strview_split_last_delim_nocase_cstr(strview_t* src, const char* delims);
 
 
 /**
