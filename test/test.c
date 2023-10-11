@@ -1039,6 +1039,13 @@ TEST test_strbuf_append(void)
 	ASSERT(!memcmp(str1.data, "{Hello-testing-some-string}{Hello-testing-some-string}", str1.size));
 	ASSERT(buf->cstr[buf->size] == 0);	//check the 0 terminator is in place
 
+	// Testing strbuf_append()
+	str1 = strbuf_assign(&buf, cstr("{Hello-Fred}"));
+	strbuf_shrink(&buf);
+	str1 = strbuf_append(&buf, "{Hello-Bob}");
+	ASSERT(!memcmp(str1.data, "{Hello-Fred}{Hello-Bob}", str1.size));
+	ASSERT(buf->cstr[buf->size] == 0);	//check the 0 terminator is in place
+
 	strbuf_destroy(&buf);
 	ASSERT(!buf);
 	PASS();
@@ -1059,6 +1066,13 @@ TEST test_strbuf_prepend(void)
 	ASSERT(!memcmp(str1.data, "{Hello-testing-some-string}{Hello-testing-some-string}", str1.size));
 	ASSERT(buf->cstr[buf->size] == 0);	//check the 0 terminator is in place
 
+	// Testing strbuf_prepend()
+	str1 = strbuf_assign(&buf, cstr("{Hello-Fred}"));
+	strbuf_shrink(&buf);
+	str1 = strbuf_prepend(&buf, "{Hello-Bob}");
+	ASSERT(!memcmp(str1.data, "{Hello-Bob}{Hello-Fred}", str1.size));
+	ASSERT(buf->cstr[buf->size] == 0);	//check the 0 terminator is in place
+
 	strbuf_destroy(&buf);
 	ASSERT(!buf);
 	PASS();
@@ -1077,6 +1091,13 @@ TEST test_strbuf_insert_at_index(void)
 	strbuf_shrink(&buf);
 	str1 = strbuf_insert_at_index(&buf, 6, strbuf_view(&buf));
 	ASSERT(!memcmp(str1.data, "{Hello{Hello-testing-some-string}-testing-some-string}", str1.size));
+	ASSERT(buf->cstr[buf->size] == 0);	//check the 0 terminator is in place
+
+	// Testing strbuf_insert_at_index(), with source from the destination
+	str1 = strbuf_assign(&buf, cstr("{Hello-testing-some-string}"));
+	strbuf_shrink(&buf);
+	str1 = strbuf_insert_at_index(&buf, 6, "(random text)");
+	ASSERT(!memcmp(str1.data, "{Hello(random text)-testing-some-string}", str1.size));
 	ASSERT(buf->cstr[buf->size] == 0);	//check the 0 terminator is in place
 
 	strbuf_destroy(&buf);
@@ -1221,6 +1242,11 @@ TEST test_strbuf_insert_before(void)
 	strbuf_insert_before(&buf, str1, cstr("***"));
 	ASSERT(!memcmp(buf->cstr, "***Hello Mellow", buf->size));
 
+	strbuf_assign(&buf, cstr("Hello Mellow"));
+	str1 = strview_find_last(strbuf_view(&buf), "ll");
+	strbuf_insert_before(&buf, str1, "...");
+	ASSERT(!memcmp(buf->cstr, "Hello Me...llow", buf->size));
+
 	strbuf_destroy(&buf);
 	ASSERT(!buf);
 	PASS();
@@ -1253,6 +1279,11 @@ TEST test_strbuf_insert_after(void)
 	str1 = strview_find_first(strbuf_view(&buf), cstr(""));
 	strbuf_insert_after(&buf, str1, cstr("***"));
 	ASSERT(!memcmp(buf->cstr, "***Hello Mellow", buf->size));
+
+	strbuf_assign(&buf, cstr("Hello Mellow"));
+	str1 = strview_find_last(strbuf_view(&buf), "ll");
+	strbuf_insert_after(&buf, str1, "...");
+	ASSERT(!memcmp(buf->cstr, "Hello Mell...ow", buf->size));
 
 	strbuf_destroy(&buf);
 	ASSERT(!buf);

@@ -394,11 +394,16 @@ strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str)
 	return strview_of_buf(buf);
 }
 
-strview_t strbuf_append(strbuf_t** buf_ptr, strview_t str)
+strview_t strbuf_append_strview(strbuf_t** buf_ptr, strview_t str)
 {
 	if(buf_ptr && *buf_ptr)
 		insert_strview_into_buf(buf_ptr, (*buf_ptr)->size, str);
 	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_append_cstr(strbuf_t** buf_ptr, const char* str)
+{
+	return strbuf_append_strview(buf_ptr, cstr(str));
 }
 
 strview_t strbuf_append_using(strbuf_t** buf_ptr, int (*strbuf_fetcher)(void* dst, int dst_size, void* fetcher_vars), void* fetch_vars)
@@ -427,21 +432,31 @@ strview_t strbuf_append_using(strbuf_t** buf_ptr, int (*strbuf_fetcher)(void* ds
 	return fetch_fault ? STRVIEW_INVALID : strview_of_buf(*buf_ptr);
 }
 
-strview_t strbuf_prepend(strbuf_t** buf_ptr, strview_t str)
+strview_t strbuf_prepend_strview(strbuf_t** buf_ptr, strview_t str)
 {
 	if(buf_ptr && *buf_ptr)
 		insert_strview_into_buf(buf_ptr, 0, str);
 	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
 }
 
-strview_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, strview_t str)
+strview_t strbuf_prepend_cstr(strbuf_t** buf_ptr, const char* str)
+{
+	return strbuf_prepend_strview(buf_ptr, cstr(str));
+}
+
+strview_t strbuf_insert_at_index_strview(strbuf_t** buf_ptr, int index, strview_t str)
 {
 	if(buf_ptr && *buf_ptr)
 		insert_strview_into_buf(buf_ptr, index, str);
 	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
 }
 
-strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, strview_t src)
+strview_t strbuf_insert_at_index_cstr(strbuf_t** buf_ptr, int index, const char* str)
+{
+	return strbuf_insert_at_index_strview(buf_ptr, index, cstr(str));
+}
+
+strview_t strbuf_insert_before_strview(strbuf_t** buf_ptr, strview_t dst, strview_t src)
 {
 	strbuf_t* buf;
 
@@ -456,7 +471,12 @@ strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, strview_t src)
 	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
 }
 
-strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, strview_t src)
+strview_t strbuf_insert_before_cstr(strbuf_t** buf_ptr, strview_t dst, const char* src)
+{
+	return strbuf_insert_before_strview(buf_ptr, dst, cstr(src));
+}
+
+strview_t strbuf_insert_after_strview(strbuf_t** buf_ptr, strview_t dst, strview_t src)
 {
 	strbuf_t* buf;
 	const char* dst_ptr;
@@ -474,7 +494,12 @@ strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, strview_t src)
 	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
 }
 
-strview_t strbuf_strip(strbuf_t** buf_ptr, strview_t stripchars)
+strview_t strbuf_insert_after_cstr(strbuf_t** buf_ptr, strview_t dst, const char* src)
+{
+	return strbuf_insert_after_strview(buf_ptr, dst, cstr(src));
+}
+
+strview_t strbuf_strip_strview(strbuf_t** buf_ptr, strview_t stripchars)
 {
 	strbuf_t* buf;
 	char* ptr;
@@ -500,6 +525,11 @@ strview_t strbuf_strip(strbuf_t** buf_ptr, strview_t stripchars)
 	};
 
 	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_strip_cstr(strbuf_t** buf_ptr, const char* stripchars)
+{
+	return strbuf_strip_strview(buf_ptr, cstr(stripchars));
 }
 
 //********************************************************************************************************

@@ -242,6 +242,102 @@
 		char cstr[];					///< Beginning of the buffers contents.
 	} strbuf_t;
 
+
+/**
+ * @def strbuf_append(strbuf_t** buf_ptr, str);
+ * @brief (macro) Append to a buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param str A C string or a view of the data to be appended.
+ * @return A view of the buffer contents.
+ * @note The source view may be of data within the destination buffer.
+ * @note If the destination is of fixed capacity, and insufficient, the buffer will be emptied.
+ **********************************************************************************/
+	#define strbuf_append(buf_ptr, str) _Generic((str),\
+		const char*:	strbuf_append_cstr,\
+		char*:			strbuf_append_cstr,\
+		strview_t:		strbuf_append_strview\
+		)(buf_ptr, str)
+
+
+/**
+ * @def strbuf_prepend(strbuf_t** buf_ptr, str);
+ * @brief (macro) Prepend the contents of a view to a buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param str A view or a C string of the data to be prepended.
+ * @return A view of the buffer contents.
+ * @note The source view may be of data within the destination buffer.
+ * @note If the destination is of fixed capacity, and insufficient, the buffer will be emptied.
+ **********************************************************************************/
+	#define strbuf_prepend(buf_ptr, str) _Generic((str),\
+		const char*:	strbuf_prepend_cstr,\
+		char*:			strbuf_prepend_cstr,\
+		strview_t:		strbuf_prepend_strview\
+		)(buf_ptr, str)
+
+
+/**
+ * @def strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str);
+ * @brief (macro) Insert the contents of a view into a buffer, at a location specified by index.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param index The position within the buffer to insert at.
+ * @param str A view or a C string of the data to be inserted.
+ * @return A view of the buffer contents.
+ * @note The source view may be of data within the destination buffer.
+ * @note A negative index may be used to reference the end of the buffer backwards.
+ **********************************************************************************/
+	#define strbuf_insert_at_index(buf_ptr, index, str) _Generic((str),\
+		const char*:	strbuf_insert_at_index_cstr,\
+		char*:			strbuf_insert_at_index_cstr,\
+		strview_t:		strbuf_insert_at_index_strview\
+		)(buf_ptr, index, str)
+
+
+/**
+ * @def strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, src);
+ * @brief (macro) Insert the contents of a view into a buffer to the left of a location specified by a view within the buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param dst A view within the buffer to insert before.
+ * @param src A view or a C string of the data to be inserted.
+ * @return A view of the buffer contents.
+ * @note The source view may be of data within the destination buffer.
+ **********************************************************************************/
+	#define strbuf_insert_before(buf_ptr, dst, src) _Generic((src),\
+		const char*:	strbuf_insert_before_cstr,\
+		char*:			strbuf_insert_before_cstr,\
+		strview_t:		strbuf_insert_before_strview\
+		)(buf_ptr, dst, src)
+
+
+/**
+ * @def strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, src);
+ * @brief (macro) Insert the contents of a view into a buffer to the right of a location specified by a view within the buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param dst A view within the buffer to insert after.
+ * @param src A view or a C string of the data to be inserted.
+ * @return A view of the buffer contents.
+ * @note The source view may be of data within the destination buffer.
+ **********************************************************************************/
+	#define strbuf_insert_after(buf_ptr, dst, src) _Generic((src),\
+		const char*:	strbuf_insert_after_cstr,\
+		char*:			strbuf_insert_after_cstr,\
+		strview_t:		strbuf_insert_after_strview\
+		)(buf_ptr, dst, src)
+
+
+/**
+ * @def strbuf_strip(strbuf_t** buf_ptr, stripchars);
+ * @brief (macro) Delete all occurrences of the specified characters in the buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param stripchars A view or a C string of the characters which should be deleted.
+ * @return A view of the buffer contents.
+ **********************************************************************************/
+	#define strbuf_strip(buf_ptr, stripchars) _Generic((stripchars),\
+		const char*:	strbuf_strip_cstr,\
+		char*:			strbuf_strip_cstr,\
+		strview_t:		strbuf_strip_strview\
+		)(buf_ptr, stripchars)
+
+
 //********************************************************************************************************
 // Public prototypes
 //********************************************************************************************************
@@ -379,14 +475,22 @@
 	strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str);
 
 /**
- * @brief Append the contents of a view to a buffer.
+ * @brief Append to a buffer.
  * @param buf_ptr The address of a pointer to the buffer.
  * @param str A view of the data to be appended.
  * @return A view of the buffer contents.
- * @note The source view may be of data within the destination buffer.
- * @note If the destination is of fixed capacity, and insufficient, the buffer will be emptied.
+ * @note Use via macro strbuf_append()
  **********************************************************************************/
-	strview_t strbuf_append(strbuf_t** buf_ptr, strview_t str);
+	strview_t strbuf_append_strview(strbuf_t** buf_ptr, strview_t str);
+
+/**
+ * @brief Append to a buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param str A C string of the data to be appended.
+ * @return A view of the buffer contents.
+ * @note Use via macro strbuf_append()
+ **********************************************************************************/
+	strview_t strbuf_append_cstr(strbuf_t** buf_ptr, const char* str);
 
 
 /**
@@ -404,54 +508,112 @@
  **********************************************************************************/
 	strview_t strbuf_append_using(strbuf_t** buf_ptr, int (*strbuf_fetcher)(void* dst, int dst_size, void* fetcher_vars), void* fetch_vars);
 
+
 /**
- * @brief Prepend the contents of a view to a buffer.
+ * @brief Prepend to a buffer.
  * @param buf_ptr The address of a pointer to the buffer.
  * @param str A view of the data to be prepended.
  * @return A view of the buffer contents.
- * @note The source view may be of data within the destination buffer.
- * @note If the destination is of fixed capacity, and insufficient, the buffer will be emptied.
+ * @note Use via macro strbuf_prepend())
  **********************************************************************************/
-	strview_t strbuf_prepend(strbuf_t** buf_ptr, strview_t str);
+	strview_t strbuf_prepend_strview(strbuf_t** buf_ptr, strview_t str);
+
 
 /**
- * @brief Insert the contents of a view into a buffer, at a location specified by index.
+ * @brief Prepend to a buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param str A C string to be prepended.
+ * @return A view of the buffer contents.
+ * @note Use via macro strbuf_prepend())
+ **********************************************************************************/
+	strview_t strbuf_prepend_cstr(strbuf_t** buf_ptr, const char* str);
+
+
+/**
+ * @brief Insert into a buffer, at a location specified by index.
  * @param buf_ptr The address of a pointer to the buffer.
  * @param index The position within the buffer to insert at.
  * @param str A view of the data to be inserted.
  * @return A view of the buffer contents.
- * @note The source view may be of data within the destination buffer.
- * @note A negative index may be used to reference the end of the buffer backwards.
+ * @note Use via macro strbuf_insert_at_index()
  **********************************************************************************/
-	strview_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, strview_t str);
+	strview_t strbuf_insert_at_index_strview(strbuf_t** buf_ptr, int index, strview_t str);
+
 
 /**
- * @brief Insert the contents of a view into a buffer to the left of a location specified by a view within the buffer.
+ * @brief Insert into a buffer, at a location specified by index.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param index The position within the buffer to insert at.
+ * @param str A C string of the data to be inserted.
+ * @return A view of the buffer contents.
+ * @note Use via macro strbuf_insert_at_index()
+ **********************************************************************************/
+	strview_t strbuf_insert_at_index_cstr(strbuf_t** buf_ptr, int index, const char* str);
+
+
+/**
+ * @brief Insert into a buffer to the left of a location specified by a view within the buffer.
  * @param buf_ptr The address of a pointer to the buffer.
  * @param dst A view within the buffer to insert before.
  * @param src A view of the data to be inserted.
  * @return A view of the buffer contents.
- * @note The source view may be of data within the destination buffer.
+ * @note Use via macro strbuf_insert_before()
  **********************************************************************************/
-	strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, strview_t src);
+	strview_t strbuf_insert_before_strview(strbuf_t** buf_ptr, strview_t dst, strview_t src);
+
 
 /**
- * @brief Insert the contents of a view into a buffer to the right of a location specified by a view within the buffer.
+ * @brief Insert into a buffer to the left of a location specified by a view within the buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param dst A view within the buffer to insert before.
+ * @param src A C string of the data to be inserted.
+ * @return A view of the buffer contents.
+ * @note Use via macro strbuf_insert_before()
+ **********************************************************************************/
+	strview_t strbuf_insert_before_cstr(strbuf_t** buf_ptr, strview_t dst, const char* src);
+
+
+/**
+ * @brief Insert into a buffer to the right of a location specified by a view within the buffer.
  * @param buf_ptr The address of a pointer to the buffer.
  * @param dst A view within the buffer to insert after.
  * @param src A view of the data to be inserted.
  * @return A view of the buffer contents.
- * @note The source view may be of data within the destination buffer.
+ * @note Use via macro strbuf_insert_after()
  **********************************************************************************/
-	strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, strview_t src);
+	strview_t strbuf_insert_after_strview(strbuf_t** buf_ptr, strview_t dst, strview_t src);
+
+
+/**
+ * @brief Insert into a buffer to the right of a location specified by a view within the buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param dst A view within the buffer to insert after.
+ * @param src A C string of the data to be inserted.
+ * @return A view of the buffer contents.
+ * @note Use via macro strbuf_insert_after()
+ **********************************************************************************/
+	strview_t strbuf_insert_after_cstr(strbuf_t** buf_ptr, strview_t dst, const char* src);
+
 
 /**
  * @brief Delete all occurrences of the specified characters in the buffer.
  * @param buf_ptr The address of a pointer to the buffer.
- * @param stripchars A view of the characters which should be deleted.
+ * @param stripchars The characters which should be deleted.
  * @return A view of the buffer contents.
+ * @note Use via macro strbuf_strip()
  **********************************************************************************/
-	strview_t strbuf_strip(strbuf_t** buf_ptr, strview_t stripchars);
+	strview_t strbuf_strip_strview(strbuf_t** buf_ptr, strview_t stripchars);
+
+
+/**
+ * @brief Delete all occurrences of the specified characters in the buffer.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param stripchars The characters which should be deleted.
+ * @return A view of the buffer contents.
+ * @note Use via macro strbuf_strip()
+ **********************************************************************************/
+	strview_t strbuf_strip_cstr(strbuf_t** buf_ptr, const char* stripchars);
+
 
 #ifdef STRBUF_PROVIDE_PRINTF
 /**
