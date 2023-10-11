@@ -81,7 +81,7 @@ As mybuffer is a pointer, members of the strbuf_t may be accessed using the arro
 	typedef struct strbuf_allocator_t
 	{
 		void* app_data;
-		void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+		void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
 	} strbuf_allocator_t;
 
 ## Explanation:
@@ -90,7 +90,7 @@ As mybuffer is a pointer, members of the strbuf_t may be accessed using the arro
 
 &nbsp;
 
-	void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line);
+	void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
 
 A pointer to the allocator function.
 
@@ -100,8 +100,6 @@ The parameters to this function are:
 	struct strbuf_allocator_t* this_allocator <-- A pointer to the strbuf_allocator_t which may be used to access ->app_data.
 	void* ptr_to_free                      <-- Memory address to free OR reallocate.
 	size_t size                            <-- Size of allocation, or new size of the reallocation, or 0 if memory is to be freed.
-	const char* caller_filename            <-- usually /path/strbuf.c, this is to support allocators which track caller ID.
-	int caller_line                        <-- The line within strbuf.c which called the allocator, this is also to support allocators which track caller ID.
 
 &nbsp;
 # Allocator example
@@ -110,9 +108,9 @@ Even though stdlib's realloc can be used as the default allocator in the case wh
 &nbsp;
 This also available in [/examples/custom_allocator](/examples/custom_allocator/heap-buf.c)
 
-	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
+	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size)
 	{
-		(void)this_allocator; (void)caller_filename; (void)caller_line;
+		(void)this_allocator;
 		void* result;
 		result = realloc(ptr_to_free, size);
 		assert(size==0 || result);	// You need to catch a failed allocation here.
@@ -230,32 +228,32 @@ Example use:
  The non-variadic version of _strbuf_cat.
 
 &nbsp;
-## `strview_t strbuf_append(strbuf_t** buf_ptr, strview_t str);`
- Append strview_t to buffer. strview_t may be owned by the output buffer itself.
+## `strview_t strbuf_append(strbuf_t** buf_ptr, str);`
+ Append to the buffer. **str** may either be a C string or a strview_t.
 
 &nbsp;
 ## `strview_t strbuf_append_char(strbuf_t** buf_ptr, char c);`
  Append a single character to the buffer.
 
 &nbsp;
-## `strview_t strbuf_prepend(strbuf_t** buf_ptr, strview_t str);`
- Prepend strview_t to buffer. strview_t may be owned by the output buffer itself.
+## `strview_t strbuf_prepend(strbuf_t** buf_ptr, str);`
+ Prepend to buffer.  **str** may either be a C string or a strview_t.
 
 &nbsp;
-## `strview_t strbuf_strip(strbuf_t** buf_ptr, strview_t stripchars);`
- Strip buffer contents of all characters in strview_t.
+## `strview_t strbuf_strip(strbuf_t** buf_ptr, stripchars);`
+ Strip buffer contents of characters in stripchars, which may either be a C string or s strview_t.
 
 &nbsp;
-## `strview_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, strview_t str);`
- Insert strview_t to buffer at index. strview_t may be owned by the output buffer itself. The index accepts python-style negative values to index the end of the string backwards.
+## `strview_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str);`
+ Insert into buffer at index. str may be a C string or a strview_t. The index accepts python-style negative values to index the end of the string backwards.
 
 &nbsp;
-## `strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, strview_t src);`
- Insert src into the buffer at the location referenced by dst. dst must reference data contained within the destination buffer.
+## `strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, src);`
+ Insert src into the buffer at the location referenced by dst. dst must reference data contained within the destination buffer. src may be a C string or a strview_t
 
 &nbsp;
-## `strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, strview_t src);`
- Insert src after the end of dst in the buffer. dst must reference data contained within the buffer.
+## `strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, src);`
+ Insert src after the end of dst in the buffer. dst must reference data contained within the buffer.  src may be a C string or a strview_t
 
 &nbsp;
 &nbsp;

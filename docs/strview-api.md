@@ -35,33 +35,33 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 &nbsp;
 ## Comparison
 
- * [bool strview_is_match(strview_t str1, strview_t str2);](#bool-strviewismatchstrviewt-str1-strviewt-str2)
- * [bool strview_is_match_nocase(strview_t str1, strview_t str2);](#bool-strviewismatchnocasestrviewt-str1-strviewt-str2)
+ * [bool strview_is_match(strview_t str1, str2);](#bool-strviewismatchstrviewt-str1-strviewt-str2)
+ * [bool strview_is_match_nocase(strview_t str1, str2);](#bool-strviewismatchnocasestrviewt-str1-strviewt-str2)
  * [int strview_compare(strview_t str1, strview_t str2);](#int-strview_compare)
- * [bool strview_starts_with(strview_t str1, strview_t str2);](#bool-strviewstartswithstrviewt-str1-strviewt-str2)
- * [bool strview_starts_with_nocase(strview_t str1, strview_t str2);](#bool-strviewstartswithnocasestrviewt-str1-strviewt-str2)
+ * [bool strview_starts_with(strview_t str1, str2);](#bool-strviewstartswithstrviewt-str1-strviewt-str2)
+ * [bool strview_starts_with_nocase(strview_t str1, str2);](#bool-strviewstartswithnocasestrviewt-str1-strviewt-str2)
 
 &nbsp;
 ## Trimming
 
- * [strview_t strview_trim(strview_t str, strview_t chars_to_trim);](#strviewt-strviewtrimstrviewt-str-strviewt-charstotrim)
- * [strview_t strview_trim_start(strview_t str, strview_t chars_to_trim);](#strviewt-strviewtrimstartstrviewt-str-strviewt-charstotrim)
- * [strview_t strview_trim_end(strview_t str, strview_t chars_to_trim);](#strviewt-strviewtrimendstrviewt-str-strviewt-charstotrim)
+ * [strview_t strview_trim(strview_t str, chars_to_trim);](#strviewt-strviewtrimstrviewt-str-strviewt-charstotrim)
+ * [strview_t strview_trim_start(strview_t str, chars_to_trim);](#strviewt-strviewtrimstartstrviewt-str-strviewt-charstotrim)
+ * [strview_t strview_trim_end(strview_t str, chars_to_trim);](#strviewt-strviewtrimendstrviewt-str-strviewt-charstotrim)
 
 &nbsp;
 ## Searching
 
- * [strview_t strview_find_first(strview_t haystack, strview_t needle);](#strviewt-strviewfindfirststrviewt-haystack-strviewt-needle)
- * [strview_t strview_find_last(strview_t haystack, strview_t needle);](#strviewt-strviewfindlaststrviewt-haystack-strviewt-needle)
+ * [strview_t strview_find_first(strview_t haystack, needle);](#strviewt-strviewfindfirststrviewt-haystack-strviewt-needle)
+ * [strview_t strview_find_last(strview_t haystack, needle);](#strviewt-strviewfindlaststrviewt-haystack-strviewt-needle)
 
 &nbsp;
 ## Splitting
 
  * [strview_t strview_sub(strview_t str, int begin, int end);](#strviewt-strviewsubstrviewt-str-int-begin-int-end)
- * [strview_t strview_split_first_delim(strview_t* src, strview_t delims);](#strviewt-strviewsplitfirstdelimstrviewt-src-strviewt-delims)
- * [strview_t strview_split_last_delim(strview_t* src, strview_t delims);](#strviewt-strviewsplitlastdelimstrviewt-src-strviewt-delims)
- * [strview_t strview_split_first_delim_nocase(strview_t* src, strview_t delims);](#strviewt-strviewsplitfirstdelimnocasestrviewt-src-strviewt-delims)
- * [strview_t strview_split_last_delim_nocase(strview_t* src, strview_t delims);](#strviewt-strviewsplitlastdelimnocasestrviewt-src-strviewt-delims)
+ * [strview_t strview_split_first_delim(strview_t* src, delims);](#strviewt-strviewsplitfirstdelimstrviewt-src-strviewt-delims)
+ * [strview_t strview_split_last_delim(strview_t* src, delims);](#strviewt-strviewsplitlastdelimstrviewt-src-strviewt-delims)
+ * [strview_t strview_split_first_delim_nocase(strview_t* src, delims);](#strviewt-strviewsplitfirstdelimnocasestrviewt-src-strviewt-delims)
+ * [strview_t strview_split_last_delim_nocase(strview_t* src, delims);](#strviewt-strviewsplitlastdelimnocasestrviewt-src-strviewt-delims)
  * [strview_t strview_split_index(strview_t* src, int index);](#strviewt-strviewsplitindexstrviewt-src-int-index)
  * [strview_t strview_split_left(strview_t* src, strview_t pos);](#strviewt-strviewsplitleftstrviewt-src-strviewt-pos)
  * [strview_t strview_split_right(strview_t* src, strview_t pos);](#strviewt-strviewsplitrightstrviewt-src-strviewt-pos)
@@ -95,11 +95,11 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 # Comparison
 
 &nbsp;
-## `bool strview_is_match(strview_t str1, strview_t str2);`
- Return true if the strings match. Also returns true if BOTH strings are invalid.
+## `bool strview_is_match(strview_t str1, str2);`
+ Return true if the strings match. Also returns true if BOTH strings are invalid. **str2** may be a C string or a strview_t.
 
 &nbsp;
-## `bool strview_is_match_nocase(strview_t str1, strview_t str2);`
+## `bool strview_is_match_nocase(strview_t str1, str2);`
  Same as **strview_is_match()** ignoring case.
 
 &nbsp;
@@ -139,18 +139,19 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 # Searching
 
 &nbsp;
-## `strview_t strview_find_first(strview_t haystack, strview_t needle);`
+## `strview_t strview_find_first(strview_t haystack, needle);`
  Return the **strview_t** for the first occurrence of needle in haystack.
  If the needle is not found, strview_find_first() returns an invalid strview_t.
  If the needle is found, the returned strview_t will match the contents of needle, only it will reference data within the haystack. 
  This can then be used as a position reference for further parsing with strview.h functions, or modification with strbuf.h functions.
+ **needle** may be a C string or a strview_t.
 
 Some special cases to consider:
  * If **needle** is valid, and of length 0, it will always be found at the start of the string.
  * If **needle** is invalid, or if **haystack** is invalid, it will not be found.
 	
 &nbsp;
-## `strview_t strview_find_last(strview_t haystack, strview_t needle);`
+## `strview_t strview_find_last(strview_t haystack, needle);`
  Similar to strview_find_first(), but returns the LAST occurrence of **needle** in **haystack**.
 
 Some special cases to consider:
@@ -168,28 +169,29 @@ Some special cases to consider:
  The indexes are clipped to the strings length, so INT_MAX may be safely used to index the end of the string. If the requested range is entirely outside of the input string, then an invalid **strview_t** is returned.
 
 &nbsp;
-## `strview_t strview_split_first_delim(strview_t* src, strview_t delims);`
+## `strview_t strview_split_first_delim(strview_t* src, delims);`
  Return a **strview_t** representing the contents of the source string up to, but not including, any of characters in **delims**.
  Additionally, the contents of the returned **strview_t**, and the delim character itself is removed (popped) from the input string.
  If no delim is found, the returned string is the entire source string, and the source string becomes invalid.
+ **delim** may be a C string or a strview_t.
 
 Example usage:
 
     strview_t date = cstr("2022/10/03");
-    strview_t year  = strview_split_first_delim(&date, cstr("/"));
-    strview_t month = strview_split_first_delim(&date, cstr("/"));
-    strview_t day   = strview_split_first_delim(&date, cstr("/"));
+    strview_t year  = strview_split_first_delim(&date, "/");
+    strview_t month = strview_split_first_delim(&date, "/");
+    strview_t day   = strview_split_first_delim(&date, "/");
 
 &nbsp;
-## `strview_t strview_split_last_delim(strview_t* src, strview_t delims);`
+## `strview_t strview_split_last_delim(strview_t* src, delims);`
  Same as **strview_split_first_delim()** but searches from the end of the string backwards.
 
 &nbsp;
-## `strview_t strview_split_first_delim_nocase(strview_t* src, strview_t delims);`
+## `strview_t strview_split_first_delim_nocase(strview_t* src, delims);`
 Same as **strview_split_first_delim()** but ignores the case of the delims
 
 &nbsp;
-## `strview_t strview_split_last_delim_nocase(strview_t* src, strview_t delims);`
+## `strview_t strview_split_last_delim_nocase(strview_t* src, delims);`
 Same as **strview_split_last_delim()** but ignores the case of the delims
 
 &nbsp;
