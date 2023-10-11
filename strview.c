@@ -21,8 +21,8 @@
 
 	static bool contains_char(strview_t str, char c, bool case_sensetive);
 
-	static strview_t split_first_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
-	static strview_t split_last_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
+	static strview_t split_first_delimiter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
+	static strview_t split_last_delimiter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive);
 	static strview_t split_index(strview_t* strview_ptr, int index);
 
 	static int memcmp_nocase(const char* a, const char* b, size_t size);
@@ -205,7 +205,7 @@ strview_t strview_trim_strview(strview_t str, strview_t chars_to_trim)
 	return str;
 }
 
-strview_t strview_find_first(strview_t haystack, strview_t needle)
+strview_t strview_find_first_strview(strview_t haystack, strview_t needle)
 {
 	strview_t result = STRVIEW_INVALID;
 
@@ -230,7 +230,12 @@ strview_t strview_find_first(strview_t haystack, strview_t needle)
 	return result;
 }
 
-strview_t strview_find_last(strview_t haystack, strview_t needle)
+strview_t strview_find_first_cstr(strview_t haystack, const char* needle)
+{
+	return strview_find_first_strview(haystack, cstr(needle));
+}
+
+strview_t strview_find_last_strview(strview_t haystack, strview_t needle)
 {
 	strview_t result = STRVIEW_INVALID;
 
@@ -255,44 +260,69 @@ strview_t strview_find_last(strview_t haystack, strview_t needle)
 	return result;
 }
 
-strview_t strview_split_first_delimeter(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_find_last_cstr(strview_t haystack, const char* needle)
+{
+	return strview_find_last_strview(haystack, cstr(needle));
+}
+
+strview_t strview_split_first_delimiter_strview(strview_t* strview_ptr, strview_t delimiters)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_first_delimeter(strview_ptr, delimiters, CASE_SENSETIVE);
+		result = split_first_delimiter(strview_ptr, delimiters, CASE_SENSETIVE);
 
 	return result;
 }
 
-strview_t strview_split_first_delimiter_nocase(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_first_delimiter_cstr(strview_t* strview_ptr, const char* delimiters)
+{
+	return strview_split_first_delimiter_strview(strview_ptr, cstr(delimiters));
+}
+
+strview_t strview_split_first_delimiter_nocase_strview(strview_t* strview_ptr, strview_t delimiters)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_first_delimeter(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
+		result = split_first_delimiter(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
 
 	return result;
 }
 
-strview_t strview_split_last_delimeter(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_first_delimiter_nocase_cstr(strview_t* strview_ptr, const char* delimiters)
+{
+	return strview_split_first_delimiter_nocase_strview(strview_ptr, cstr(delimiters));
+}
+
+strview_t strview_split_last_delimiter_strview(strview_t* strview_ptr, strview_t delimiters)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_last_delimeter(strview_ptr, delimiters, CASE_SENSETIVE);
+		result = split_last_delimiter(strview_ptr, delimiters, CASE_SENSETIVE);
 
 	return result;
 }
 
-strview_t strview_split_last_delimeter_nocase(strview_t* strview_ptr, strview_t delimiters)
+strview_t strview_split_last_delimiter_cstr(strview_t* strview_ptr, const char* delimiters)
+{
+	return strview_split_last_delimiter_strview(strview_ptr, cstr(delimiters));
+}
+
+strview_t strview_split_last_delimiter_nocase_strview(strview_t* strview_ptr, strview_t delimiters)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_last_delimeter(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
+		result = split_last_delimiter(strview_ptr, delimiters, NOT_CASE_SENSETIVE);
 
 	return result;
+}
+
+strview_t strview_split_last_delimiter_nocase_cstr(strview_t* strview_ptr, const char* delimiters)
+{
+	return strview_split_last_delimiter_nocase_strview(strview_ptr, cstr(delimiters));
 }
 
 strview_t strview_split_index(strview_t* strview_ptr, int index)
@@ -328,7 +358,7 @@ strview_t strview_split_line(strview_t* strview_ptr, char* eol)
 				strview_pop_first_char(&src);
 		};
 
-		result = strview_split_first_delimeter(&src, cstr("\r\n"));
+		result = strview_split_first_delimiter(&src, cstr("\r\n"));
 
 		if(strview_is_valid(src))	//a line ending was found
 		{
@@ -414,7 +444,7 @@ static int memcmp_nocase(const char* a, const char* b, size_t size)
 	return result;
 }
 
-static strview_t split_first_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
+static strview_t split_first_delimiter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
 {
 	strview_t result;
 	bool found = false;
@@ -453,7 +483,7 @@ static strview_t split_first_delimeter(strview_t* strview_ptr, strview_t delimit
 	return result;
 }
 
-static strview_t split_last_delimeter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
+static strview_t split_last_delimiter(strview_t* strview_ptr, strview_t delimiters, bool case_sensetive)
 {
 	strview_t result;
 	bool found = false;

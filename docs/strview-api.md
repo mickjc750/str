@@ -58,10 +58,10 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 ## Splitting
 
  * [strview_t strview_sub(strview_t str, int begin, int end);](#strviewt-strviewsubstrviewt-str-int-begin-int-end)
- * [strview_t strview_split_first_delimeter(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitfirstdelimeterstrviewt-src-strviewt-delimiters)
- * [strview_t strview_split_last_delimeter(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitlastdelimeterstrviewt-src-strviewt-delimiters)
+ * [strview_t strview_split_first_delimiter(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitfirstdelimiterstrviewt-src-strviewt-delimiters)
+ * [strview_t strview_split_last_delimiter(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitlastdelimiterstrviewt-src-strviewt-delimiters)
  * [strview_t strview_split_first_delimiter_nocase(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitfirstdelimiternocasestrviewt-src-strviewt-delimiters)
- * [strview_t strview_split_last_delimeter_nocase(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitlastdelimeternocasestrviewt-src-strviewt-delimiters)
+ * [strview_t strview_split_last_delimiter_nocase(strview_t* src, strview_t delimiters);](#strviewt-strviewsplitlastdelimiternocasestrviewt-src-strviewt-delimiters)
  * [strview_t strview_split_index(strview_t* src, int index);](#strviewt-strviewsplitindexstrviewt-src-int-index)
  * [strview_t strview_split_left(strview_t* src, strview_t pos);](#strviewt-strviewsplitleftstrviewt-src-strviewt-pos)
  * [strview_t strview_split_right(strview_t* src, strview_t pos);](#strviewt-strviewsplitrightstrviewt-src-strviewt-pos)
@@ -168,7 +168,7 @@ Some special cases to consider:
  The indexes are clipped to the strings length, so INT_MAX may be safely used to index the end of the string. If the requested range is entirely outside of the input string, then an invalid **strview_t** is returned.
 
 &nbsp;
-## `strview_t strview_split_first_delimeter(strview_t* src, strview_t delimiters);`
+## `strview_t strview_split_first_delimiter(strview_t* src, strview_t delimiters);`
  Return a **strview_t** representing the contents of the source string up to, but not including, any of characters in **delimiters**.
  Additionally, the contents of the returned **strview_t**, and the delimiter character itself is removed (popped) from the input string.
  If no delimiter is found, the returned string is the entire source string, and the source string becomes invalid.
@@ -176,21 +176,21 @@ Some special cases to consider:
 Example usage:
 
     strview_t date = cstr("2022/10/03");
-    strview_t year  = strview_split_first_delimeter(&date, cstr("/"));
-    strview_t month = strview_split_first_delimeter(&date, cstr("/"));
-    strview_t day   = strview_split_first_delimeter(&date, cstr("/"));
+    strview_t year  = strview_split_first_delimiter(&date, cstr("/"));
+    strview_t month = strview_split_first_delimiter(&date, cstr("/"));
+    strview_t day   = strview_split_first_delimiter(&date, cstr("/"));
 
 &nbsp;
-## `strview_t strview_split_last_delimeter(strview_t* src, strview_t delimiters);`
- Same as **strview_split_first_delimeter()** but searches from the end of the string backwards.
+## `strview_t strview_split_last_delimiter(strview_t* src, strview_t delimiters);`
+ Same as **strview_split_first_delimiter()** but searches from the end of the string backwards.
 
 &nbsp;
 ## `strview_t strview_split_first_delimiter_nocase(strview_t* src, strview_t delimiters);`
-Same as **strview_split_first_delimeter()** but ignores the case of the delimiters
+Same as **strview_split_first_delimiter()** but ignores the case of the delimiters
 
 &nbsp;
-## `strview_t strview_split_last_delimeter_nocase(strview_t* src, strview_t delimiters);`
-Same as **strview_split_last_delimeter()** but ignores the case of the delimiters
+## `strview_t strview_split_last_delimiter_nocase(strview_t* src, strview_t delimiters);`
+Same as **strview_split_last_delimiter()** but ignores the case of the delimiters
 
 &nbsp;
 ## `strview_t strview_split_index(strview_t* src, int index);`

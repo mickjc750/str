@@ -385,11 +385,11 @@ TEST test_strview_split_first_delimiter(void)
 
 	str2 = cstr("123/456/789");
 
-	str1 = strview_split_first_delimeter(&str2, cstr("/"));
+	str1 = strview_split_first_delimiter(&str2, cstr("/"));
 	ASSERT(!memcmp("123", str1.data, str1.size));
-	str1 = strview_split_first_delimeter(&str2, cstr("/"));
+	str1 = strview_split_first_delimiter(&str2, "/");
 	ASSERT(!memcmp("456", str1.data, str1.size));
-	str1 = strview_split_first_delimeter(&str2, cstr("/"));
+	str1 = strview_split_first_delimiter(&str2, cstr("/"));
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
 
@@ -402,32 +402,32 @@ TEST test_strview_split_first_delimiter_edge_cases(void)
 
 	str2 = cstr("/456/789/");
 
-	str1 = strview_split_first_delimeter(&str2, cstr("/"));
+	str1 = strview_split_first_delimiter(&str2, cstr("/"));
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
 	ASSERT(str2.size == 8);
 	ASSERT(!memcmp("456/789/", str2.data, str2.size));
 
-	str1 = strview_split_first_delimeter(&str2, cstr("/"));
+	str1 = strview_split_first_delimiter(&str2, cstr("/"));
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("456", str1.data, str1.size));
 	ASSERT(str2.size == 4);
 	ASSERT(!memcmp("789/", str2.data, str2.size));
 
-	str1 = strview_split_first_delimeter(&str2, cstr("/"));
+	str1 = strview_split_first_delimiter(&str2, "/");
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(str2.size == 0);
 	ASSERT(str2.data);		//remainder string should be valid and length 0, as a delimiter was found
 
-	str1 = strview_split_first_delimeter(&str2, cstr("/"));
+	str1 = strview_split_first_delimiter(&str2, cstr("/"));
 	ASSERT(str1.size == 0);		//split string should be the entire source, which is a valid string of length 0
 	ASSERT(str1.data);	
 	ASSERT(str2.size == 0);
 	ASSERT(str2.data == NULL); 	//remaining string should be invalid as there were no delimiters found
 
 	str2 = cstr("no-delimiters");
-	str1 = strview_split_first_delimeter(&str2, cstr("/"));
+	str1 = strview_split_first_delimiter(&str2, cstr("/"));
 	ASSERT(str1.data);
 	ASSERT(str1.size == sizeof("no-delimiters")-1);
 	ASSERT(str2.data == NULL);
@@ -441,10 +441,10 @@ TEST test_strview_split_first_delimiter_nocase(void)
 	strview_t str1, str2;
 
 	str2 = cstr("123r456R789");
-
+           
 	str1 = strview_split_first_delimiter_nocase(&str2, cstr("r"));
 	ASSERT(!memcmp("123", str1.data, str1.size));
-	str1 = strview_split_first_delimiter_nocase(&str2, cstr("r"));
+	str1 = strview_split_first_delimiter_nocase(&str2, "r");
 	ASSERT(!memcmp("456", str1.data, str1.size));
 	str1 = strview_split_first_delimiter_nocase(&str2, cstr("r"));
 	ASSERT(!memcmp("789", str1.data, str1.size));
@@ -458,13 +458,13 @@ TEST test_strview_split_last_delimiter(void)
 	strview_t str1, str2;
 
 	str2 = cstr("123/456/789");
-	str1 = strview_split_last_delimeter(&str2, cstr("/"));
+	str1 = strview_split_last_delimiter(&str2, cstr("/"));
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(str2.size == 7);
 	ASSERT(!memcmp("123/456", str2.data, str2.size));
 
-	str1 = strview_split_last_delimeter(&str2, cstr("/"));
+	str1 = strview_split_last_delimiter(&str2, "/");
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("456", str1.data, str1.size));
 	ASSERT(str2.size == 3);
@@ -479,25 +479,25 @@ TEST test_strview_split_last_delimiter_edge_cases(void)
 
 	str2 = cstr("/456/789/");
 
-	str1 = strview_split_last_delimeter(&str2, cstr("/"));
+	str1 = strview_split_last_delimiter(&str2, cstr("/"));
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
 	ASSERT(str2.size == 8);
 	ASSERT(!memcmp("/456/789", str2.data, str2.size));
 
-	str1 = strview_split_last_delimeter(&str2, cstr("/"));
+	str1 = strview_split_last_delimiter(&str2, cstr("/"));
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(str2.size == 4);
 	ASSERT(!memcmp("/456", str2.data, str2.size));
 
-	str1 = strview_split_last_delimeter(&str2, cstr("/"));
+	str1 = strview_split_last_delimiter(&str2, "/");
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("456", str1.data, str1.size));
 	ASSERT(str2.size == 0);
 	ASSERT(str2.data);
 
-	str1 = strview_split_last_delimeter(&str2, cstr("/"));
+	str1 = strview_split_last_delimiter(&str2, cstr("/"));
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
 	ASSERT(str2.size == 0);
@@ -513,6 +513,11 @@ TEST test_strview_find_first(void)
 	str1 = cstr("needle");
 	str2 = cstr("needle");
 	search_result = strview_find_first(str1, str2);
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 0);
+
+	str1 = cstr("needle");
+	search_result = strview_find_first(str1, "needle");
 	ASSERT(strview_is_valid(search_result));
 	ASSERT((search_result.data - str1.data) == 0);
 
@@ -565,6 +570,11 @@ TEST test_strview_find_last(void)
 	str1 = cstr("needle");
 	str2 = cstr("needle");
 	search_result = strview_find_last(str1, str2);
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 0);
+
+	str1 = cstr("needle");
+	search_result = strview_find_last(str1, "needle");
 	ASSERT(strview_is_valid(search_result));
 	ASSERT((search_result.data - str1.data) == 0);
 
