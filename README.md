@@ -35,9 +35,7 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
  * Supports custom allocators, for applications which use temporary allocators for speed. Or can default to malloc/free for simplicity.
  * A rich set of of string splitting/trim/search functions.
  * A number parser which checks for errors, including range errors, or invalid input.
- * A test suite which uses https://github.com/silentbicycle/greatest, currently passing all 42 tests, 486 assertions.
-
- STR is not currently MISRA compliant, but as it doesn't depend on dynamic memory allocation, it has the potential to be so. I don't possess a MISRA linter, and I'm unable to find a free one. If a contributor wishes to provide information regarding the violations, I'm willing to make it comply.
+ * A test suite which uses https://github.com/silentbicycle/greatest, currently passing all 43 tests, 528 assertions.
 
  For an example of how useful this approach to string handling is, see the URI parser in [/examples/parse_uri/parse-uri.c](/examples/parse-uri/parse-uri.c)
 
@@ -120,6 +118,8 @@ To understand this approach to string handling, and the purpose of each, it help
 	title_set(cstr("Main menu"));
 	title_set(cstr_SL("Main menu"));
 
+ * Note that many of the library functions which take a strview_t are generic macros which can also accept a C string.
+
 &nbsp;
 # Comparison with SDS https://github.com/antirez/sds
 
@@ -142,7 +142,7 @@ SDS functions are of the form:
 
 As __sdscat()__ may relocate the buffer, you have to remember to assign the returned value back to the variable. If the variable passed to __sdscat()__ was of any use after the call, then this signature might make sense. But as that isn't the case, it makes more sense to pass the buffer by reference. So __strbuf.h__ functions are of the form:
 
-	strbuf_append(&s, cstr("Hello"));
+	strbuf_append(&s, "Hello");
 
 &nbsp;
 ## Disagreement on what is an advantage, and what is a hazard.
