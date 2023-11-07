@@ -281,6 +281,22 @@
 
 
 /**
+ * @def strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims);
+ * @brief Split entire view by delims, into an array of views.
+ * @param dst The destination array to write to.
+ * @param dst_size The number of elements available in the destination.
+ * @param src The view to split.
+ * @param delims A view or a C string of the delim character/s.
+ * @return The number of elements written to dst[]
+ * *********************************************************************************/
+	#define strview_split_all(dst_size, dst, src, delims) _Generic((delims),\
+		const char*:	strview_split_all_cstr,\
+		char*:			strview_split_all_cstr,\
+		strview_t:		strview_split_all_strview\
+		)(dst_size, dst, src, delims)
+
+
+/**
  * @def strview_split_first_delim_nocase(strview_t* src, delims);
  * @brief (macro) Split view by delims, ignoring case.
  * @param src The address of the view to split.
@@ -563,6 +579,27 @@
  * *********************************************************************************/
 	strview_t strview_split_first_delim_strview(strview_t* src, strview_t delims);
 
+/**
+ * @brief Split entire view by delims, into an array of views.
+ * @param dst The destination array to write to.
+ * @param dst_size The number of elements available in the destination.
+ * @param src The the view to split.
+ * @param delims A C string of the delim character/s.
+ * @return The number of elements written to dst[]
+ * @note Use via macro strview_split_all()
+ * *********************************************************************************/
+	int strview_split_all_cstr(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims);
+
+/**
+ * @brief Split entire view by delims, into an array of views.
+ * @param dst The destination array to write to.
+ * @param dst_size The number of elements available in the destination.
+ * @param src The the view to split.
+ * @param delims A view of the delim character/s.
+ * @return The number of elements written to dst[]
+ * @note Use via macro strview_split_all()
+ * *********************************************************************************/
+	int strview_split_all_strview(int dst_size, strview_t dst[dst_size], strview_t src, strview_t delims);
 
 /**
  * @brief Split view by delims.

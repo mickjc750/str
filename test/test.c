@@ -65,6 +65,7 @@
 	TEST test_strview_sub(void);
 	TEST test_strview_sub_edge_cases(void);
 	TEST test_strview_split_first_delim(void);
+	TEST test_strview_split_all(void);
 	TEST test_strview_split_first_delim_edge_cases(void);
 	TEST test_strview_split_first_delim_nocase(void);
 	TEST test_strview_split_last_delim(void);
@@ -141,6 +142,7 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_sub);
 	RUN_TEST(test_strview_sub_edge_cases);
 	RUN_TEST(test_strview_split_first_delim);
+	RUN_TEST(test_strview_split_all);
 	RUN_TEST(test_strview_split_first_delim_edge_cases);
 	RUN_TEST(test_strview_split_first_delim_nocase);
 	RUN_TEST(test_strview_split_last_delim);
@@ -393,6 +395,40 @@ TEST test_strview_split_first_delim(void)
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
 
+	PASS();
+}
+
+TEST test_strview_split_all(void)
+{
+	#define DST_SIZE	4
+	strview_t dst[DST_SIZE] = {0};
+	int count;
+
+	count = strview_split_all(2, dst, cstr("123/456/789"), "/");
+	ASSERT(count == 2);
+	ASSERT(!memcmp("123", dst[0].data, dst[0].size));
+	ASSERT(!memcmp("456", dst[1].data, dst[1].size));
+	ASSERT(!strview_is_valid(dst[2]));
+	memset(dst, 0, sizeof(dst));
+
+	count = strview_split_all(DST_SIZE, dst, cstr("123/456/789"), "/");
+	ASSERT(count == 3);
+	ASSERT(!memcmp("123", dst[0].data, dst[0].size));
+	ASSERT(!memcmp("456", dst[1].data, dst[1].size));
+	ASSERT(!memcmp("789", dst[2].data, dst[2].size));
+	memset(dst, 0, sizeof(dst));
+
+	count = strview_split_all(DST_SIZE, dst, STRVIEW_INVALID, "/");
+	ASSERT(count == 0);
+	ASSERT(!strview_is_valid(dst[0]));
+
+	count = strview_split_all(DST_SIZE, dst, cstr("123/456/789"), cstr("/"));
+	ASSERT(count == 3);
+	ASSERT(!memcmp("123", dst[0].data, dst[0].size));
+	ASSERT(!memcmp("456", dst[1].data, dst[1].size));
+	ASSERT(!memcmp("789", dst[2].data, dst[2].size));
+
+	#undef DST_SIZE
 	PASS();
 }
 

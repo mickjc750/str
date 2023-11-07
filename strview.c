@@ -275,6 +275,19 @@ strview_t strview_split_first_delim_strview(strview_t* strview_ptr, strview_t de
 	return result;
 }
 
+int strview_split_all_cstr(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims)
+{
+	return strview_split_all_strview(dst_size, dst, src, cstr(delims));
+}
+
+int strview_split_all_strview(int dst_size, strview_t dst[dst_size], strview_t src, strview_t delims)
+{
+	int count = 0;
+	while(strview_is_valid(src) && count < dst_size)
+		dst[count++] = strview_split_first_delim_strview(&src, delims);
+	return count;
+}
+
 strview_t strview_split_first_delim_cstr(strview_t* strview_ptr, const char* delims)
 {
 	return strview_split_first_delim_strview(strview_ptr, cstr(delims));
