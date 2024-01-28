@@ -60,6 +60,7 @@
 	TEST test_strbuf_insert_at_index(void);
 	TEST test_strbuf_insert_before(void);
 	TEST test_strbuf_insert_after(void);
+	TEST test_strbuf_to_cstr(void);
 
 	SUITE(suite_strview);
 	TEST test_strview_sub(void);
@@ -135,6 +136,7 @@ SUITE(suite_strbuf)
 	RUN_TEST(test_strbuf_insert_at_index);
 	RUN_TEST(test_strbuf_insert_before);
 	RUN_TEST(test_strbuf_insert_after);
+	RUN_TEST(test_strbuf_to_cstr);
 }
 
 SUITE(suite_strview)
@@ -1323,6 +1325,29 @@ TEST test_strbuf_insert_after(void)
 
 	strbuf_destroy(&buf);
 	ASSERT(!buf);
+	PASS();
+}
+
+TEST test_strbuf_to_cstr(void)
+{
+	strbuf_t* dbuf = strbuf_create(0, NULL);
+	strbuf_t* sbuf = strbuf_create_fixed(static_buf, STATIC_BUFFER_SIZE);
+	char* dstr;
+	char* sstr;
+
+	strbuf_assign(&dbuf, cstr("Some test string in a dynamic buffer, hello test."));
+	strbuf_assign(&sbuf, cstr("Some test string in a static buffer, hello test."));
+
+	dstr = strbuf_to_cstr(&dbuf);
+	sstr = strbuf_to_cstr(&sbuf);
+
+	ASSERT(dbuf == NULL);
+	ASSERT(sbuf == NULL);
+
+	ASSERT(!strcmp(dstr, "Some test string in a dynamic buffer, hello test."));
+	ASSERT(!strcmp(sstr, "Some test string in a static buffer, hello test."));
+
+	free(dstr);	// this should not segfault or leak memory.
 	PASS();
 }
 

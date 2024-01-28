@@ -365,6 +365,29 @@ void strbuf_destroy(strbuf_t** buf_ptr)
 	};	
 }
 
+char* strbuf_to_cstr(strbuf_t** buf_ptr)
+{
+	int len;
+	char* str = NULL;
+	strbuf_allocator_t allocator;
+	if(buf_ptr && *buf_ptr)
+	{
+		len = (*buf_ptr)->size;
+		if(buf_is_dynamic(*buf_ptr))
+		{
+			allocator = (*buf_ptr)->allocator;
+			str = (void*)(*buf_ptr);
+			memmove(str, (*buf_ptr)->cstr, len);
+			str = allocator.allocator(&allocator, str, len+1);
+		}
+		else
+			str = (*buf_ptr)->cstr;
+		str[len] = 0;
+		*buf_ptr = NULL;
+	};
+	return str;
+}
+
 strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str)
 {
 	strbuf_t* buf;

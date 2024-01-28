@@ -453,6 +453,16 @@
  **********************************************************************************/
 	void strbuf_destroy(strbuf_t** buf_ptr);
 
+/**
+ * @brief Remove metadata from strbuf and reallocate as a naked 0 terminated c string.
+ * @param buf_ptr The address of a pointer to the buffer. This pointer will be NULL after the operation.
+ * @return A memory allocation containing a regular c string.
+ * @note Used for applications where an interface expects a regular heap allocated c string.
+ * @note Care should be taken to free the returned string with the same allocator that was used to create the buffer.
+ * @note If used on a static buffer, the ->cstr member is returned and *buf_ptr is NULLed.
+ * @note To instead copy the buffer contents to a pre-existing memory space, use strview_to_cstr().
+ **********************************************************************************/
+	char* strbuf_to_cstr(strbuf_t** buf_ptr);
 
 /*
 	For the below assign/append/prepend/insert functions:

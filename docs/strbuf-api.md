@@ -192,6 +192,14 @@ Example use:
  Free memory allocated to hold the buffer and its contents. buf_ptr is nulled.
 
 &nbsp;
+## `char* strbuf_to_cstr(strbuf_t** buf_ptr);`
+ Remove metadata from strbuf and reallocate as a naked 0 terminated c string. buf_ptr is nulled.
+ Used for applications where an interface expects a regular heap allocated c string.
+ Care should be taken to free the returned string with the same allocator that was used to create the buffer.
+ If used on a static buffer, the ->cstr member is returned and *buf_ptr is still nulled.
+ To instead copy the buffer contents to a pre-existing memory space, use strview_to_cstr().
+
+&nbsp;
 ## `strview_t strbuf_view(strbuf_t** buf_ptr);`
  Return strview_t of buffer contents.
 
