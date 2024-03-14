@@ -633,7 +633,7 @@
  * @note Only available if build with -DSTRBUF_PROVIDE_PRINTF
  * @note This uses vsnprintf() from stdio.h
  **********************************************************************************/
-	strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);
+	strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...) __attribute__((format(printf, 2, 3)));
 
 /**
  * @brief non-variadic version of strbuf_printf().
@@ -655,7 +655,7 @@
  * @note Only available if build with -DSTRBUF_PROVIDE_PRINTF
  * @note This uses vsnprintf() from stdio.h
  **********************************************************************************/
-	strview_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...);
+	strview_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...) __attribute__((format(printf, 2, 3)));
 
 /**
  * @brief non-variadic version of strbuf_append_printf().
@@ -679,7 +679,7 @@
  * @note Only available if build with -DSTRBUF_PROVIDE_PRNF
  * @note This uses vfptrprnf() from prnf.h
  **********************************************************************************/
-	strview_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...);
+	strview_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...) __attribute__((format(printf, 2, 3)));
 
 /**
  * @brief non-variadic version of strbuf_prnf().
@@ -701,7 +701,7 @@
  * @note Only available if build with -DSTRBUF_PROVIDE_PRNF
  * @note This uses vfptrprnf() from prnf.h
  **********************************************************************************/
-	strview_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...);
+	strview_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...) __attribute__((format(printf, 2, 3)));
 
 /**
  * @brief non-variadic version of strbuf_append_prnf().
