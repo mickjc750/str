@@ -562,3 +562,18 @@ static strview_t split_index(strview_t* strview_ptr, int index)
 
 	return result;
 }
+
+strview_t strview_dequote(strview_t src)
+{
+	strview_t result = src;
+	char quote_char;
+
+	if(result.size > 1)
+		quote_char = result.data[0];
+	while( 	(result.size > 1)
+	 && 	(result.data[0] == quote_char)
+	 && 	(result.data[result.size-1] == quote_char) )
+		result = strview_sub(result, 1, -1);
+	return result;
+}
+

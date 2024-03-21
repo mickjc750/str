@@ -745,5 +745,16 @@
  * *********************************************************************************/
 	strview_t strview_split_line(strview_t* src, char* eol);
 
+/**
+ * @brief Remove quotation.
+ * @param src The view to de-quote.
+ * @return A view of the src without quotes.
+ * @note Multiple levels of quotation will be removed providing it is of the same type eg.
+ * @note ""Fred"" yields Fred. "'Fred'" yields 'Fred'. '"Fred"' yields "Fred"
+ * @note Does not trim whitespace first, use strview_trim() for that.
+ * *********************************************************************************/
+	strview_t strview_dequote(strview_t src);
+
+
 #endif
 

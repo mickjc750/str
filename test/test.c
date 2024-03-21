@@ -90,6 +90,7 @@
 	TEST test_strview_split_line(void);
 	TEST test_strview_split_left(void);
 	TEST test_strview_split_right(void);
+	TEST test_strview_dequote(void);
 	TEST test_strnum_value(void);
 
 //********************************************************************************************************
@@ -169,7 +170,7 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_split_left);
 	RUN_TEST(test_strview_split_right);
 	RUN_TEST(test_strnum_value);
-
+	RUN_TEST(test_strview_dequote);
 }
 
 TEST test_strbuf_create_using_malloc(void)
@@ -1425,6 +1426,37 @@ TEST test_strview_split_right(void)
 	str3 = strview_split_right(&str1, str2);
 	ASSERT(!strview_is_valid(str3));
 	ASSERT(strview_is_match(str1, cstr("Hello-testing-123")));
+
+	PASS();
+}
+
+TEST test_strview_dequote(void)
+{
+	strview_t str1;
+
+	str1 = strview_dequote(cstr("\"Fred\""));
+	ASSERT(strview_is_match(str1, cstr("Fred")));
+
+	str1 = strview_dequote(cstr("\'Fred\'"));
+	ASSERT(strview_is_match(str1, cstr("Fred")));
+
+	str1 = strview_dequote(cstr("\"\'Fred\'\""));
+	ASSERT(strview_is_match(str1, cstr("'Fred'")));
+
+	str1 = strview_dequote(cstr("\'\"Fred\"\'"));
+	ASSERT(strview_is_match(str1, cstr("\"Fred\"")));
+
+	str1 = strview_dequote(cstr("\'\'\"Fred\"\'\'"));
+	ASSERT(strview_is_match(str1, cstr("\"Fred\"")));
+
+	str1 = strview_dequote(cstr("\"\"\'Fred\'\"\""));
+	ASSERT(strview_is_match(str1, cstr("'Fred'")));
+
+	str1 = strview_dequote(cstr("\"\'Fred\"\'"));		//dont remove quotes that don't match ie. 'Fred"
+	ASSERT(strview_is_match(str1, cstr("\"\'Fred\"\'")));
+
+	str1 = strview_dequote(cstr(" \"Fred\""));			//don't trim space
+	ASSERT(strview_is_match(str1, cstr(" \"Fred\"")));
 
 	PASS();
 }
