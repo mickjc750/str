@@ -1034,6 +1034,29 @@ TEST test_strbuf_append_prnf(void)
 	ASSERT(!memcmp(str1.data, "Hello Appending one more number 748921", str1.size));
 	ASSERT(buf->cstr[buf->size] == 0);	//check the 0 terminator is in place
 
+	//assign 240 bytes
+	strbuf_assign(&buf, cstr("\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF\
+0123456789ABCDEF"));
+
+	//append 16
+	strbuf_append_printf(&buf, "012345670123456~");
+
+	ASSERT(buf->cstr[255] == '~');
+
 	strbuf_destroy(&buf);
 	ASSERT(!buf);
 	PASS();
