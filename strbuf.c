@@ -224,7 +224,7 @@ strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list 
 		};
 
 		if(!failed)
-			buf->size += vsnprintf(&buf->cstr[buf->size], buf->capacity - buf->size, format, vb);
+			buf->size += vsnprintf(&buf->cstr[buf->size], buf->capacity - buf->size + 1, format, vb);
 		else
 			empty_buf(buf);
 
