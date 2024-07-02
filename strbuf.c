@@ -634,7 +634,7 @@ static strview_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 		};
 	}
 	else
-		empty_buf(build_buf);
+		empty_buf(dst_buf);
 
 	*buf_ptr = dst_buf;
 
