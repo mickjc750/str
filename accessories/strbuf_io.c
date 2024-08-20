@@ -17,7 +17,7 @@
 // Public functions
 //********************************************************************************************************
 
-int strbuf_read(strbuf_t** buf_ptr, int fd)
+int strbuf_append_read(strbuf_t** buf_ptr, int fd)
 {
 	int retval = 0;
 	strbuf_t *buf;
@@ -26,7 +26,7 @@ int strbuf_read(strbuf_t** buf_ptr, int fd)
 	{
 		buf = *buf_ptr;
 
-		retval = read(fd, buf->cstr, buf->capacity - buf->size);
+		retval = read(fd, &buf->cstr[buf->size], buf->capacity - buf->size);
 		if(retval > 0)
 		{
 			buf->size += retval;

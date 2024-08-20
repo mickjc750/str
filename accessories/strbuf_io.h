@@ -25,7 +25,7 @@
  * @note The return value is that returned by read(), read will always be called even if remaining space in the buffer is 0.
  * @note Does not increase the buffers capacity. Use strbuf_grow() to suitably size the buffer first.
    **********************************************************************************/
-	int strbuf_read(strbuf_t** buf_ptr, int fd);
+	int strbuf_append_read(strbuf_t** buf_ptr, int fd);
 
 /**
  * @brief Attempt to write the contents of the buffer using a POSIX write() and remove the number of bytes written.
