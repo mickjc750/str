@@ -341,15 +341,6 @@
 //********************************************************************************************************
 
 /**
- * @brief Register default allocator.
- * @param allocator A pointer to a strbuf_allocator_t which provides the allocator to use.
- * @note Replaces malloc/free as the default allocator, when none is provided to strbuf_create()
- * @note The argument is copied, so the passed structure may be temporary.
- * @endcode
-  **********************************************************************************/
-	void strbuf_register_default_allocator(strbuf_allocator_t allocator);
-
-/**
  * @brief Create a new empty buffer.
  * @param initial_capacity The initial capacity of the buffer. This must be <= INT_MAX. It may  be 0.
  * @param allocator A pointer to a strbuf_allocator_t which provides the allocator to use, or NULL to use the default allocator.

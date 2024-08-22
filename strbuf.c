@@ -54,9 +54,6 @@
 
 #ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
 	static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
-	static strbuf_allocator_t default_allocator = (strbuf_allocator_t){.allocator=allocfunc_stdlib, .app_data=NULL};
-#else
-	static strbuf_allocator_t default_allocator = (strbuf_allocator_t){.allocator=NULL, .app_data=NULL};
 #endif
 
 //********************************************************************************************************
@@ -74,20 +71,18 @@ static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* p
 	#endif
 	return result;
 }
+	strbuf_allocator_t strbuf_default_allocator = (strbuf_allocator_t){.allocator=allocfunc_stdlib, .app_data=NULL};
+#else
+	strbuf_allocator_t weak_default_allocator = (strbuf_allocator_t){.allocator=NULL, .app_data=NULL};
+	#pragma weak strbuf_default_allocator = weak_default_allocator
 #endif
-
-void strbuf_register_default_allocator(strbuf_allocator_t allocator)
-{
-	default_allocator.allocator = allocator.allocator;
-	default_allocator.app_data = allocator.app_data;
-}
 
 strbuf_t* strbuf_create_empty(size_t initial_capacity, strbuf_allocator_t* allocator)
 {
 	strbuf_t* result;
 	
 	if(!allocator)
-		allocator = &default_allocator;
+		allocator = &strbuf_default_allocator;
 
 	if(allocator->allocator && initial_capacity <= INT_MAX)
 		result = create_buf((int)initial_capacity, *allocator);
@@ -101,7 +96,7 @@ strbuf_t* strbuf_create_init(strview_t initial_content, strbuf_allocator_t* allo
 	strbuf_t* result;
 	
 	if(!allocator)
-		allocator = &default_allocator;
+		allocator = &strbuf_default_allocator;
 
 	if(allocator->allocator)
 	{
