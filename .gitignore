@@ -19,3 +19,6 @@
 *.out
 *.hex
 *.eep
+
+# Unignore Makefile
+!Makefile
