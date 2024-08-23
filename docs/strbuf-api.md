@@ -74,7 +74,7 @@ As mybuffer is a pointer, members of the strbuf_t may be accessed using the arro
 # Providing an allocator for strbuf_create().
 
  **strbuf_create()** *may* be passed an allocator. If you just want strbuf_create() to use stdlib's malloc and free, then simply add -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB to your compiler options, and pass a NULL to the allocator parameter of strbuf_create(). If you want to check that stdlib's allocation/resize actually succeeded, you can also add -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB which uses regular assert() to check this.
- If you don't want to use stdlib's malloc and free, and also don't want to pass your custom allocator to every occurrence of strbuf_create(), then you can register a default allocator at the start of your application using **strbuf_register_default_allocator(strbuf_allocator_t allocator);** 
+ If you don't want to use stdlib's malloc and free, and also don't want to pass your custom allocator to every occurrence of strbuf_create(), then you can provide a default allocator named **strbuf_default_allocator** (see the examples/ provided)
 
  The following __strbuf_allocator_t__ type is defined by __strbuf.h__
 

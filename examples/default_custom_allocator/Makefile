@@ -2,12 +2,12 @@
 #
 
 # Target file name (without extension).
-TARGET = static-buf
+TARGET = default-custom-alloc
 
 # List C source files here. (C dependencies are automatically generated.)
 # To exclude certain files in a folder remove the $(wildcard) and 
 # list them seperated by spaces, ie src/main.c src/util.c 
-SRC = static-buf.c ../../strbuf.c ../../strview.c
+SRC = default-custom-alloc.c ../../strbuf.c ../../strview.c
 
 # List any extra directories to look for include files here.
 #     Each directory must be seperated by a space.
@@ -126,10 +126,11 @@ clean: begin clean_list end
 clean_list :
 	@echo
 	@echo $(MSG_CLEANING)
-	$(REMOVE) $(TARGET)
 	$(REMOVE) $(SRC:%.c=$(OBJLSTDIR)/%.o)
 	$(REMOVE) $(SRC:%.c=$(OBJLSTDIR)/%.lst)
+	$(REMOVE) $(TARGET)
 	$(REMOVEDIR) .dep
+	
 
 # Create object files directory
 $(shell mkdir $(OBJLSTDIR) 2>/dev/null)

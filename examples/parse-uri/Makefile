@@ -91,7 +91,7 @@ GENDEPFLAGS = -MMD -MP -MF .dep/$(@F).d
 ALL_CFLAGS = -I. $(CFLAGS) $(GENDEPFLAGS)
 
 # Default target.
-all: begin gccversion buildinfo build end
+all: begin gccversion build end
 
 
 build: tgt
@@ -105,18 +105,9 @@ begin:
 	@echo $(MSG_BEGIN)
 
 end:
-	@cat build_date.inc
 	@echo $(MSG_END)
 	@echo
 
-# Gather information about build
-buildinfo:
-	@$(CC) --version | grep gcc | awk '{print "\x22" $$0 "\x22"}' > gcc_version.inc
-	@date --iso-8601=seconds -u | awk '{print "\x22" $$0 "\x22"}' > build_date.inc
-	@read LASTNUM < build_number.inc;	\
-	NEWNUM=$$(($$LASTNUM + 1));			\
-	echo "$$NEWNUM" > build_number.inc
-	@touch version.c
 
 # Display compiler version information.
 gccversion : 
@@ -145,6 +136,7 @@ clean_list :
 	@echo $(MSG_CLEANING)
 	$(REMOVE) $(SRC:%.c=$(OBJLSTDIR)/%.o)
 	$(REMOVE) $(SRC:%.c=$(OBJLSTDIR)/%.lst)
+	$(REMOVE) $(TARGET)
 	$(REMOVEDIR) .dep
 
 # Create object files directory
@@ -154,4 +146,4 @@ $(shell mkdir $(OBJLSTDIR) 2>/dev/null)
 -include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
 
 # Listing of phony targets.
-.PHONY : all begin end buildinfo gccversion build tgt clean clean_list 
+.PHONY : all begin end gccversion build tgt clean clean_list 

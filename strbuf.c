@@ -64,8 +64,11 @@
 static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size)
 {
 	(void)this_allocator;
-	void* result;
-	result = realloc(ptr_to_free, size);
+	void* result = NULL;
+	if(size == 0)
+		free(ptr_to_free);
+	else
+		result = realloc(ptr_to_free, size);
 	#ifdef STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
 		assert(size==0 || result);
 	#endif
@@ -73,8 +76,8 @@ static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* p
 }
 	strbuf_allocator_t strbuf_default_allocator = (strbuf_allocator_t){.allocator=allocfunc_stdlib, .app_data=NULL};
 #else
-	strbuf_allocator_t weak_default_allocator = (strbuf_allocator_t){.allocator=NULL, .app_data=NULL};
-	#pragma weak strbuf_default_allocator = weak_default_allocator
+	#pragma weak strbuf_default_allocator
+	strbuf_allocator_t strbuf_default_allocator = (strbuf_allocator_t){.allocator=NULL, .app_data=NULL};
 #endif
 
 strbuf_t* strbuf_create_empty(size_t initial_capacity, strbuf_allocator_t* allocator)

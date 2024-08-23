@@ -34,11 +34,11 @@
 int main(int argc, const char* argv[])
 {
 
-	strbuf_allocator_t str_allocator = {.allocator = allocator};
+	strbuf_allocator_t custom_allocator = {.allocator = allocator};
 	strbuf_t* buf;
 
 	DBG("Creating buffer with initial capacity of %i", INITIAL_BUF_CAPACITY);
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, &str_allocator);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY, &custom_allocator);
 
 	strbuf_append(&buf, cstr("This "));
 	strbuf_append(&buf, cstr("buffer "));
@@ -64,8 +64,12 @@ int main(int argc, const char* argv[])
 static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size)
 {
 	(void)this_allocator;
-	void* result;
-	result = realloc(ptr_to_free, size);
+	void* result = NULL;
+	DBG("(Custom allocator called)");
+	if(size == 0)
+		free(ptr_to_free);
+	else
+		result = realloc(ptr_to_free, size);
 	assert(size==0 || result);	// You need to catch a failed allocation here.
 	return result;
 }
