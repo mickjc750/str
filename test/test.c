@@ -68,7 +68,6 @@
 	TEST test_strview_split_first_delim(void);
 	TEST test_strview_split_all(void);
 	TEST test_strview_split_first_delim_edge_cases(void);
-	TEST test_strview_split_first_delim_nocase(void);
 	TEST test_strview_split_last_delim(void);
 	TEST test_strview_split_last_delim_edge_cases(void);
 	TEST test_strview_find_first(void);
@@ -147,7 +146,6 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_split_first_delim);
 	RUN_TEST(test_strview_split_all);
 	RUN_TEST(test_strview_split_first_delim_edge_cases);
-	RUN_TEST(test_strview_split_first_delim_nocase);
 	RUN_TEST(test_strview_split_last_delim);
 	RUN_TEST(test_strview_split_last_delim_edge_cases);
 	RUN_TEST(test_strview_find_first);
@@ -471,23 +469,6 @@ TEST test_strview_split_first_delim_edge_cases(void)
 	ASSERT(str1.size == sizeof("no-delims")-1);
 	ASSERT(str2.data == NULL);
 	ASSERT(str2.size == 0);
-
-	PASS();
-}
-
-TEST test_strview_split_first_delim_nocase(void)
-{
-	strview_t str1, str2;
-
-	str2 = cstr("123r456R789");
-           
-	str1 = strview_split_first_delim_nocase(&str2, cstr("r"));
-	ASSERT(!memcmp("123", str1.data, str1.size));
-	str1 = strview_split_first_delim_nocase(&str2, "r");
-	ASSERT(!memcmp("456", str1.data, str1.size));
-	str1 = strview_split_first_delim_nocase(&str2, cstr("r"));
-	ASSERT(!memcmp("789", str1.data, str1.size));
-	ASSERT(!strview_is_valid(str2));	//source is entirely consumed
 
 	PASS();
 }

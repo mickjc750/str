@@ -293,21 +293,6 @@ strview_t strview_split_first_delim_cstr(strview_t* strview_ptr, const char* del
 	return strview_split_first_delim_strview(strview_ptr, cstr(delims));
 }
 
-strview_t strview_split_first_delim_nocase_strview(strview_t* strview_ptr, strview_t delims)
-{
-	strview_t result = STRVIEW_INVALID;
-	
-	if(strview_ptr)
-		result = split_first_delim(strview_ptr, delims, NOT_CASE_SENSETIVE);
-
-	return result;
-}
-
-strview_t strview_split_first_delim_nocase_cstr(strview_t* strview_ptr, const char* delims)
-{
-	return strview_split_first_delim_nocase_strview(strview_ptr, cstr(delims));
-}
-
 strview_t strview_split_last_delim_strview(strview_t* strview_ptr, strview_t delims)
 {
 	strview_t result = STRVIEW_INVALID;
@@ -321,21 +306,6 @@ strview_t strview_split_last_delim_strview(strview_t* strview_ptr, strview_t del
 strview_t strview_split_last_delim_cstr(strview_t* strview_ptr, const char* delims)
 {
 	return strview_split_last_delim_strview(strview_ptr, cstr(delims));
-}
-
-strview_t strview_split_last_delim_nocase_strview(strview_t* strview_ptr, strview_t delims)
-{
-	strview_t result = STRVIEW_INVALID;
-	
-	if(strview_ptr)
-		result = split_last_delim(strview_ptr, delims, NOT_CASE_SENSETIVE);
-
-	return result;
-}
-
-strview_t strview_split_last_delim_nocase_cstr(strview_t* strview_ptr, const char* delims)
-{
-	return strview_split_last_delim_nocase_strview(strview_ptr, cstr(delims));
 }
 
 strview_t strview_split_index(strview_t* strview_ptr, int index)

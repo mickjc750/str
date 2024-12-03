@@ -388,7 +388,7 @@ char* strbuf_to_cstr(strbuf_t** buf_ptr)
 
 strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str)
 {
-	strbuf_t* buf;
+	strbuf_t* buf = NULL;
 	bool failed;
 	if(buf_ptr && *buf_ptr)
 	{
