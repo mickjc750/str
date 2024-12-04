@@ -12,17 +12,14 @@
 //	#include <stdio.h>
 //	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
-	#define CASE_SENSETIVE		true
-	#define NOT_CASE_SENSETIVE	false
-
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
 
-	static bool contains_char(strview_t str, char c, bool case_sensetive);
+	static bool contains_char(strview_t str, char c);
 
-	static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool case_sensetive);
-	static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool case_sensetive);
+	static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims);
+	static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims);
 	static strview_t split_index(strview_t* strview_ptr, int index);
 
 	static int memcmp_nocase(const char* a, const char* b, size_t size);
@@ -171,7 +168,7 @@ strview_t strview_trim_start_cstr(strview_t str, const char* chars_to_trim)
 
 strview_t strview_trim_start_strview(strview_t str, strview_t chars_to_trim)
 {
-	while(str.size && contains_char(chars_to_trim, *str.data, CASE_SENSETIVE))
+	while(str.size && contains_char(chars_to_trim, *str.data))
 	{
 		str.data++;
 		str.size--;
@@ -187,7 +184,7 @@ strview_t strview_trim_end_cstr(strview_t str, const char* chars_to_trim)
 
 strview_t strview_trim_end_strview(strview_t str, strview_t chars_to_trim)
 {
-	while(str.size && contains_char(chars_to_trim, str.data[str.size-1], CASE_SENSETIVE))
+	while(str.size && contains_char(chars_to_trim, str.data[str.size-1]))
 		str.size--;
 
 	return str;
@@ -270,7 +267,7 @@ strview_t strview_split_first_delim(strview_t* strview_ptr, const char* delims)
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_first_delim(strview_ptr, cstr(delims), CASE_SENSETIVE);
+		result = split_first_delim(strview_ptr, cstr(delims));
 
 	return result;
 }
@@ -288,7 +285,7 @@ strview_t strview_split_last_delim(strview_t* strview_ptr, const char* delims)
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_last_delim(strview_ptr, cstr(delims), CASE_SENSETIVE);
+		result = split_last_delim(strview_ptr, cstr(delims));
 
 	return result;
 }
@@ -385,17 +382,14 @@ strview_t strview_split_right(strview_t* strview_ptr, strview_t pos)
 // Private functions
 //********************************************************************************************************
 
-static bool contains_char(strview_t str, char c, bool case_sensetive)
+static bool contains_char(strview_t str, char c)
 {
 	bool found = false;
 	const char* ptr = str.data;
 
 	while(!found && ptr != &str.data[str.size])
 	{
-		if(case_sensetive)
-			found = *ptr == c;
-		else
-			found = toupper(*ptr) == toupper(c);
+		found = *ptr == c;
 		ptr++;
 	};
 
@@ -412,12 +406,12 @@ static int memcmp_nocase(const char* a, const char* b, size_t size)
 	return result;
 }
 
-static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool case_sensetive)
+static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims)
 {
 	strview_t result;
 	bool found = false;
 	const char* ptr;
-	
+
 	ptr = strview_ptr->data;
 
 	if(strview_ptr->data && delims.data)
@@ -425,7 +419,7 @@ static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, boo
 		// try to find the delim
 		while(ptr != &strview_ptr->data[strview_ptr->size] && !found)
 		{
-			found = contains_char(delims, *ptr, case_sensetive);
+			found = contains_char(delims, *ptr);
 			ptr += !found;
 		};
 	};
@@ -451,7 +445,7 @@ static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, boo
 	return result;
 }
 
-static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool case_sensetive)
+static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims)
 {
 	strview_t result;
 	bool found = false;
@@ -463,7 +457,7 @@ static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool
 		ptr = &strview_ptr->data[strview_ptr->size-1];
 		while(ptr != strview_ptr->data-1 && !found)
 		{
-			found = contains_char(delims, *ptr, case_sensetive);
+			found = contains_char(delims, *ptr);
 			ptr -= !found;
 		};
 	};
