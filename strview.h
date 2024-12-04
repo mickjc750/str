@@ -490,27 +490,30 @@
  * @param dst_size The number of elements available in the destination.
  * @param src The the view to split.
  * @param delims A C string of the delimiter character/s.
+ * @param exclude_quotes If true, ignore delimiters contained within "quotes"
  * @return The number of elements written to dst[]
  * *********************************************************************************/
-	int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims);
+	int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, bool exclude_quotes);
 
 
 /**
  * @brief Split view by delimiters.
  * @param src The address of the view to split.
  * @param delims A view of the delimiter character/s.
+ * @param exclude_quotes If true, ignore delimiters contained within "quotes"
  * @return A view up to, but not including, the first delimiter found.
  * *********************************************************************************/
-	strview_t strview_split_first_delim(strview_t* src, const char* delims);
+	strview_t strview_split_first_delim(strview_t* src, const char* delims, bool exclude_quotes);
 
 
 /**
  * @brief Split view by last delimiter.
  * @param src The address of the view to split.
  * @param delims A view of the delimiter character/s.
+ * @param exclude_quotes If true, ignore delimiters contained within "quotes"
  * @return A view from, but not including, the last delimiter found.
  * *********************************************************************************/
-	strview_t strview_split_last_delim(strview_t* src, const char* delims);
+	strview_t strview_split_last_delim(strview_t* src, const char* delims, bool exclude_quotes);
 
 
 /**

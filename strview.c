@@ -18,8 +18,8 @@
 
 	static bool contains_char(strview_t str, char c);
 
-	static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims);
-	static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims);
+	static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes);
+	static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes);
 	static strview_t split_index(strview_t* strview_ptr, int index);
 
 	static int memcmp_nocase(const char* a, const char* b, size_t size);
@@ -262,30 +262,30 @@ strview_t strview_find_last_cstr(strview_t haystack, const char* needle)
 	return strview_find_last_strview(haystack, cstr(needle));
 }
 
-strview_t strview_split_first_delim(strview_t* strview_ptr, const char* delims)
+strview_t strview_split_first_delim(strview_t* strview_ptr, const char* delims, bool exclude_quotes)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_first_delim(strview_ptr, cstr(delims));
+		result = split_first_delim(strview_ptr, cstr(delims), exclude_quotes);
 
 	return result;
 }
 
-int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims)
+int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, bool exclude_quotes)
 {
 	int count = 0;
 	while(strview_is_valid(src) && count < dst_size)
-		dst[count++] = strview_split_first_delim(&src, delims);
+		dst[count++] = strview_split_first_delim(&src, delims, exclude_quotes);
 	return count;
 }
 
-strview_t strview_split_last_delim(strview_t* strview_ptr, const char* delims)
+strview_t strview_split_last_delim(strview_t* strview_ptr, const char* delims, bool exclude_quotes)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_last_delim(strview_ptr, cstr(delims));
+		result = split_last_delim(strview_ptr, cstr(delims), exclude_quotes);
 
 	return result;
 }
@@ -323,7 +323,7 @@ strview_t strview_split_line(strview_t* strview_ptr, char* eol)
 				strview_pop_first_char(&src);
 		};
 
-		result = strview_split_first_delim(&src, "\r\n");
+		result = strview_split_first_delim(&src, "\r\n", false);
 
 		if(strview_is_valid(src))	//a line ending was found
 		{
@@ -406,12 +406,12 @@ static int memcmp_nocase(const char* a, const char* b, size_t size)
 	return result;
 }
 
-static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims)
+static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes)
 {
 	strview_t result;
 	bool found = false;
 	const char* ptr;
-
+	bool in_quotes = false;
 	ptr = strview_ptr->data;
 
 	if(strview_ptr->data && delims.data)
@@ -419,7 +419,8 @@ static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims)
 		// try to find the delim
 		while(ptr != &strview_ptr->data[strview_ptr->size] && !found)
 		{
-			found = contains_char(delims, *ptr);
+			in_quotes ^= (*ptr == '\"') && exclude_quotes;
+			found = !in_quotes && contains_char(delims, *ptr);
 			ptr += !found;
 		};
 	};
@@ -445,11 +446,12 @@ static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims)
 	return result;
 }
 
-static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims)
+static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes)
 {
 	strview_t result;
 	bool found = false;
 	const char* ptr;
+	bool in_quotes = false;
 
 	if(strview_ptr->data && strview_ptr->size && delims.data)
 	{
@@ -457,7 +459,8 @@ static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims)
 		ptr = &strview_ptr->data[strview_ptr->size-1];
 		while(ptr != strview_ptr->data-1 && !found)
 		{
-			found = contains_char(delims, *ptr);
+			in_quotes ^= (*ptr == '\"') && exclude_quotes;
+			found = !in_quotes && contains_char(delims, *ptr);
 			ptr -= !found;
 		};
 	};
