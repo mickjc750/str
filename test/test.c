@@ -388,11 +388,11 @@ TEST test_strview_split_first_delim(void)
 
 	str2 = cstr("123/456/789");
 
-	str1 = strview_split_first_delim(&str2, cstr("/"));
+	str1 = strview_split_first_delim(&str2, "/");
 	ASSERT(!memcmp("123", str1.data, str1.size));
 	str1 = strview_split_first_delim(&str2, "/");
 	ASSERT(!memcmp("456", str1.data, str1.size));
-	str1 = strview_split_first_delim(&str2, cstr("/"));
+	str1 = strview_split_first_delim(&str2, "/");
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
 
@@ -423,7 +423,7 @@ TEST test_strview_split_all(void)
 	ASSERT(count == 0);
 	ASSERT(!strview_is_valid(dst[0]));
 
-	count = strview_split_all(DST_SIZE, dst, cstr("123/456/789"), cstr("/"));
+	count = strview_split_all(DST_SIZE, dst, cstr("123/456/789"), "/");
 	ASSERT(count == 3);
 	ASSERT(!memcmp("123", dst[0].data, dst[0].size));
 	ASSERT(!memcmp("456", dst[1].data, dst[1].size));
@@ -439,13 +439,13 @@ TEST test_strview_split_first_delim_edge_cases(void)
 
 	str2 = cstr("/456/789/");
 
-	str1 = strview_split_first_delim(&str2, cstr("/"));
+	str1 = strview_split_first_delim(&str2, "/");
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
 	ASSERT(str2.size == 8);
 	ASSERT(!memcmp("456/789/", str2.data, str2.size));
 
-	str1 = strview_split_first_delim(&str2, cstr("/"));
+	str1 = strview_split_first_delim(&str2, "/");
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("456", str1.data, str1.size));
 	ASSERT(str2.size == 4);
@@ -457,14 +457,14 @@ TEST test_strview_split_first_delim_edge_cases(void)
 	ASSERT(str2.size == 0);
 	ASSERT(str2.data);		//remainder string should be valid and length 0, as a delim was found
 
-	str1 = strview_split_first_delim(&str2, cstr("/"));
+	str1 = strview_split_first_delim(&str2, "/");
 	ASSERT(str1.size == 0);		//split string should be the entire source, which is a valid string of length 0
 	ASSERT(str1.data);	
 	ASSERT(str2.size == 0);
 	ASSERT(str2.data == NULL); 	//remaining string should be invalid as there were no delims found
 
 	str2 = cstr("no-delims");
-	str1 = strview_split_first_delim(&str2, cstr("/"));
+	str1 = strview_split_first_delim(&str2, "/");
 	ASSERT(str1.data);
 	ASSERT(str1.size == sizeof("no-delims")-1);
 	ASSERT(str2.data == NULL);
@@ -478,7 +478,7 @@ TEST test_strview_split_last_delim(void)
 	strview_t str1, str2;
 
 	str2 = cstr("123/456/789");
-	str1 = strview_split_last_delim(&str2, cstr("/"));
+	str1 = strview_split_last_delim(&str2, "/");
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(str2.size == 7);
@@ -499,13 +499,13 @@ TEST test_strview_split_last_delim_edge_cases(void)
 
 	str2 = cstr("/456/789/");
 
-	str1 = strview_split_last_delim(&str2, cstr("/"));
+	str1 = strview_split_last_delim(&str2, "/");
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
 	ASSERT(str2.size == 8);
 	ASSERT(!memcmp("/456/789", str2.data, str2.size));
 
-	str1 = strview_split_last_delim(&str2, cstr("/"));
+	str1 = strview_split_last_delim(&str2, "/");
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(str2.size == 4);
@@ -517,7 +517,7 @@ TEST test_strview_split_last_delim_edge_cases(void)
 	ASSERT(str2.size == 0);
 	ASSERT(str2.data);
 
-	str1 = strview_split_last_delim(&str2, cstr("/"));
+	str1 = strview_split_last_delim(&str2, "/");
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
 	ASSERT(str2.size == 0);

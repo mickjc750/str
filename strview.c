@@ -265,47 +265,32 @@ strview_t strview_find_last_cstr(strview_t haystack, const char* needle)
 	return strview_find_last_strview(haystack, cstr(needle));
 }
 
-strview_t strview_split_first_delim_strview(strview_t* strview_ptr, strview_t delims)
+strview_t strview_split_first_delim(strview_t* strview_ptr, const char* delims)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_first_delim(strview_ptr, delims, CASE_SENSETIVE);
+		result = split_first_delim(strview_ptr, cstr(delims), CASE_SENSETIVE);
 
 	return result;
 }
 
-int strview_split_all_cstr(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims)
-{
-	return strview_split_all_strview(dst_size, dst, src, cstr(delims));
-}
-
-int strview_split_all_strview(int dst_size, strview_t dst[dst_size], strview_t src, strview_t delims)
+int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims)
 {
 	int count = 0;
 	while(strview_is_valid(src) && count < dst_size)
-		dst[count++] = strview_split_first_delim_strview(&src, delims);
+		dst[count++] = strview_split_first_delim(&src, delims);
 	return count;
 }
 
-strview_t strview_split_first_delim_cstr(strview_t* strview_ptr, const char* delims)
-{
-	return strview_split_first_delim_strview(strview_ptr, cstr(delims));
-}
-
-strview_t strview_split_last_delim_strview(strview_t* strview_ptr, strview_t delims)
+strview_t strview_split_last_delim(strview_t* strview_ptr, const char* delims)
 {
 	strview_t result = STRVIEW_INVALID;
 	
 	if(strview_ptr)
-		result = split_last_delim(strview_ptr, delims, CASE_SENSETIVE);
+		result = split_last_delim(strview_ptr, cstr(delims), CASE_SENSETIVE);
 
 	return result;
-}
-
-strview_t strview_split_last_delim_cstr(strview_t* strview_ptr, const char* delims)
-{
-	return strview_split_last_delim_strview(strview_ptr, cstr(delims));
 }
 
 strview_t strview_split_index(strview_t* strview_ptr, int index)
@@ -341,7 +326,7 @@ strview_t strview_split_line(strview_t* strview_ptr, char* eol)
 				strview_pop_first_char(&src);
 		};
 
-		result = strview_split_first_delim(&src, cstr("\r\n"));
+		result = strview_split_first_delim(&src, "\r\n");
 
 		if(strview_is_valid(src))	//a line ending was found
 		{

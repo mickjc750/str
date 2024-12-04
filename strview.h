@@ -257,68 +257,6 @@
 		)(haystack, needle)
 
 
-/**
- * @def strview_split_first_delim(strview_t* src, delims);
- * @brief (macro) Split view by delimiters.
- * @param src The address of the view to split.
- * @param delims A view or a C string of the delimiter character/s.
- * @return A view up to, but not including, the first delimiter found.
- * @note The returned view and the delimiter itself is removed from the source view.
- * @note If there are no delimiters, the entire source will be returned, and the source view becomes invalid.
- * @note Example:
- * @code{.c}
- *  strview_t date_view = cstr("2023/07/03");
- *  strview_t year_view  = strview_split_first_delim(&date_view, "/");
- *  strview_t month_view = strview_split_first_delim(&date_view, "/");
- *  strview_t day_view   = strview_split_first_delim(&date_view, "/");
- * @endcode
- * *********************************************************************************/
-	#define strview_split_first_delim(src, delims) _Generic((delims),\
-		const char*:	strview_split_first_delim_cstr,\
-		char*:			strview_split_first_delim_cstr,\
-		strview_t:		strview_split_first_delim_strview\
-		)(src, delims)
-
-
-/**
- * @def strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims);
- * @brief Split entire view by delimiters, into an array of views.
- * @param dst The destination array to write to.
- * @param dst_size The number of elements available in the destination.
- * @param src The view to split.
- * @param delims A view or a C string of the delimiter character/s.
- * @return The number of elements written to dst[]
- * *********************************************************************************/
-	#define strview_split_all(dst_size, dst, src, delims) _Generic((delims),\
-		const char*:	strview_split_all_cstr,\
-		char*:			strview_split_all_cstr,\
-		strview_t:		strview_split_all_strview\
-		)(dst_size, dst, src, delims)
-
-
-/**
- * @def strview_split_last_delim(strview_t* src, delims);
- * @brief (macro) Split view by last delimiter.
- * @param src The address of the view to split.
- * @param delims A view or a C string of the delimiter character/s.
- * @return A view from, but not including, the last delimiter found.
- * @note The returned view and the delimiter itself is removed from the source view.
- * @note If there are no delimiters, the entire source will be returned, and the source view becomes invalid.
- * @note Example:
- * @code{.c}
- *  strview_t date_view = cstr("2023/07/03");
- *  strview_t day_view   = strview_split_first_delim(&date_view, "/");
- *  strview_t month_view = strview_split_first_delim(&date_view, "/");
- *  strview_t year_view  = strview_split_first_delim(&date_view, "/");
- * @endcode
- * *********************************************************************************/
-	#define strview_split_last_delim(src, delims) _Generic((delims),\
-		const char*:	strview_split_last_delim_cstr,\
-		char*:			strview_split_last_delim_cstr,\
-		strview_t:		strview_split_last_delim_strview\
-		)(src, delims)
-
-
 //********************************************************************************************************
 // Public variables
 //********************************************************************************************************
@@ -539,36 +477,14 @@
 	strview_t strview_find_last_cstr(strview_t haystack, const char* needle);
 
 /**
- * @brief Split view by delimiters.
- * @param src The address of the view to split.
- * @param delims A view of the delimiter character/s.
- * @return A view up to, but not including, the first delimiter found.
- * @note Use via macro strview_split_first_delim()
- * *********************************************************************************/
-	strview_t strview_split_first_delim_strview(strview_t* src, strview_t delims);
-
-/**
  * @brief Split entire view by delimiters, into an array of views.
  * @param dst The destination array to write to.
  * @param dst_size The number of elements available in the destination.
  * @param src The the view to split.
  * @param delims A C string of the delimiter character/s.
  * @return The number of elements written to dst[]
- * @note Use via macro strview_split_all()
  * *********************************************************************************/
-	int strview_split_all_cstr(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims);
-
-
-/**
- * @brief Split entire view by delimiters, into an array of views.
- * @param dst The destination array to write to.
- * @param dst_size The number of elements available in the destination.
- * @param src The the view to split.
- * @param delims A view of the delimiter character/s.
- * @return The number of elements written to dst[]
- * @note Use via macro strview_split_all()
- * *********************************************************************************/
-	int strview_split_all_strview(int dst_size, strview_t dst[dst_size], strview_t src, strview_t delims);
+	int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims);
 
 
 /**
@@ -576,9 +492,8 @@
  * @param src The address of the view to split.
  * @param delims A view of the delimiter character/s.
  * @return A view up to, but not including, the first delimiter found.
- * @note Use via macro strview_split_first_delim()
  * *********************************************************************************/
-	strview_t strview_split_first_delim_cstr(strview_t* src, const char* delims);
+	strview_t strview_split_first_delim(strview_t* src, const char* delims);
 
 
 /**
@@ -586,19 +501,8 @@
  * @param src The address of the view to split.
  * @param delims A view of the delimiter character/s.
  * @return A view from, but not including, the last delimiter found.
- * @note Use via macro strview_split_last_delim()
  * *********************************************************************************/
-	strview_t strview_split_last_delim_strview(strview_t* src, strview_t delims);
-
-
-/**
- * @brief Split view by last delimiter.
- * @param src The address of the view to split.
- * @param delims A view of the delimiter character/s.
- * @return A view from, but not including, the last delimiter found.
- * @note Use via macro strview_split_last_delim()
- * *********************************************************************************/
-	strview_t strview_split_last_delim_cstr(strview_t* src, const char* delims);
+	strview_t strview_split_last_delim(strview_t* src, const char* delims);
 
 
 /**
