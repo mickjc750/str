@@ -22,7 +22,10 @@
 	static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes);
 	static strview_t split_index(strview_t* strview_ptr, int index);
 
-	static int memcmp_nocase(const char* a, const char* b, size_t size);
+	static strview_t find_first(strview_t haystack, strview_t needle, int(*comp_func)(const void*,const void*, size_t));
+	static strview_t find_last(strview_t haystack, strview_t needle, int(*comp_func)(const void*,const void*, size_t));
+
+	static int memcmp_nocase(const void* a, const void* b, size_t size);
 
 //********************************************************************************************************
 // Public functions
@@ -204,27 +207,7 @@ strview_t strview_trim_strview(strview_t str, strview_t chars_to_trim)
 
 strview_t strview_find_first_strview(strview_t haystack, strview_t needle)
 {
-	strview_t result = STRVIEW_INVALID;
-
-	const char* remaining_hay = haystack.data;
-	bool found = false;
-
-	if(haystack.data && needle.data)
-	{
-		while((&haystack.data[haystack.size] - remaining_hay >= needle.size) && !found)
-		{
-			found = !memcmp(remaining_hay, needle.data, needle.size);
-			remaining_hay += !found;
-		};
-	};
-
-	if(found)
-	{
-		result.data = remaining_hay;
-		result.size = needle.size;
-	};
-
-	return result;
+	return find_first(haystack, needle, memcmp);
 }
 
 strview_t strview_find_first_cstr(strview_t haystack, const char* needle)
@@ -234,27 +217,7 @@ strview_t strview_find_first_cstr(strview_t haystack, const char* needle)
 
 strview_t strview_find_last_strview(strview_t haystack, strview_t needle)
 {
-	strview_t result = STRVIEW_INVALID;
-
-	const char* remaining_hay = &haystack.data[haystack.size - needle.size];
-	bool found = false;
-
-	if(haystack.data && needle.data)
-	{
-		while((remaining_hay >= haystack.data) && !found)
-		{
-			found = !memcmp(remaining_hay, needle.data, needle.size);
-			remaining_hay -= !found;
-		};
-	};
-
-	if(found)
-	{
-		result.data = remaining_hay;
-		result.size = needle.size;
-	};
-
-	return result;
+	return find_last(haystack, needle, memcmp);
 }
 
 strview_t strview_find_last_cstr(strview_t haystack, const char* needle)
@@ -396,12 +359,14 @@ static bool contains_char(strview_t str, char c)
 	return found;
 }
 
-static int memcmp_nocase(const char* a, const char* b, size_t size)
+static int memcmp_nocase(const void* a, const void* b, size_t size)
 {
 	int result = 0;
+	const unsigned char *achar = a;
+	const unsigned char *bchar = b;
 
 	while(size-- && !result)
-		result = toupper((unsigned)(*a++)) - toupper((unsigned)(*b++));
+		result = toupper(*achar++) - toupper(*bchar++);
 
 	return result;
 }
@@ -526,6 +491,56 @@ strview_t strview_dequote(strview_t src)
 	 && 	(result.data[0] == quote_char)
 	 && 	(result.data[result.size-1] == quote_char) )
 		result = strview_sub(result, 1, -1);
+	return result;
+}
+
+static strview_t find_first(strview_t haystack, strview_t needle, int(*comp_func)(const void*,const void*, size_t))
+{
+	strview_t result = STRVIEW_INVALID;
+
+	const char* remaining_hay = haystack.data;
+	bool found = false;
+
+	if(haystack.data && needle.data)
+	{
+		while((&haystack.data[haystack.size] - remaining_hay >= needle.size) && !found)
+		{
+			found = !comp_func(remaining_hay, needle.data, needle.size);
+			remaining_hay += !found;
+		};
+	};
+
+	if(found)
+	{
+		result.data = remaining_hay;
+		result.size = needle.size;
+	};
+
+	return result;
+}
+
+static strview_t find_last(strview_t haystack, strview_t needle, int(*comp_func)(const void*,const void*, size_t))
+{
+	strview_t result = STRVIEW_INVALID;
+
+	const char* remaining_hay = &haystack.data[haystack.size - needle.size];
+	bool found = false;
+
+	if(haystack.data && needle.data)
+	{
+		while((remaining_hay >= haystack.data) && !found)
+		{
+			found = !comp_func(remaining_hay, needle.data, needle.size);
+			remaining_hay -= !found;
+		};
+	};
+
+	if(found)
+	{
+		result.data = remaining_hay;
+		result.size = needle.size;
+	};
+
 	return result;
 }
 
