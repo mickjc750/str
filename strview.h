@@ -347,6 +347,14 @@
 	bool strview_contains(strview_t haystack, strview_t needle);
 
 /**
+ * @brief Test if needle is in haystack.
+ * @param haystack The view to search within.
+ * @param needle A view of the contents to search for.
+ * @return true if the contents of needle is found within haystack.
+  **********************************************************************************/
+	bool strview_contains_nocase(strview_t haystack, strview_t needle);
+
+/**
  * @brief Swap two views.
  * @note This does not move any data, only the two views are swapped.
   **********************************************************************************/

@@ -92,6 +92,8 @@
 	TEST test_strview_split_left(void);
 	TEST test_strview_split_right(void);
 	TEST test_strview_dequote(void);
+	TEST test_strview_contains(void);
+	TEST test_strview_contains_nocase(void);
 	TEST test_strnum_value(void);
 
 //********************************************************************************************************
@@ -173,6 +175,8 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_split_right);
 	RUN_TEST(test_strnum_value);
 	RUN_TEST(test_strview_dequote);
+	RUN_TEST(test_strview_contains);
+	RUN_TEST(test_strview_contains_nocase);
 }
 
 TEST test_strbuf_create_using_malloc(void)
@@ -1548,6 +1552,27 @@ TEST test_strview_dequote(void)
 	str1 = strview_dequote(cstr(" \"Fred\""));			//don't trim space
 	ASSERT(strview_is_match(str1, cstr(" \"Fred\"")));
 
+	PASS();
+}
+
+TEST test_strview_contains(void)
+{
+	ASSERT(!strview_contains(cstr("bc..."), cstr("abc")));
+	ASSERT( strview_contains(cstr("abc.."), cstr("abc")));
+	ASSERT( strview_contains(cstr(".abc."), cstr("abc")));
+	ASSERT(!strview_contains(cstr(".abc."), cstr("aBc")));
+	ASSERT( strview_contains(cstr("..abc"), cstr("abc")));
+	ASSERT(!strview_contains(cstr("...ab"), cstr("abc")));
+	PASS();
+}
+
+TEST test_strview_contains_nocase(void)
+{
+	ASSERT(!strview_contains_nocase(cstr("bc..."), cstr("Abc")));
+	ASSERT( strview_contains_nocase(cstr("abc.."), cstr("aBc")));
+	ASSERT( strview_contains_nocase(cstr(".abc."), cstr("ABc")));
+	ASSERT( strview_contains_nocase(cstr("..abc"), cstr("abC")));
+	ASSERT(!strview_contains_nocase(cstr("...ab"), cstr("AbC")));
 	PASS();
 }
 

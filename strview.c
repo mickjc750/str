@@ -136,6 +136,11 @@ bool strview_contains(strview_t haystack, strview_t needle)
 	return strview_is_valid(strview_find_first(haystack, needle));
 }
 
+bool strview_contains_nocase(strview_t haystack, strview_t needle)
+{
+	return strview_is_valid(strview_find_first_nocase(haystack, needle));
+}
+
 strview_t strview_sub(strview_t str, int begin, int end)
 {
 	strview_t result = (strview_t){.size = 0, .data = str.data};
