@@ -71,8 +71,10 @@
 	TEST test_strview_split_last_delim(void);
 	TEST test_strview_split_last_delim_edge_cases(void);
 	TEST test_strview_find_first(void);
+	TEST test_strview_find_first_nocase(void);
 	TEST test_strview_find_first_edge_cases(void);
 	TEST test_strview_find_last(void);
+	TEST test_strview_find_last_nocase(void);
 	TEST test_strview_find_last_edge_cases(void);
 	TEST test_strview_is_valid(void);
 	TEST test_strview_append_char(void);
@@ -149,8 +151,10 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_split_last_delim);
 	RUN_TEST(test_strview_split_last_delim_edge_cases);
 	RUN_TEST(test_strview_find_first);
+	RUN_TEST(test_strview_find_first_nocase);
 	RUN_TEST(test_strview_find_first_edge_cases);
 	RUN_TEST(test_strview_find_last);
+	RUN_TEST(test_strview_find_last_nocase);
 	RUN_TEST(test_strview_find_last_edge_cases);
 	RUN_TEST(test_strview_is_valid);
 	RUN_TEST(test_strview_append_char);
@@ -578,6 +582,35 @@ TEST test_strview_find_first(void)
 	PASS();
 }
 
+TEST test_strview_find_first_nocase(void)
+{
+	strview_t str1, str2, search_result;
+
+	str1 = cstr("nEedle");
+	str2 = cstr("neeDle");
+	search_result = strview_find_first_nocase(str1, str2);
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 0);
+
+	str1 = cstr("Needle");
+	search_result = strview_find_first_nocase(str1, "needlE");
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 0);
+
+	str1 = cstr("neEDleneEdlE");
+	str2 = cstr("Needle");
+	search_result = strview_find_first_nocase(str1, str2);
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 0);
+
+	str1 = cstr("needLneedLe");
+	str2 = cstr("needle");
+	search_result = strview_find_first_nocase(str1, str2);
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 5);
+	PASS();
+}
+
 TEST test_strview_find_first_edge_cases(void)
 {
 	strview_t str1, str2, search_result;
@@ -630,6 +663,36 @@ TEST test_strview_find_last(void)
 	str1 = cstr("needlneedle");
 	str2 = cstr("needle");
 	search_result = strview_find_last(str1, str2);
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 5);
+
+	PASS();
+}
+
+TEST test_strview_find_last_nocase(void)
+{
+	strview_t str1, str2, search_result;
+
+	str1 = cstr("needle");
+	str2 = cstr("needlE");
+	search_result = strview_find_last_nocase(str1, str2);
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 0);
+
+	str1 = cstr("neeDle");
+	search_result = strview_find_last_nocase(str1, "nEedle");
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 0);
+
+	str1 = cstr("needleNeedle");
+	str2 = cstr("needle");
+	search_result = strview_find_last_nocase(str1, str2);
+	ASSERT(strview_is_valid(search_result));
+	ASSERT((search_result.data - str1.data) == 6);
+
+	str1 = cstr("needlneedle");
+	str2 = cstr("needLe");
+	search_result = strview_find_last_nocase(str1, str2);
 	ASSERT(strview_is_valid(search_result));
 	ASSERT((search_result.data - str1.data) == 5);
 

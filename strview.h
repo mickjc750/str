@@ -235,6 +235,25 @@
 		strview_t:		strview_find_first_strview\
 		)(haystack, needle)
 
+/**
+ * @def strview_find_first_nocase(strview_t haystack, needle);
+ * @brief (macro) Find first needle in haystack, not case sensetive.
+ * @param haystack The view to search within.
+ * @param needle A view or a C string of the contents to search for.
+ * @return A view of the needle within the haystack, or an invalid view if the needle was not found.
+ * @note On success, the returned view will match the contents of needle, but will be viewing data within the haystack.
+ * @note Example:
+ * @code{.c}
+ * strview_t haystack_view = cstr_SL("First name: FRED, Second name: SMITH");
+ * strview_t needle_view = strview_find_first_nocase(haystack_view, "name: ");
+ * strview_t name_view = strview_split_right(&haystack_view, needle_view); // view "FRED, Second name: SMITH"
+ * @endcode
+ * *********************************************************************************/
+	#define strview_find_first_nocase(haystack, needle) _Generic((needle),\
+		const char*:	strview_find_first_nocase_cstr,\
+		char*:			strview_find_first_nocase_cstr,\
+		strview_t:		strview_find_first_nocase_strview\
+		)(haystack, needle)
 
 /**
  * @def strview_find_last(strview_t haystack, needle);
@@ -256,6 +275,25 @@
 		strview_t:		strview_find_last_strview\
 		)(haystack, needle)
 
+/**
+ * @def strview_find_last_nocase(strview_t haystack, needle);
+ * @brief (macro) Find last needle in haystack, not case sensetive.
+ * @param haystack The view to search within.
+ * @param needle A view or a C string of the contents to search for.
+ * @return A view of the needle within the haystack, or an invalid view if the needle was not found.
+ * @note On success, the returned view will match the contents of needle, but will be viewing data within the haystack.
+ * @note Example:
+ * @code{.c}
+ * strview_t haystack_view = cstr_SL("First name: FRED, Second name: SMITH");
+ * strview_t needle_view = strview_find_last_nocase(haystack_view, cstr_SL("name: ");
+ * strview_t name_view = strview_split_right(&haystack_view, needle_view); // view "SMITH"
+ * @endcode
+ * *********************************************************************************/
+	#define strview_find_last_nocase(haystack, needle) _Generic((needle),\
+		const char*:	strview_find_last_nocase_cstr,\
+		char*:			strview_find_last_nocase_cstr,\
+		strview_t:		strview_find_last_nocase_strview\
+		)(haystack, needle)
 
 //********************************************************************************************************
 // Public variables
@@ -458,6 +496,15 @@
 	strview_t strview_find_first_strview(strview_t haystack, strview_t needle);
 
 /**
+ * @brief Find first needle in haystack, not case sensetive.
+ * @param haystack The view to search within.
+ * @param needle A view of the contents to search for.
+ * @return A view of the needle within the haystack, or an invalid view if the needle was not found.
+ * @note Use via macro strview_find_first_nocase()
+ * *********************************************************************************/
+	strview_t strview_find_first_nocase_strview(strview_t haystack, strview_t needle);
+
+/**
  * @brief Find first needle in haystack.
  * @param haystack The view to search within.
  * @param needle A C string of the contents to search for.
@@ -465,6 +512,15 @@
  * @note Use via macro strview_find_first()
  * *********************************************************************************/
 	strview_t strview_find_first_cstr(strview_t haystack, const char* needle);
+
+/**
+ * @brief Find first needle in haystack, not case sensetive.
+ * @param haystack The view to search within.
+ * @param needle A C string of the contents to search for.
+ * @return A view of the needle within the haystack, or an invalid view if the needle was not found.
+ * @note Use via macro strview_find_first_nocase()
+ * *********************************************************************************/
+	strview_t strview_find_first_nocase_cstr(strview_t haystack, const char* needle);
 
 /**
  * @brief Find last needle in haystack.
@@ -476,6 +532,15 @@
 	strview_t strview_find_last_strview(strview_t haystack, strview_t needle);
 
 /**
+ * @brief Find last needle in haystack, not case sensetive.
+ * @param haystack The view to search within.
+ * @param needle A view of the contents to search for.
+ * @return A view of the needle within the haystack, or an invalid view if the needle was not found.
+ * @note Use via macro strview_find_last_nocse()
+ * *********************************************************************************/
+	strview_t strview_find_last_nocase_strview(strview_t haystack, strview_t needle);
+
+/**
  * @brief Find last needle in haystack.
  * @param haystack The view to search within.
  * @param needle A C string of the contents to search for.
@@ -483,6 +548,15 @@
  * @note Use via macro strview_find_last()
  * *********************************************************************************/
 	strview_t strview_find_last_cstr(strview_t haystack, const char* needle);
+
+/**
+ * @brief Find last needle in haystack.
+ * @param haystack The view to search within.
+ * @param needle A C string of the contents to search for.
+ * @return A view of the needle within the haystack, or an invalid view if the needle was not found.
+ * @note Use via macro strview_find_last()
+ * *********************************************************************************/
+	strview_t strview_find_last_nocase_cstr(strview_t haystack, const char* needle);
 
 /**
  * @brief Split entire view by delimiters, into an array of views.

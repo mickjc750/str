@@ -210,6 +210,16 @@ strview_t strview_find_first_strview(strview_t haystack, strview_t needle)
 	return find_first(haystack, needle, memcmp);
 }
 
+strview_t strview_find_first_nocase_strview(strview_t haystack, strview_t needle)
+{
+	return find_first(haystack, needle, memcmp_nocase);
+}
+
+strview_t strview_find_first_nocase_cstr(strview_t haystack, const char* needle)
+{
+	return find_first(haystack, cstr(needle), memcmp_nocase);
+}
+
 strview_t strview_find_first_cstr(strview_t haystack, const char* needle)
 {
 	return strview_find_first_strview(haystack, cstr(needle));
@@ -218,6 +228,16 @@ strview_t strview_find_first_cstr(strview_t haystack, const char* needle)
 strview_t strview_find_last_strview(strview_t haystack, strview_t needle)
 {
 	return find_last(haystack, needle, memcmp);
+}
+
+strview_t strview_find_last_nocase_strview(strview_t haystack, strview_t needle)
+{
+	return find_last(haystack, needle, memcmp_nocase);
+}
+
+strview_t strview_find_last_nocase_cstr(strview_t haystack, const char *needle)
+{
+	return find_last(haystack, cstr(needle), memcmp_nocase);
 }
 
 strview_t strview_find_last_cstr(strview_t haystack, const char* needle)
