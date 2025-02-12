@@ -16,20 +16,26 @@
 // Public defines
 //********************************************************************************************************
 
-	#define STRVIEW_UNPACK_LE(dst, view) 					\
-	do														\
-	{														\
-		memcpy(&(dst), (view).data, sizeof(dst));			\
-		(dst) = xendian_unpack_LE(dst);						\
-		(view) = strview_sub((view), sizeof(dst), INT_MAX);	\
+	#define STRVIEW_UNPACK_LE(dst, view) 						\
+	do															\
+	{															\
+		if((view).size >= sizeof(dst))							\
+		{														\
+			memcpy(&(dst), (view).data, sizeof(dst));			\
+			(dst) = xendian_unpack_LE(dst);						\
+			(view) = strview_sub((view), sizeof(dst), INT_MAX);	\
+		};														\
 	}while(0)
 
-	#define STRVIEW_UNPACK_BE(dst, view) 					\
-	do														\
-	{														\
-		memcpy(&(dst), (view).data, sizeof(dst));			\
-		(dst) = xendian_unpack_BE(dst);						\
-		(view) = strview_sub((view), sizeof(dst), INT_MAX);	\
+	#define STRVIEW_UNPACK_BE(dst, view) 						\
+	do															\
+	{															\
+		if((view).size >= sizeof(dst))							\
+		{														\
+			memcpy(&(dst), (view).data, sizeof(dst));			\
+			(dst) = xendian_unpack_BE(dst);						\
+			(view) = strview_sub((view), sizeof(dst), INT_MAX);	\
+		};														\
 	}while(0)
 
 #endif
