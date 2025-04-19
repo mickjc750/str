@@ -553,9 +553,33 @@ strview_t strbuf_strip_cstr(strbuf_t** buf_ptr, const char* stripchars)
 	return strbuf_strip_strview(buf_ptr, cstr(stripchars));
 }
 
-strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, striew_t src[count])
+strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count])
 {
+	bool failed;
+	int i = 0;
+	int size_needed = 0;
+	strbuf_t *buf = NULL;
 	
+	failed = !(buf_ptr && *buf_ptr);
+	if(!failed)
+	{
+		buf = *buf_ptr;
+
+		while(i != count)
+			size_needed += strview_is_valid(src[i]) ? src[i].size + 1 : 0;
+
+		if(buf_is_dynamic(buf) && (buf->capacity < size_needed))
+			change_buf_capacity(&buf, size_needed);
+
+		failed = (buf->capacity < size_needed);
+		if(failed)
+			empty_buf(buf);
+	};
+	if(!failed)
+	{
+
+	};
+
 }
 
 //********************************************************************************************************
