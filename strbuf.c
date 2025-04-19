@@ -559,6 +559,7 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 	int i = 0;
 	int size_needed = 0;
 	strbuf_t *buf = NULL;
+	char *dst;
 	
 	failed = !(buf_ptr && *buf_ptr);
 	if(!failed)
@@ -577,7 +578,18 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 	};
 	if(!failed)
 	{
-
+		dst = buf->cstr;
+		i = 0;
+		while(i != count)
+		{
+			if(strview_is_valid(src[i]))
+			{
+				memmove(dst, src[i].data, src[i].size);
+				src->data = dst;
+				src[i].size++;
+				dst += src[i].s
+			}
+		};
 	};
 
 }
