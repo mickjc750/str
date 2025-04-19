@@ -553,6 +553,11 @@ strview_t strbuf_strip_cstr(strbuf_t** buf_ptr, const char* stripchars)
 	return strbuf_strip_strview(buf_ptr, cstr(stripchars));
 }
 
+strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, striew_t src[count])
+{
+	
+}
+
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************
