@@ -560,7 +560,8 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 	int i = 0;
 	int size_needed = 0;
 	char *dst;
-	
+	strview_t view;
+
 	failed = !(buf_ptr && *buf_ptr);
 	if(!failed)
 	{
@@ -582,7 +583,10 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 		{
 			dst = locate_terminated_view((*buf_ptr)->cstr, i, count, src);
 			if(dst && dst < src[i].data)
+			{
 				memmove(dst, src[i].data, src[i].size);
+				src[i].data = dst;
+			};
 			i++;
 		};
 
@@ -593,13 +597,19 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 			if(dst)
 			{
 				if(dst > src[i].data)
+				{
 					memmove(dst, src[i].data, src[i].size);
+					src[i].data = dst;
+				};
 				dst[src[i].size] = 0;
 			};
 		};
+		view = strview_of_buf(*buf_ptr);
+		view.size = size_needed;
+		strbuf_assign(buf_ptr, view);
 	};
 
-	return failed ? STRVIEW_INVALID : 
+	return failed ? STRVIEW_INVALID : view;
 }
 
 //********************************************************************************************************

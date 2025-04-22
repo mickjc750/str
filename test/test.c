@@ -61,6 +61,7 @@
 	TEST test_strbuf_insert_before(void);
 	TEST test_strbuf_insert_after(void);
 	TEST test_strbuf_to_cstr(void);
+	TEST test_strbuf_terminate_views(void);
 
 	SUITE(suite_strview);
 	TEST test_strview_sub(void);
@@ -141,6 +142,7 @@ SUITE(suite_strbuf)
 	RUN_TEST(test_strbuf_insert_before);
 	RUN_TEST(test_strbuf_insert_after);
 	RUN_TEST(test_strbuf_to_cstr);
+	RUN_TEST(test_strbuf_terminate_views);
 }
 
 SUITE(suite_strview)
@@ -1444,6 +1446,48 @@ TEST test_strbuf_to_cstr(void)
 
 	free(dstr);	// this should not segfault or leak memory.
 	PASS();
+}
+
+TEST test_strbuf_terminate_views(void)
+{
+/*
+	in		AAABBBCCC
+	out		AAA.BBB.CCC.
+
+	in		AAA.BBBCCC
+	out		AAA.BBB.CCC.
+
+	in		AAA.BBB.CCC
+	out		AAA.BBB.CCC.
+
+	in		AAA.BBB..CCC
+	out		AAA.BBB.CCC.
+
+	in		AAA..BBB.CCC
+	out		AAA.BBB.CCC.
+
+	in		AAABBB...CCC
+	out		AAA.BBB.CCC.
+
+	in		.AAA.BBBCCC
+	out		AAA.BBB.CCC.
+
+	in		AAABBB...CCC	(a is invalid view)
+	out		BBB.CCC.
+
+	in		AAABBB...CCC	(b is invalid view)
+	out		AAA.CCC.
+
+	in		AAABBB...CCC	(c is invalid view)
+	out		AAA.BBB.
+
+	in		AAABBB...CCC	(all views invalid)
+	out		<empty buffer>
+
+	in		AAABBB..CCC		(static buffer, result does not fit)
+	out		AAA.BBB.CCC.
+
+*/
 }
 
 TEST test_strview_split_left(void)
