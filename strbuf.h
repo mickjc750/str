@@ -620,10 +620,10 @@
  * @param views A pointer to an array of views.
  * @return A view of the buffer contents, or NULL if the operation failed.
  * @note The buffer contents will become a concatenation of each view followed by a 0 terminator.
- * @note If the buffer size is fixed and insufficient to hold the result
- * @note the buffer will be emptied, and all views will be assigned STRVIEW_INVALID.
+ * @note If the buffer size is fixed, and insufficient to hold the result the buffer will be emptied.
+ * @note This is an n^2 operation.
  **********************************************************************************/
-	strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, striew_t src[count]);
+	strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count]);
 
 #ifdef STRBUF_PROVIDE_PRINTF
 /**
