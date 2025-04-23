@@ -602,6 +602,7 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 					src[i].data = dst;
 				};
 				dst[src[i].size] = 0;
+				src[i].size++;
 			};
 		};
 		view = strview_of_buf(*buf_ptr);

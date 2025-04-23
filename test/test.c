@@ -1450,44 +1450,225 @@ TEST test_strbuf_to_cstr(void)
 
 TEST test_strbuf_terminate_views(void)
 {
-/*
-	in		AAABBBCCC
-	out		AAA.BBB.CCC.
+	strbuf_t* dbuf = strbuf_create(0, NULL);
+	strbuf_t* sbuf = strbuf_create_fixed(static_buf, 8+sizeof(strbuf_t));
+	strview_t view[3];
+	strview_t result;
+	strview_t src;
 
-	in		AAA.BBBCCC
-	out		AAA.BBB.CCC.
+//	in		AAA
+//	out		AAA.
+	view[0] = strbuf_assign(&dbuf, cstr("AAA      "));
+	view[0].size = 3;
+	result = strbuf_terminate_views(&dbuf, 1, view);
+	ASSERT(view[0].size == 4);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(dbuf->size == 4);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-	in		AAA.BBB.CCC
-	out		AAA.BBB.CCC.
+//	in		(a single view of size 0)
+//	out		.
+	view[0] = strbuf_assign(&dbuf, cstr("      "));
+	view[0].size = 0;
+	result = strbuf_terminate_views(&dbuf, 1, view);
+	ASSERT(view[0].size == 1);
+	ASSERT(view[0].data[0] == 0);
+	ASSERT(dbuf->size == 1);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-	in		AAA.BBB..CCC
-	out		AAA.BBB.CCC.
+//	in		AAABBBCCC
+//	out		AAA.BBB.CCC.
+	strbuf_assign(&dbuf, cstr("AAABBBCCC"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
+	view[1] = strview_sub(strbuf_view(&dbuf), 3, 6);
+	view[2] = strview_sub(strbuf_view(&dbuf), 6, 9);
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(!strcmp(view[2].data, "CCC"));
+	ASSERT(dbuf->size == 12);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-	in		AAA..BBB.CCC
-	out		AAA.BBB.CCC.
 
-	in		AAABBB...CCC
-	out		AAA.BBB.CCC.
+//	in		AAA.BBBCCC
+//	out		AAA.BBB.CCC.
+	strbuf_assign(&dbuf, cstr("AAA.BBBCCC"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
+	view[1] = strview_sub(strbuf_view(&dbuf), 4, 7);
+	view[2] = strview_sub(strbuf_view(&dbuf), 7, 10);
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(!strcmp(view[2].data, "CCC"));
+	ASSERT(dbuf->size == 12);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-	in		.AAA.BBBCCC
-	out		AAA.BBB.CCC.
+//	in		AAA.BBB.CCC
+//	out		AAA.BBB.CCC.
+	strbuf_assign(&dbuf, cstr("AAA.BBB.CCC"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
+	view[1] = strview_sub(strbuf_view(&dbuf), 4, 7);
+	view[2] = strview_sub(strbuf_view(&dbuf), 8, 11);
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(!strcmp(view[2].data, "CCC"));
+	ASSERT(dbuf->size == 12);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-	in		AAABBB...CCC	(a is invalid view)
-	out		BBB.CCC.
+//	in		AAA.BBB..CCC
+//	out		AAA.BBB.CCC.
+	strbuf_assign(&dbuf, cstr("AAA.BBB..CCC"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
+	view[1] = strview_sub(strbuf_view(&dbuf), 4, 7);
+	view[2] = strview_sub(strbuf_view(&dbuf), 9, 12);
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(!strcmp(view[2].data, "CCC"));
+	ASSERT(dbuf->size == 12);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-	in		AAABBB...CCC	(b is invalid view)
-	out		AAA.CCC.
+//	in		AAA..BBB.CCC
+//	out		AAA.BBB.CCC.
+	strbuf_assign(&dbuf, cstr("AAA..BBB.CCC"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
+	view[1] = strview_sub(strbuf_view(&dbuf), 5, 8);
+	view[2] = strview_sub(strbuf_view(&dbuf), 9, 12);
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(!strcmp(view[2].data, "CCC"));
+	ASSERT(dbuf->size == 12);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-	in		AAABBB...CCC	(c is invalid view)
-	out		AAA.BBB.
+//	in		AAABBB...CCC
+//	out		AAA.BBB.CCC.
+	strbuf_assign(&dbuf, cstr("AAABBB...CCC"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
+	view[1] = strview_sub(strbuf_view(&dbuf), 3, 6);
+	view[2] = strview_sub(strbuf_view(&dbuf), 9, 12);
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(!strcmp(view[2].data, "CCC"));
+	ASSERT(dbuf->size == 12);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-	in		AAABBB...CCC	(all views invalid)
-	out		<empty buffer>
+//	in		.AAA.BBBCCC
+//	out		AAA.BBB.CCC.
+	strbuf_assign(&dbuf, cstr(".AAA.BBBCCC"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 1, 4);
+	view[1] = strview_sub(strbuf_view(&dbuf), 5, 8);
+	view[2] = strview_sub(strbuf_view(&dbuf), 8, 11);
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(!strcmp(view[2].data, "CCC"));
+	ASSERT(dbuf->size == 12);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-	in		AAABBB..CCC		(static buffer, result does not fit)
-	out		AAA.BBB.CCC.
+//	in		AAA	 (view B is of size 0 but still produces a terminator in the buffer)
+//	out		AAA..
+	strbuf_assign(&dbuf, cstr("AAA"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
+	view[1] = strview_sub(strbuf_view(&dbuf), 3, 3);
+	result = strbuf_terminate_views(&dbuf, 2, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[1].data, ""));
+	ASSERT(dbuf->size == 5);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
 
-*/
+//	in		AAABBB...CCC	(a is invalid view)
+//	out		BBB.CCC.
+	strbuf_assign(&dbuf, cstr("AAABBB...CCC"));
+	view[0] = STRVIEW_INVALID;
+	view[1] = strview_sub(strbuf_view(&dbuf), 3, 6);
+	view[2] = strview_sub(strbuf_view(&dbuf), 9, 12);
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(!strcmp(view[2].data, "CCC"));
+	ASSERT(dbuf->size == 8);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
+
+
+//	in		AAABBB...CCC	(b is invalid view)
+//	out		AAA.CCC.
+	strbuf_assign(&dbuf, cstr("AAABBB...CCC"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
+	view[1] = STRVIEW_INVALID;
+	view[2] = strview_sub(strbuf_view(&dbuf), 9, 12);
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[2].data, "CCC"));
+	ASSERT(dbuf->size == 8);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
+
+//	in		AAABBB...CCC	(c is invalid view)
+//	out		AAA.BBB.
+	strbuf_assign(&dbuf, cstr("AAABBB...CCC"));
+	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
+	view[1] = strview_sub(strbuf_view(&dbuf), 3, 6);
+	view[2] = STRVIEW_INVALID;
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[0].data, "AAA"));
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(dbuf->size == 8);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
+
+//	in		AAABBB...CCC	(only B is a valid view)
+//	out		BBB.
+	strbuf_assign(&dbuf, cstr("AAABBB...CCC"));
+	view[0] = STRVIEW_INVALID;
+	view[1] = strview_sub(strbuf_view(&dbuf), 3, 6);
+	view[2] = STRVIEW_INVALID;
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(!strcmp(view[1].data, "BBB"));
+	ASSERT(dbuf->size == 4);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
+
+//	in		AAABBB...CCC	(all views invalid)
+//	out		<empty buffer>
+	strbuf_assign(&dbuf, cstr("AAABBB...CCC"));
+	view[0] = STRVIEW_INVALID;
+	view[1] = STRVIEW_INVALID;
+	view[2] = STRVIEW_INVALID;
+	result = strbuf_terminate_views(&dbuf, 3, view);
+	ASSERT(dbuf->size == 0);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
+
+//	Try an operation on a static buffer that just fits
+	src = cstr("***********************************************************************************************");
+	src.size = sbuf->capacity-1;
+	strbuf_assign(&sbuf, src);
+	view[0] = strbuf_view(&sbuf);
+	result = strbuf_terminate_views(&sbuf, 1, view);
+	ASSERT(strview_is_valid(result));
+	ASSERT(strview_is_match(cstr(view[0].data), src));
+
+//	Try an operation on a static buffer that does not fit
+	src = cstr("***********************************************************************************************");
+	src.size = sbuf->capacity;
+	strbuf_assign(&sbuf, src);
+	view[0] = strbuf_view(&sbuf);
+	result = strbuf_terminate_views(&sbuf, 1, view);
+	ASSERT(!strview_is_valid(result));
+	ASSERT(sbuf->size == 0);
 }
 
 TEST test_strview_split_left(void)
