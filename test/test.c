@@ -1668,12 +1668,18 @@ TEST test_strbuf_terminate_views(void)
 	ASSERT(!strview_is_valid(result));
 	ASSERT(sbuf->size == 0);
 
-	//	Array of 0 views should empty the buffer and return a valid view of the empty buffer
+//	Array of 0 views should empty the buffer and return a valid view of the empty buffer
 	strbuf_assign(&dbuf, cstr("anything"));
 	result = strbuf_terminate_views(&dbuf, 0, view);
 	ASSERT(dbuf->size == 0);
 	ASSERT(result.data == dbuf->cstr);
 	ASSERT(result.size == dbuf->size);
+
+//	Gracefully return in invalid view if a source view is not within the buffer
+	strbuf_assign(&dbuf, cstr("anything"));
+	view[0] = cstr("I am not in the buffer");
+	result = strbuf_terminate_views(&dbuf, 1, view);
+	ASSERT(!strview_is_valid(result));
 
 	strbuf_destroy(&dbuf);
 	PASS();

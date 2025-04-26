@@ -563,14 +563,22 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 	strview_t view;
 
 	failed = !(buf_ptr && *buf_ptr);
+
+//	determine size needed, and check that all valid views are within the buffer
 	if(!failed)
 	{
-		while(i != count)
+		i = 0;
+		while(i != count && !failed)
 		{
 			size_needed += strview_is_valid(src[i]) ? src[i].size + 1 : 0;
+			failed |= !(buf_contains_str(*buf_ptr, src[i]) || !strview_is_valid(src[i]));
 			i++;
 		};
+	};
 
+//	resize the buffer if possible, and check that the buffer is big enough
+	if(!failed)
+	{
 		if(buf_is_dynamic(*buf_ptr) && ((*buf_ptr)->capacity < size_needed))
 			change_buf_capacity(buf_ptr, size_needed);
 
