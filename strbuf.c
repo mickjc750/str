@@ -566,7 +566,10 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 	if(!failed)
 	{
 		while(i != count)
+		{
 			size_needed += strview_is_valid(src[i]) ? src[i].size + 1 : 0;
+			i++;
+		};
 
 		if(buf_is_dynamic(*buf_ptr) && ((*buf_ptr)->capacity < size_needed))
 			change_buf_capacity(buf_ptr, size_needed);

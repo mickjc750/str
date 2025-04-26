@@ -1492,7 +1492,6 @@ TEST test_strbuf_terminate_views(void)
 	ASSERT(result.data == dbuf->cstr);
 	ASSERT(result.size == dbuf->size);
 
-
 //	in		AAA.BBBCCC
 //	out		AAA.BBB.CCC.
 	strbuf_assign(&dbuf, cstr("AAA.BBBCCC"));
@@ -1579,7 +1578,7 @@ TEST test_strbuf_terminate_views(void)
 
 //	in		AAA	 (view B is of size 0 but still produces a terminator in the buffer)
 //	out		AAA..
-	strbuf_assign(&dbuf, cstr("AAA"));
+	strbuf_assign(&dbuf, cstr("AAA "));
 	view[0] = strview_sub(strbuf_view(&dbuf), 0, 3);
 	view[1] = strview_sub(strbuf_view(&dbuf), 3, 3);
 	result = strbuf_terminate_views(&dbuf, 2, view);
@@ -1628,7 +1627,6 @@ TEST test_strbuf_terminate_views(void)
 	ASSERT(dbuf->size == 8);
 	ASSERT(result.data == dbuf->cstr);
 	ASSERT(result.size == dbuf->size);
-
 //	in		AAABBB...CCC	(only B is a valid view)
 //	out		BBB.
 	strbuf_assign(&dbuf, cstr("AAABBB...CCC"));
@@ -1669,6 +1667,16 @@ TEST test_strbuf_terminate_views(void)
 	result = strbuf_terminate_views(&sbuf, 1, view);
 	ASSERT(!strview_is_valid(result));
 	ASSERT(sbuf->size == 0);
+
+	//	Array of 0 views should empty the buffer and return a valid view of the empty buffer
+	strbuf_assign(&dbuf, cstr("anything"));
+	result = strbuf_terminate_views(&dbuf, 0, view);
+	ASSERT(dbuf->size == 0);
+	ASSERT(result.data == dbuf->cstr);
+	ASSERT(result.size == dbuf->size);
+
+	strbuf_destroy(&dbuf);
+	PASS();
 }
 
 TEST test_strview_split_left(void)
