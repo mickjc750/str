@@ -47,7 +47,6 @@
 	static void empty_buf(strbuf_t* buf);
 	static bool add_will_overflow_int(int a, int b);
 	static bool view_contains_char(strview_t view, char c);
-	static char* locate_terminated_view(char* buf, int index, int count, strview_t src[count]);
 
 #ifdef STRBUF_PROVIDE_PRNF
 	static void char_handler_for_prnf(void* dst, char c);
@@ -590,32 +589,36 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 	if(!failed)
 	{
 		i = 0;
+		dst = (*buf_ptr)->cstr;
 		while(i != count)
 		{
-			dst = locate_terminated_view((*buf_ptr)->cstr, i, count, src);
-			if(dst && dst < src[i].data)
+			if(strview_is_valid(src[i]))
 			{
-				memmove(dst, src[i].data, src[i].size);
-				src[i].data = dst;
+				if(dst < src[i].data)
+				{
+					memmove(dst, src[i].data, src[i].size);
+					src[i].data = dst;
+				};
+				dst += src[i].size + 1;
 			};
 			i++;
 		};
 
-		i = count;
 		while(i--)
 		{
-			dst = locate_terminated_view((*buf_ptr)->cstr, i, count, src);
-			if(dst)
+			if(strview_is_valid(src[i]))
 			{
+				dst -= src[i].size + 1;
 				if(dst > src[i].data)
 				{
 					memmove(dst, src[i].data, src[i].size);
 					src[i].data = dst;
 				};
-				dst[src[i].size] = 0;
+				((char*)(src[i].data))[src[i].size] = 0;
 				src[i].size++;
 			};
 		};
+
 		view = strview_of_buf(*buf_ptr);
 		view.size = size_needed;
 		strbuf_assign(buf_ptr, view);
@@ -627,21 +630,6 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************
-
-// Given a buffer, and an array of views within the buffer, return the intended destination of view[index]
-// if the views were to be concatenated and 0 terminated within the buffer using strbuf_terminate_views()
-static char* locate_terminated_view(char* buf, int index, int count, strview_t src[count])
-{
-	int i = 0;
-	char* pos = buf;
-	while(i != index)
-	{
-		pos += strview_is_valid(src[i]) ? src[i].size + 1 : 0;
-		i++;
-	};
-
-	return strview_is_valid(src[i]) ? pos : NULL;
-}
 
 static strbuf_t* create_buf(int initial_capacity, strbuf_allocator_t allocator)
 {
