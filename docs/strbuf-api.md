@@ -291,3 +291,8 @@ Example use:
 ### These functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler options
  These provide the variadic and non-variadic versions of printf, which append their output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit. If the buffer is non-dynamic, and the output string does not fit, the buffer will be emptied.
 
+&nbsp;
+## `strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count]);`
+ Given an array of views within a buffer, 0 terminate each view within the buffer.
+ The end result is a concatenation of each 0 terminated view, and other data between the views is lost.
+ The views themselves (src[]) are modified to view the now 0-terminated contents within the buffer, including the terminator. 

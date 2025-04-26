@@ -553,6 +553,80 @@ strview_t strbuf_strip_cstr(strbuf_t** buf_ptr, const char* stripchars)
 	return strbuf_strip_strview(buf_ptr, cstr(stripchars));
 }
 
+strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count])
+{
+	bool failed;
+	int i = 0;
+	int size_needed = 0;
+	char *dst;
+	strview_t view;
+
+	failed = !(buf_ptr && *buf_ptr);
+
+//	determine size needed, and check that all valid views are within the buffer
+	if(!failed)
+	{
+		i = 0;
+		while(i != count && !failed)
+		{
+			size_needed += strview_is_valid(src[i]) ? src[i].size + 1 : 0;
+			failed |= !(buf_contains_str(*buf_ptr, src[i]) || !strview_is_valid(src[i]));
+			i++;
+		};
+	};
+
+//	resize the buffer if possible, and check that the buffer is big enough
+	if(!failed)
+	{
+		if(buf_is_dynamic(*buf_ptr) && ((*buf_ptr)->capacity < size_needed))
+			change_buf_capacity(buf_ptr, size_needed);
+
+		failed = ((*buf_ptr)->capacity < size_needed);
+		if(failed)
+			empty_buf((*buf_ptr));
+	};
+
+	if(!failed)
+	{
+		i = 0;
+		dst = (*buf_ptr)->cstr;
+		while(i != count)
+		{
+			if(strview_is_valid(src[i]))
+			{
+				if(dst < src[i].data)
+				{
+					memmove(dst, src[i].data, src[i].size);
+					src[i].data = dst;
+				};
+				dst += src[i].size + 1;
+			};
+			i++;
+		};
+
+		while(i--)
+		{
+			if(strview_is_valid(src[i]))
+			{
+				dst -= src[i].size + 1;
+				if(dst > src[i].data)
+				{
+					memmove(dst, src[i].data, src[i].size);
+					src[i].data = dst;
+				};
+				((char*)(src[i].data))[src[i].size] = 0;
+				src[i].size++;
+			};
+		};
+
+		view = strview_of_buf(*buf_ptr);
+		view.size = size_needed;
+		strbuf_assign(buf_ptr, view);
+	};
+
+	return failed ? STRVIEW_INVALID : view;
+}
+
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************

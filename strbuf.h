@@ -613,6 +613,17 @@
  **********************************************************************************/
 	strview_t strbuf_strip_cstr(strbuf_t** buf_ptr, const char* stripchars);
 
+/**
+ * @brief Insert a zero terminator at the end of each view.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param count The number of views to modify.
+ * @param views A pointer to an array of views.
+ * @return A view of the buffer contents, or NULL if the operation failed.
+ * @note The buffer contents will become a concatenation of each view followed by a 0 terminator.
+ * @note If the buffer size is fixed, and insufficient to hold the result the buffer will be emptied.
+ * @note Invalid views will be excluded from the output.
+ **********************************************************************************/
+	strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count]);
 
 #ifdef STRBUF_PROVIDE_PRINTF
 /**
