@@ -223,7 +223,7 @@ Example use:
 
 &nbsp;
 ##	`strview_t strbuf_cat(strbuf_t** buf_ptr, ...);`
- This is a macro, which concatenates one or more strview_t into a buffer, and returns the strview_t of the buffer. The returned strview_t is always valid.
+ This is a macro, which concatenates one or more strview_t into a buffer, and returns the strview_t of the buffer. The returned strview_t is always valid. Note that unlike strcat() this overwrites the previous buffer contents instead of appending to it. You may include the original buffer contents by passing a view of it as one of the arguments, providing the buffer is dynamic.
 
 &nbsp;
  After performing some argument counting wizardry, it calls **`_strbuf_cat(strbuf_t** buf_ptr, int n_args, ...)`**
