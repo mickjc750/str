@@ -18,7 +18,7 @@
 
 	static bool contains_char(strview_t str, char c);
 
-	static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes);
+	static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, const char* exclude_quotes);
 	static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes);
 	static strview_t split_index(strview_t* strview_ptr, int index);
 
@@ -250,12 +250,12 @@ strview_t strview_find_last_cstr(strview_t haystack, const char* needle)
 	return strview_find_last_strview(haystack, cstr(needle));
 }
 
-strview_t strview_split_first_delim(strview_t* strview_ptr, const char* delims, bool exclude_quotes)
+strview_t strview_split_first_delim(strview_t* src, const char* delims, const char* ignore_within)
 {
 	strview_t result = STRVIEW_INVALID;
 	
-	if(strview_ptr)
-		result = split_first_delim(strview_ptr, cstr(delims), exclude_quotes);
+	if(src)
+		result = split_first_delim(src, cstr(delims), ignore_within);
 
 	return result;
 }
@@ -396,7 +396,7 @@ static int memcmp_nocase(const void* a, const void* b, size_t size)
 	return result;
 }
 
-static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes)
+static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, const char* ignore_within)
 {
 	strview_t result;
 	bool found = false;

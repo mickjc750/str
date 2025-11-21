@@ -583,7 +583,8 @@
  * @param src The address of the view to split.
  * @param delims A view of the delimiter character/s.
  * @param ignore_within A C string specifying opening and closing characters within which delimiters are ignored.
- * @note Example ignore_within string "{}[]()''", ignore_within may be NULL or "" if not used.
+ * @note Example ignore_within string "()''", will ignore delimiters within brackets or single quotes.
+ * @note ignore_within may be NULL or "" if not used.
  * @return A view up to, but not including, the first delimiter found.
  * *********************************************************************************/
 	strview_t strview_split_first_delim(strview_t* src, const char* delims, const char* ignore_within);
