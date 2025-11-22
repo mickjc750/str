@@ -615,7 +615,7 @@ static bool lexbracket_is_inside(lexbracket_t *ctx, const char c)
 {
 	int i = 0;
 
-	if(ctx->depth && c == ctx->opening_char)
+	if(ctx->depth && c == ctx->opening_char && c != ctx->closing_char)
 		ctx->depth++;
 	else if(ctx->depth && c == ctx->closing_char)
 		ctx->depth--;
