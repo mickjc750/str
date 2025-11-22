@@ -12,6 +12,15 @@
 //	#include <stdio.h>
 //	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
+	typedef struct lexbracket_t
+	{
+		const char *bracket_pairs;
+		int pair_count;
+		int depth;
+		char opening_char;
+		char closing_char;
+	} lexbracket_t;
+
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
@@ -24,6 +33,9 @@
 
 	static strview_t find_first(strview_t haystack, strview_t needle, int(*comp_func)(const void*,const void*, size_t));
 	static strview_t find_last(strview_t haystack, strview_t needle, int(*comp_func)(const void*,const void*, size_t));
+
+	static void lexbracket_init(lexbracket_t *ctx, const char *bracket_pairs);
+	static bool lexbracket_is_inside(lexbracket_t *ctx, const char c);
 
 	static int memcmp_nocase(const void* a, const void* b, size_t size);
 
@@ -569,3 +581,41 @@ static strview_t find_last(strview_t haystack, strview_t needle, int(*comp_func)
 	return result;
 }
 
+static void lexbracket_init(lexbracket_t *ctx, const char *bracket_pairs)
+{
+	int i = 0;
+
+	if(bracket_pairs)
+		i = strlen(bracket_pairs);
+
+	if(i & 1)
+		i = 0;
+
+	if(i)
+	{
+		ctx->pair_count = i/2;
+		ctx->bracket_pairs = bracket_pairs;
+	}
+	else
+	{
+		ctx->pair_count = 0;
+		ctx->bracket_pairs = NULL;
+	};
+
+	ctx->depth = 0;
+	ctx->closing_char = 0;
+	ctx->opening_char = 0;
+}
+
+static bool lexbracket_is_inside(lexbracket_t *ctx, const char c)
+{
+	int i;	
+	if(ctx->depth == 0)
+	{
+		i = 0;
+		while(i != ctx->pair_count)
+		{
+			if(ctx->bracket_pairs[i*2] == c)
+			
+	}
+}
