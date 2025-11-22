@@ -609,13 +609,21 @@ static void lexbracket_init(lexbracket_t *ctx, const char *bracket_pairs)
 
 static bool lexbracket_is_inside(lexbracket_t *ctx, const char c)
 {
-	int i;	
-	if(ctx->depth == 0)
+	int i = 0;
+
+	if(ctx->depth && c == ctx->opening_char)
+		ctx->depth++;
+	else if(ctx->depth && c == ctx->closing_char)
+		ctx->depth--;
+	else while(ctx->depth == 0 && i != ctx->pair_count)
 	{
-		i = 0;
-		while(i != ctx->pair_count)
+		if(ctx->bracket_pairs[i * 2] == c)
 		{
-			if(ctx->bracket_pairs[i*2] == c)
-			
-	}
+			ctx->depth = 1;
+			ctx->opening_char = c;
+			ctx->closing_char = ctx->bracket_pairs[i * 2 + 1];
+		};
+		i++;
+	};
+	return (ctx->depth != 0);
 }
