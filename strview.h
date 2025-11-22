@@ -347,7 +347,7 @@
 	bool strview_contains(strview_t haystack, strview_t needle);
 
 /**
- * @brief Test if needle is in haystack.
+ * @brief Test if needle is in haystack, ignoring case.
  * @param haystack The view to search within.
  * @param needle A view of the contents to search for.
  * @return true if the contents of needle is found within haystack.
@@ -575,7 +575,7 @@
  * @param exclude_quotes If true, ignore delimiters contained within "quotes"
  * @return The number of elements written to dst[]
  * *********************************************************************************/
-	int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, bool exclude_quotes);
+	int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, const char* ignore_within);
 
 
 /**
@@ -597,7 +597,7 @@
  * @param exclude_quotes If true, ignore delimiters contained within "quotes"
  * @return A view from, but not including, the last delimiter found.
  * *********************************************************************************/
-	strview_t strview_split_last_delim(strview_t* src, const char* delims, bool exclude_quotes);
+	strview_t strview_split_last_delim(strview_t* src, const char* delims, const char* ignore_within);
 
 
 /**
