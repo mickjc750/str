@@ -397,7 +397,6 @@ TEST test_strview_split_first_delim(void)
 	strview_t str1, str2;
 
 	str2 = cstr("123/456/789");
-
 	str1 = strview_split_first_delim(&str2, "/", NULL);
 	ASSERT(!memcmp("123", str1.data, str1.size));
 	str1 = strview_split_first_delim(&str2, "/", NULL);
@@ -406,15 +405,35 @@ TEST test_strview_split_first_delim(void)
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
 
+	str2 = cstr("123/456/789");
+	str1 = strview_split_first_delim(&str2, "/", "");
+	ASSERT(!memcmp("123", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, "/", "");
+	ASSERT(!memcmp("456", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, "/", "");
+	ASSERT(!memcmp("789", str1.data, str1.size));
+	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
 
 	str2 = cstr("ab\".\"c.d\"a.\"ef.gh\".a\"i");
-
 	str1 = strview_split_first_delim(&str2, ".", "\"\"");
 	ASSERT(!memcmp("ab\".\"c", str1.data, str1.size));
 	str1 = strview_split_first_delim(&str2, ".", "\"\"");
 	ASSERT(!memcmp("d\"a.\"ef", str1.data, str1.size));
 	str1 = strview_split_first_delim(&str2, ".", "\"\"");
 	ASSERT(!memcmp("gh\".a\"i", str1.data, str1.size));
+	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
+
+	str2 = cstr("ab.{cd.ef}.gh[.[ij.kl].]mn.op.qr");
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("ab", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("{cd.ef}", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("gh[.[ij.kl].]mn", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("op", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("qr", str1.data, str1.size));
 	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
 
 	PASS();
