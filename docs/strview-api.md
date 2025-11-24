@@ -57,16 +57,43 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 &nbsp;
 ## Splitting
 
- * [strview_t strview_sub(strview_t str, int begin, int end);](#strviewt-strviewsubstrviewt-str-int-begin-int-end)
- * [strview_t strview_split_first_delim(strview_t* src, delims);](#strviewt-strviewsplitfirstdelimstrviewt-src-strviewt-delims)
- * [strview_t strview_split_last_delim(strview_t* src, delims);](#strviewt-strviewsplitlastdelimstrviewt-src-strviewt-delims)
- * [strview_t strview_split_first_delim_nocase(strview_t* src, delims);](#strviewt-strviewsplitfirstdelimnocasestrviewt-src-strviewt-delims)
- * [strview_t strview_split_last_delim_nocase(strview_t* src, delims);](#strviewt-strviewsplitlastdelimnocasestrviewt-src-strviewt-delims)
- * [strview_t strview_split_index(strview_t* src, int index);](#strviewt-strviewsplitindexstrviewt-src-int-index)
- * [strview_t strview_split_left(strview_t* src, strview_t pos);](#strviewt-strviewsplitleftstrviewt-src-strviewt-pos)
- * [strview_t strview_split_right(strview_t* src, strview_t pos);](#strviewt-strviewsplitrightstrviewt-src-strviewt-pos)
- * [char strview_pop_first_char(strview_t* src);](#char-strviewpopfirstcharstrviewt-src)
- * [strview_t strview_split_line(strview_t* src, char* eol);](#strviewt-strviewsplitlinestrviewt-src-char-eol)
+- [strview.h](#strviewh)
+- [About](#about)
+- [Function reference](#function-reference)
+	- [Comparison](#comparison)
+	- [Trimming](#trimming)
+	- [Searching](#searching)
+	- [Splitting](#splitting)
+- [strview.h functions](#strviewh-functions)
+	- [`strview_t cstr(const char* c_str);`](#strview_t-cstrconst-char-c_str)
+	- [`char* strview_to_cstr(char* dst, size_t dst_size, strview_t str);`](#char-strview_to_cstrchar-dst-size_t-dst_size-strview_t-str)
+	- [`bool strview_is_valid(strview_t str);`](#bool-strview_is_validstrview_t-str)
+	- [`void strview_swap(strview_t* a, strview_t* b);`](#void-strview_swapstrview_t-a-strview_t-b)
+- [Comparison](#comparison-1)
+	- [`bool strview_is_match(strview_t str1, str2);`](#bool-strview_is_matchstrview_t-str1-str2)
+	- [`bool strview_is_match_nocase(strview_t str1, str2);`](#bool-strview_is_match_nocasestrview_t-str1-str2)
+	- [`int strview_compare(strview_t str1, strview_t str2);`](#int-strview_comparestrview_t-str1-strview_t-str2)
+	- [`bool strview_starts_with(strview_t str1, str2);`](#bool-strview_starts_withstrview_t-str1-str2)
+	- [`bool strview_starts_with_nocase(strview_t str1, str2);`](#bool-strview_starts_with_nocasestrview_t-str1-str2)
+- [Trimming](#trimming-1)
+	- [`strview_t strview_trim(strview_t str, chars_to_trim);`](#strview_t-strview_trimstrview_t-str-chars_to_trim)
+	- [`strview_t strview_trim_start(strview_t str, chars_to_trim);`](#strview_t-strview_trim_startstrview_t-str-chars_to_trim)
+	- [`strview_t strview_trim_end(strview_t str, chars_to_trim);`](#strview_t-strview_trim_endstrview_t-str-chars_to_trim)
+- [Searching](#searching-1)
+	- [`strview_t strview_find_first(strview_t haystack, needle);`](#strview_t-strview_find_firststrview_t-haystack-needle)
+	- [`strview_t strview_find_last(strview_t haystack, needle);`](#strview_t-strview_find_laststrview_t-haystack-needle)
+- [Splitting](#splitting-1)
+	- [`strview_t strview_sub(strview_t str, int begin, int end);`](#strview_t-strview_substrview_t-str-int-begin-int-end)
+	- [`strview_t strview_split_first_delim(strview_t* src, const char* delims, const char* ignore_within);`](#strview_t-strview_split_first_delimstrview_t-src-const-char-delims-const-char-ignore_within)
+	- [`int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, const char* ignore_within);`](#int-strview_split_allint-dst_size-strview_t-dstdst_size-strview_t-src-const-char-delims-const-char-ignore_within)
+	- [`strview_t strview_split_last_delim(strview_t* src, const char* delims, const char* ignore_within);`](#strview_t-strview_split_last_delimstrview_t-src-const-char-delims-const-char-ignore_within)
+	- [`strview_t strview_split_first_delim_nocase(strview_t* src, const char* delims, const char* ignore_within);`](#strview_t-strview_split_first_delim_nocasestrview_t-src-const-char-delims-const-char-ignore_within)
+	- [`strview_t strview_split_last_delim_nocase(strview_t* src, const char* delims, const char* ignore_within);`](#strview_t-strview_split_last_delim_nocasestrview_t-src-const-char-delims-const-char-ignore_within)
+	- [`strview_t strview_split_index(strview_t* src, int index);`](#strview_t-strview_split_indexstrview_t-src-int-index)
+	- [`strview_t strview_split_left(strview_t* src, strview_t pos);`](#strview_t-strview_split_leftstrview_t-src-strview_t-pos)
+	- [`strview_t strview_split_right(strview_t* src, strview_t pos);`](#strview_t-strview_split_rightstrview_t-src-strview_t-pos)
+	- [`char strview_pop_first_char(strview_t* src);`](#char-strview_pop_first_charstrview_t-src)
+	- [`strview_t strview_split_line(strview_t* src, char* eol);`](#strview_t-strview_split_linestrview_t-src-char-eol)
 
 
 
@@ -169,35 +196,34 @@ Some special cases to consider:
  The indexes are clipped to the strings length, so INT_MAX may be safely used to index the end of the string. If the requested range is entirely outside of the input string, then an invalid **strview_t** is returned.
 
 &nbsp;
-## `strview_t strview_split_first_delim(strview_t* src, delims);`
+## `strview_t strview_split_first_delim(strview_t* src, const char* delims, const char* ignore_within);`
  Return a **strview_t** representing the contents of the source string up to, but not including, any of characters in **delims**.
  Additionally, the contents of the returned **strview_t**, and the delim character itself is removed (popped) from the input string.
  If no delim is found, the returned string is the entire source string, and the source string becomes invalid.
- **delims** may be a C string or a strview_t.
-
+ Brackets or quotes may be specified by **ignore_within** eg. "{}''" would ignore delimeters within {ignored} or 'ignored'
 Example usage:
 
     strview_t date = cstr("2022/10/03");
-    strview_t year  = strview_split_first_delim(&date, "/");
-    strview_t month = strview_split_first_delim(&date, "/");
-    strview_t day   = strview_split_first_delim(&date, "/");
+    strview_t year  = strview_split_first_delim(&date, "/", NULL);
+    strview_t month = strview_split_first_delim(&date, "/", NULL);
+    strview_t day   = strview_split_first_delim(&date, "/", NULL);
 
 &nbsp;
-## `int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, delims);`
+## `int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, const char* ignore_within);`
  Split entire view by delimiters, into an array of views.
  Return the number of elements written to the destination
- **delims** may be a C string or a strview_t.
+ Brackets or quotes may be specified by **ignore_within** eg. "{}''" would ignore delimeters within {ignored} or 'ignored'
 
 &nbsp;
-## `strview_t strview_split_last_delim(strview_t* src, delims);`
+## `strview_t strview_split_last_delim(strview_t* src, const char* delims, const char* ignore_within);`
  Same as **strview_split_first_delim()** but searches from the end of the string backwards.
 
 &nbsp;
-## `strview_t strview_split_first_delim_nocase(strview_t* src, delims);`
+## `strview_t strview_split_first_delim_nocase(strview_t* src, const char* delims, const char* ignore_within);`
 Same as **strview_split_first_delim()** but ignores the case of the delims
 
 &nbsp;
-## `strview_t strview_split_last_delim_nocase(strview_t* src, delims);`
+## `strview_t strview_split_last_delim_nocase(strview_t* src, const char* delims, const char* ignore_within);`
 Same as **strview_split_last_delim()** but ignores the case of the delims
 
 &nbsp;
@@ -218,13 +244,13 @@ If you do not wish to remove/pop the split string from the source, this is easil
 Instead of:
 
 	strview_t full_view = cstr("Hello World");
-	strview_t first_word = strview_split_first_delim(&full_view, cstr(" ")); // (full view becomes "World")
+	strview_t first_word = strview_split_first_delim(&full_view, " ", NULL); // (full view becomes "World")
 
 Simply assign the source to your destination before splitting:
 
 	strview_t full_view = cstr("Hello World");
 	strview_t first_word = full_view;
-	first_word = strview_split_first_delim(&first_word, cstr(" ")); (full view remains unmodified)
+	first_word = strview_split_first_delim(&first_word, " ", NULL); (full view remains unmodified)
 
 &nbsp;
 ## `strview_t strview_split_left(strview_t* src, strview_t pos);`

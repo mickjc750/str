@@ -347,7 +347,7 @@
 	bool strview_contains(strview_t haystack, strview_t needle);
 
 /**
- * @brief Test if needle is in haystack.
+ * @brief Test if needle is in haystack, ignoring case.
  * @param haystack The view to search within.
  * @param needle A view of the contents to search for.
  * @return true if the contents of needle is found within haystack.
@@ -572,20 +572,24 @@
  * @param dst_size The number of elements available in the destination.
  * @param src The the view to split.
  * @param delims A C string of the delimiter character/s.
- * @param exclude_quotes If true, ignore delimiters contained within "quotes"
+ * @param ignore_within A C string specifying opening and closing characters within which delimiters are ignored.
+ * @note Example ignore_within string "()''", will ignore delimiters within brackets or single quotes.
+ * @note ignore_within may be NULL or "" if not used.
  * @return The number of elements written to dst[]
  * *********************************************************************************/
-	int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, bool exclude_quotes);
+	int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, const char* ignore_within);
 
 
 /**
  * @brief Split view by delimiters.
  * @param src The address of the view to split.
  * @param delims A view of the delimiter character/s.
- * @param exclude_quotes If true, ignore delimiters contained within "quotes"
+ * @param ignore_within A C string specifying opening and closing characters within which delimiters are ignored.
+ * @note Example ignore_within string "()''", will ignore delimiters within brackets or single quotes.
+ * @note ignore_within may be NULL or "" if not used.
  * @return A view up to, but not including, the first delimiter found.
  * *********************************************************************************/
-	strview_t strview_split_first_delim(strview_t* src, const char* delims, bool exclude_quotes);
+	strview_t strview_split_first_delim(strview_t* src, const char* delims, const char* ignore_within);
 
 
 /**
@@ -593,9 +597,12 @@
  * @param src The address of the view to split.
  * @param delims A view of the delimiter character/s.
  * @param exclude_quotes If true, ignore delimiters contained within "quotes"
+ * @param ignore_within A C string specifying opening and closing characters within which delimiters are ignored.
+ * @note Example ignore_within string "()''", will ignore delimiters within brackets or single quotes.
+ * @note ignore_within may be NULL or "" if not used.
  * @return A view from, but not including, the last delimiter found.
  * *********************************************************************************/
-	strview_t strview_split_last_delim(strview_t* src, const char* delims, bool exclude_quotes);
+	strview_t strview_split_last_delim(strview_t* src, const char* delims, const char* ignore_within);
 
 
 /**

@@ -397,24 +397,43 @@ TEST test_strview_split_first_delim(void)
 	strview_t str1, str2;
 
 	str2 = cstr("123/456/789");
-
-	str1 = strview_split_first_delim(&str2, "/", false);
+	str1 = strview_split_first_delim(&str2, "/", NULL);
 	ASSERT(!memcmp("123", str1.data, str1.size));
-	str1 = strview_split_first_delim(&str2, "/", false);
+	str1 = strview_split_first_delim(&str2, "/", NULL);
 	ASSERT(!memcmp("456", str1.data, str1.size));
-	str1 = strview_split_first_delim(&str2, "/", false);
+	str1 = strview_split_first_delim(&str2, "/", NULL);
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
 
+	str2 = cstr("123/456/789");
+	str1 = strview_split_first_delim(&str2, "/", "");
+	ASSERT(!memcmp("123", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, "/", "");
+	ASSERT(!memcmp("456", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, "/", "");
+	ASSERT(!memcmp("789", str1.data, str1.size));
+	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
 
 	str2 = cstr("ab\".\"c.d\"a.\"ef.gh\".a\"i");
-
-	str1 = strview_split_first_delim(&str2, ".", true);
+	str1 = strview_split_first_delim(&str2, ".", "\"\"");
 	ASSERT(!memcmp("ab\".\"c", str1.data, str1.size));
-	str1 = strview_split_first_delim(&str2, ".", true);
+	str1 = strview_split_first_delim(&str2, ".", "\"\"");
 	ASSERT(!memcmp("d\"a.\"ef", str1.data, str1.size));
-	str1 = strview_split_first_delim(&str2, ".", true);
+	str1 = strview_split_first_delim(&str2, ".", "\"\"");
 	ASSERT(!memcmp("gh\".a\"i", str1.data, str1.size));
+	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
+
+	str2 = cstr("ab.{cd.ef}.gh[.[ij.kl].]mn.op.qr");
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("ab", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("{cd.ef}", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("gh[.[ij.kl].]mn", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("op", str1.data, str1.size));
+	str1 = strview_split_first_delim(&str2, ".", "[]{}");
+	ASSERT(!memcmp("qr", str1.data, str1.size));
 	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
 
 	PASS();
@@ -426,25 +445,25 @@ TEST test_strview_split_all(void)
 	strview_t dst[DST_SIZE] = {0};
 	int count;
 
-	count = strview_split_all(2, dst, cstr("123/456/789"), "/", false);
+	count = strview_split_all(2, dst, cstr("123/456/789"), "/", NULL);
 	ASSERT(count == 2);
 	ASSERT(!memcmp("123", dst[0].data, dst[0].size));
 	ASSERT(!memcmp("456", dst[1].data, dst[1].size));
 	ASSERT(!strview_is_valid(dst[2]));
 	memset(dst, 0, sizeof(dst));
 
-	count = strview_split_all(DST_SIZE, dst, cstr("123/456/789"), "/", false);
+	count = strview_split_all(DST_SIZE, dst, cstr("123/456/789"), "/", NULL);
 	ASSERT(count == 3);
 	ASSERT(!memcmp("123", dst[0].data, dst[0].size));
 	ASSERT(!memcmp("456", dst[1].data, dst[1].size));
 	ASSERT(!memcmp("789", dst[2].data, dst[2].size));
 	memset(dst, 0, sizeof(dst));
 
-	count = strview_split_all(DST_SIZE, dst, STRVIEW_INVALID, "/", false);
+	count = strview_split_all(DST_SIZE, dst, STRVIEW_INVALID, "/", NULL);
 	ASSERT(count == 0);
 	ASSERT(!strview_is_valid(dst[0]));
 
-	count = strview_split_all(DST_SIZE, dst, cstr("123/456/789"), "/", false);
+	count = strview_split_all(DST_SIZE, dst, cstr("123/456/789"), "/", NULL);
 	ASSERT(count == 3);
 	ASSERT(!memcmp("123", dst[0].data, dst[0].size));
 	ASSERT(!memcmp("456", dst[1].data, dst[1].size));
@@ -460,32 +479,32 @@ TEST test_strview_split_first_delim_edge_cases(void)
 
 	str2 = cstr("/456/789/");
 
-	str1 = strview_split_first_delim(&str2, "/", false);
+	str1 = strview_split_first_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
 	ASSERT(str2.size == 8);
 	ASSERT(!memcmp("456/789/", str2.data, str2.size));
 
-	str1 = strview_split_first_delim(&str2, "/", false);
+	str1 = strview_split_first_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("456", str1.data, str1.size));
 	ASSERT(str2.size == 4);
 	ASSERT(!memcmp("789/", str2.data, str2.size));
 
-	str1 = strview_split_first_delim(&str2, "/", false);
+	str1 = strview_split_first_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(str2.size == 0);
 	ASSERT(str2.data);		//remainder string should be valid and length 0, as a delim was found
 
-	str1 = strview_split_first_delim(&str2, "/", false);
+	str1 = strview_split_first_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 0);		//split string should be the entire source, which is a valid string of length 0
 	ASSERT(str1.data);	
 	ASSERT(str2.size == 0);
 	ASSERT(str2.data == NULL); 	//remaining string should be invalid as there were no delims found
 
 	str2 = cstr("no-delims");
-	str1 = strview_split_first_delim(&str2, "/", false);
+	str1 = strview_split_first_delim(&str2, "/", NULL);
 	ASSERT(str1.data);
 	ASSERT(str1.size == sizeof("no-delims")-1);
 	ASSERT(str2.data == NULL);
@@ -499,13 +518,13 @@ TEST test_strview_split_last_delim(void)
 	strview_t str1, str2;
 
 	str2 = cstr("123/456/789");
-	str1 = strview_split_last_delim(&str2, "/", false);
+	str1 = strview_split_last_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(str2.size == 7);
 	ASSERT(!memcmp("123/456", str2.data, str2.size));
 
-	str1 = strview_split_last_delim(&str2, "/", false);
+	str1 = strview_split_last_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("456", str1.data, str1.size));
 	ASSERT(str2.size == 3);
@@ -514,11 +533,11 @@ TEST test_strview_split_last_delim(void)
 
 	str2 = cstr("ab\".\"c.d\"a.\"ef.gh\".a\"i");
 
-	str1 = strview_split_last_delim(&str2, ".", true);
+	str1 = strview_split_last_delim(&str2, ".", "\"\"");
 	ASSERT(!memcmp("gh\".a\"i", str1.data, str1.size));
-	str1 = strview_split_last_delim(&str2, ".", true);
+	str1 = strview_split_last_delim(&str2, ".", "\"\"");
 	ASSERT(!memcmp("d\"a.\"ef", str1.data, str1.size));
-	str1 = strview_split_last_delim(&str2, ".", true);
+	str1 = strview_split_last_delim(&str2, ".", "\"\"");
 	ASSERT(!memcmp("ab\".\"c", str1.data, str1.size));
 
 	ASSERT(!strview_is_valid(str2)); 	//source is entirely consumed
@@ -532,25 +551,25 @@ TEST test_strview_split_last_delim_edge_cases(void)
 
 	str2 = cstr("/456/789/");
 
-	str1 = strview_split_last_delim(&str2, "/", false);
+	str1 = strview_split_last_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
 	ASSERT(str2.size == 8);
 	ASSERT(!memcmp("/456/789", str2.data, str2.size));
 
-	str1 = strview_split_last_delim(&str2, "/", false);
+	str1 = strview_split_last_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("789", str1.data, str1.size));
 	ASSERT(str2.size == 4);
 	ASSERT(!memcmp("/456", str2.data, str2.size));
 
-	str1 = strview_split_last_delim(&str2, "/", false);
+	str1 = strview_split_last_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 3);
 	ASSERT(!memcmp("456", str1.data, str1.size));
 	ASSERT(str2.size == 0);
 	ASSERT(str2.data);
 
-	str1 = strview_split_last_delim(&str2, "/", false);
+	str1 = strview_split_last_delim(&str2, "/", NULL);
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
 	ASSERT(str2.size == 0);

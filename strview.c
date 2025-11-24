@@ -12,18 +12,30 @@
 //	#include <stdio.h>
 //	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
+	typedef struct lexbracket_t
+	{
+		const char *bracket_pairs;
+		int pair_count;
+		int depth;
+		char opening_char;
+		char closing_char;
+	} lexbracket_t;
+
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
 
 	static bool contains_char(strview_t str, char c);
 
-	static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes);
-	static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes);
+	static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, const char* exclude_quotes);
+	static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, const char* exclude_quotes);
 	static strview_t split_index(strview_t* strview_ptr, int index);
 
 	static strview_t find_first(strview_t haystack, strview_t needle, int(*comp_func)(const void*,const void*, size_t));
 	static strview_t find_last(strview_t haystack, strview_t needle, int(*comp_func)(const void*,const void*, size_t));
+
+	static void lexbracket_init(lexbracket_t *ctx, const char *bracket_pairs);
+	static bool lexbracket_is_inside(lexbracket_t *ctx, const char c);
 
 	static int memcmp_nocase(const void* a, const void* b, size_t size);
 
@@ -250,30 +262,30 @@ strview_t strview_find_last_cstr(strview_t haystack, const char* needle)
 	return strview_find_last_strview(haystack, cstr(needle));
 }
 
-strview_t strview_split_first_delim(strview_t* strview_ptr, const char* delims, bool exclude_quotes)
+strview_t strview_split_first_delim(strview_t* src, const char* delims, const char* ignore_within)
 {
 	strview_t result = STRVIEW_INVALID;
 	
-	if(strview_ptr)
-		result = split_first_delim(strview_ptr, cstr(delims), exclude_quotes);
+	if(src)
+		result = split_first_delim(src, cstr(delims), ignore_within);
 
 	return result;
 }
 
-int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, bool exclude_quotes)
+int strview_split_all(int dst_size, strview_t dst[dst_size], strview_t src, const char* delims, const char* ignore_within)
 {
 	int count = 0;
 	while(strview_is_valid(src) && count < dst_size)
-		dst[count++] = strview_split_first_delim(&src, delims, exclude_quotes);
+		dst[count++] = strview_split_first_delim(&src, delims, ignore_within);
 	return count;
 }
 
-strview_t strview_split_last_delim(strview_t* strview_ptr, const char* delims, bool exclude_quotes)
+strview_t strview_split_last_delim(strview_t* strview_ptr, const char* delims, const char* ignore_within)
 {
 	strview_t result = STRVIEW_INVALID;
-	
+
 	if(strview_ptr)
-		result = split_last_delim(strview_ptr, cstr(delims), exclude_quotes);
+		result = split_last_delim(strview_ptr, cstr(delims), ignore_within);
 
 	return result;
 }
@@ -396,21 +408,23 @@ static int memcmp_nocase(const void* a, const void* b, size_t size)
 	return result;
 }
 
-static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes)
+static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, const char* ignore_within)
 {
 	strview_t result;
 	bool found = false;
 	const char* ptr;
-	bool in_quotes = false;
+	bool ignore = false;
+	lexbracket_t lexbracket;
 	ptr = strview_ptr->data;
+	lexbracket_init(&lexbracket, ignore_within);
 
 	if(strview_ptr->data && delims.data)
 	{
 		// try to find the delim
 		while(ptr != &strview_ptr->data[strview_ptr->size] && !found)
 		{
-			in_quotes ^= (*ptr == '\"') && exclude_quotes;
-			found = !in_quotes && contains_char(delims, *ptr);
+			ignore = lexbracket_is_inside(&lexbracket, *ptr);
+			found = !ignore && contains_char(delims, *ptr);
 			ptr += !found;
 		};
 	};
@@ -436,12 +450,14 @@ static strview_t split_first_delim(strview_t* strview_ptr, strview_t delims, boo
 	return result;
 }
 
-static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool exclude_quotes)
+static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, const char* ignore_within)
 {
 	strview_t result;
 	bool found = false;
 	const char* ptr;
-	bool in_quotes = false;
+	bool ignore = false;
+	lexbracket_t lexbracket;
+	lexbracket_init(&lexbracket, ignore_within);
 
 	if(strview_ptr->data && strview_ptr->size && delims.data)
 	{
@@ -449,8 +465,8 @@ static strview_t split_last_delim(strview_t* strview_ptr, strview_t delims, bool
 		ptr = &strview_ptr->data[strview_ptr->size-1];
 		while(ptr != strview_ptr->data-1 && !found)
 		{
-			in_quotes ^= (*ptr == '\"') && exclude_quotes;
-			found = !in_quotes && contains_char(delims, *ptr);
+			ignore = lexbracket_is_inside(&lexbracket, *ptr);
+			found = !ignore && contains_char(delims, *ptr);
 			ptr -= !found;
 		};
 	};
@@ -569,3 +585,49 @@ static strview_t find_last(strview_t haystack, strview_t needle, int(*comp_func)
 	return result;
 }
 
+static void lexbracket_init(lexbracket_t *ctx, const char *bracket_pairs)
+{
+	int i = 0;
+
+	if(bracket_pairs)
+		i = strlen(bracket_pairs);
+
+	if(i & 1)
+		i = 0;
+
+	if(i)
+	{
+		ctx->pair_count = i/2;
+		ctx->bracket_pairs = bracket_pairs;
+	}
+	else
+	{
+		ctx->pair_count = 0;
+		ctx->bracket_pairs = NULL;
+	};
+
+	ctx->depth = 0;
+	ctx->closing_char = 0;
+	ctx->opening_char = 0;
+}
+
+static bool lexbracket_is_inside(lexbracket_t *ctx, const char c)
+{
+	int i = 0;
+
+	if(ctx->depth && c == ctx->opening_char && c != ctx->closing_char)
+		ctx->depth++;
+	else if(ctx->depth && c == ctx->closing_char)
+		ctx->depth--;
+	else while(ctx->depth == 0 && i != ctx->pair_count)
+	{
+		if(ctx->bracket_pairs[i * 2] == c)
+		{
+			ctx->depth = 1;
+			ctx->opening_char = c;
+			ctx->closing_char = ctx->bracket_pairs[i * 2 + 1];
+		};
+		i++;
+	};
+	return (ctx->depth != 0);
+}
