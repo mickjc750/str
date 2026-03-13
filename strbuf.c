@@ -225,7 +225,7 @@ strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list 
 		{
 			size += append_size;
 			if(buf_is_dynamic(buf) && size > buf->capacity)
-				change_buf_capacity(&buf, round_up_capacity(size));
+				change_buf_capacity(&buf, round_up_capacity(buf->size, size));
 
 			failed = size > buf->capacity;
 		};
@@ -824,7 +824,7 @@ static void append_char_to_buf(strbuf_t** buf_ptr, char c)
 	if(!failed)
 	{
 		if(buf_is_dynamic(buf) && buf->size+1 > buf->capacity)
-			change_buf_capacity(&buf, round_up_capacity(buf->size + 1));
+			change_buf_capacity(&buf, round_up_capacity(buf->size, buf->size + 1));
 		failed = buf->capacity < buf->size+1;
 	};
 
@@ -848,6 +848,8 @@ static int round_up_capacity(int current_capacity, int capacity_needed)
 	while(new_capacity < capacity_needed)
 	{
 		grow_size = new_capacity >> STRBUF_CAPACITY_GROW_RATIO;
+		if(!grow_size)
+			grow_size = 1;
 		if(!add_will_overflow_int(new_capacity, grow_size))
 			new_capacity += grow_size;
 		else
