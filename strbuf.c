@@ -22,6 +22,15 @@
 		#include <assert.h>
 	#endif
 
+	#ifdef STRBUF_CAPACITY_GROW_STEP
+		#warning "Depreciated build option STRBUF_CAPACITY_GROW_STEP.\
+ Buffer size now increases by 1/2^(STRBUF_CAPACITY_GROW_RATIO), which defaults to 1/2^1 or a 50% increase."
+	#endif
+
+	#ifndef STRBUF_CAPACITY_GROW_RATIO
+		#define STRBUF_CAPACITY_GROW_RATIO 1
+	#endif
+
 //********************************************************************************************************
 // Local defines
 //********************************************************************************************************
@@ -40,7 +49,7 @@
 	static void change_buf_capacity(strbuf_t** buf_ptr, int new_capacity);
 	static void assign_strview_to_buf(strbuf_t** buf_ptr, strview_t str);
 	static void append_char_to_buf(strbuf_t** strbuf, char c);
-	static int  round_up_capacity(int capacity);
+	static int  round_up_capacity(int current_capacity, int capacity_needed);
 	static strview_t strview_of_buf(strbuf_t* buf);
 	static bool buf_contains_str(strbuf_t* buf, strview_t str);
 	static bool buf_is_dynamic(strbuf_t* buf);
@@ -397,7 +406,7 @@ strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str)
 		if(!failed)
 		{
 			if(str.size > buf->capacity && buf_is_dynamic(buf))
-				change_buf_capacity(&buf, round_up_capacity(str.size));
+				change_buf_capacity(&buf, round_up_capacity(buf->size, str.size));
 			
 			failed = str.size > buf->capacity;
 		};
@@ -684,7 +693,7 @@ static strview_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 		else
 		{
 			if(buf_is_dynamic(dst_buf) && dst_buf->capacity < size_needed)
-				change_buf_capacity(&dst_buf, round_up_capacity(size_needed));
+				change_buf_capacity(&dst_buf, round_up_capacity(dst_buf->size, size_needed));
 			build_buf = dst_buf;
 			empty_buf(build_buf);
 		};
@@ -737,7 +746,7 @@ static void insert_strview_into_buf(strbuf_t** buf_ptr, int index, strview_t str
 	if(!failed)
 	{
 		if(buf_is_dynamic(buf) && buf->capacity < buf->size + str.size)
-			change_buf_capacity(&buf, round_up_capacity(buf->size + str.size));
+			change_buf_capacity(&buf, round_up_capacity(buf->size, (buf->size + str.size)));
 
 		if(src_in_dst && buf != *buf_ptr)
 			str.data = buf->cstr + src_offset;
@@ -831,19 +840,21 @@ static void append_char_to_buf(strbuf_t** buf_ptr, char c)
 	*buf_ptr = buf;
 }
 
-static int round_up_capacity(int capacity)
+static int round_up_capacity(int current_capacity, int capacity_needed)
 {
-	int remainder = capacity % STRBUF_CAPACITY_GROW_STEP;
-	
-	if(remainder)
+	int grow_size;
+	int new_capacity = current_capacity;
+
+	while(new_capacity < capacity_needed)
 	{
-		if(!add_will_overflow_int(capacity, STRBUF_CAPACITY_GROW_STEP-remainder))
-			capacity += STRBUF_CAPACITY_GROW_STEP-remainder;
+		grow_size = new_capacity >> STRBUF_CAPACITY_GROW_RATIO;
+		if(!add_will_overflow_int(new_capacity, grow_size))
+			new_capacity += grow_size;
 		else
-			capacity = INT_MAX;
+			new_capacity = INT_MAX;
 	};
 
-	return capacity;
+	return new_capacity;
 }
 
 static bool buf_contains_str(strbuf_t* buf, strview_t str)
