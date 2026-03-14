@@ -605,7 +605,7 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 			{
 				if(dst < src[i].data)
 				{
-					memmove(dst, src[i].data, src[i].size);
+					memmove(dst, src[i].data, src[i].size); //<-- ASAN FAULT
 					src[i].data = dst;
 				};
 				dst += src[i].size + 1;
