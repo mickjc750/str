@@ -115,15 +115,6 @@
    **********************************************************************************/ 
 	#define STRBUF_FIXED_CAP(cap)	((strbuf_t*)&((strbuf_space_t(cap)){.buf.capacity=(cap), .buf.size=0, .buf.allocator.allocator=NULL, .buf.allocator.app_data=NULL, .bdy[0]=0}))
 
-/*	The buffer capacity is rounded up to a multiple of this when:
-		* creating a new buffer with strbuf_create()
-		* expanding the buffer for any reason
-	The buffer size can only ever be shrunk by calling strbuf_shrink(), which shrinks it to the minimum needed.
-	Higher values will reduce calls to the allocator, at the expense of more memory overhead. */
- 	#ifndef STRBUF_CAPACITY_GROW_STEP
-		#define STRBUF_CAPACITY_GROW_STEP 16
-	#endif
-
 /// @cond DEV
 //	This is used for counting the number of arguments to the strbuf_cat() macro below.
 // 	From https://stackoverflow.com/questions/4421681/how-to-count-the-number-of-arguments-passed-to-a-function-that-accepts-a-variabl
