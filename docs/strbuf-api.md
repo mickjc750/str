@@ -10,30 +10,49 @@
 5. [Using static or stack allocated buffers](#using-static-or-stack-allocated-buffers)
 
 # Function reference
- * [strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator)](#strbuf_t-strbuf_createsize_t-initial_capacity-strbuf_allocator_t-allocator)
- * [strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size)](#strbuf_t-strbuf_create_fixedvoid-addr-size_t-addr_size)
- * [void strbuf_destroy(strbuf_t** buf_ptr)](#void-strbuf_destroystrbuf_t-buf_ptr)
- * [strview_t strbuf_view(strbuf_t** buf_ptr)](#strview_t-strbuf_viewstrbuf_t-buf_ptr)
- * [strview_t strbuf_shrink(strbuf_t** buf_ptr)](#strview_t-strbuf_shrinkstrbuf_t-buf_ptr)
- * [strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size)](#strview_t-strbuf_growstrbuf_t-buf_ptr-int-min_size)
- * [strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str)](#strview_t-strbuf_assignstrbuf_t-buf_ptr-strview_t-str)
- * [strview_t strbuf_cat(strbuf_t** buf_ptr, ...)](#strview_t-strbuf_catstrbuf_t-buf_ptr)
- * [strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va)](#strview_t-strbuf_vcatstrbuf_t-buf_ptr-int-n_args-va_list-va)
- * [strview_t strbuf_append(strbuf_t** buf_ptr, strview_t str)](#strview_t-strbuf_appendstrbuf_t-buf_ptr-str)
- * [strview_t strbuf_append_char(strbuf_t** buf_ptr, char c)](#strview_t-strbuf_append_charstrbuf_t-buf_ptr-char-c)
- * [strview_t strbuf_prepend(strbuf_t** buf_ptr, strview_t str)](#strview_t-strbuf_prependstrbuf_t-buf_ptr-str)
- * [strview_t strbuf_strip(strbuf_t** buf_ptr, strview_t stripchars)](#strview_t-strbuf_stripstrbuf_t-buf_ptr-stripchars)
- * [strview_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, strview_t str)](#strview_t-strbuf_insert_at_indexstrbuf_t-buf_ptr-int-index-str)
- * [strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, strview_t src)](#strview_t-strbuf_insert_beforestrbuf_t-buf_ptr-strview_t-dst-src)
- * [strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, strview_t src)](#strview_t-strbuf_insert_afterstrbuf_t-buf_ptr-strview_t-dst-src)
- * [strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...)](#strview_t-strbuf_printfstrbuf_t-buf_ptr-const-char-format)
- * [strview_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)](#strview_t-strbuf_vprintfstrbuf_t-buf_ptr-const-char-format-va_list-va)
- * [strview_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...)](#strview_t-strbuf_prnfstrbuf_t-buf_ptr-const-char-format)
- * [strview_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)](#strview_t-strbuf_vprnfstrbuf_t-buf_ptr-const-char-format-va_list-va)
- * [strview_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...)](#strview_t-strbuf_append_printfstrbuf_t-buf_ptr-const-char-format)
- * [strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)](#strview_t-strbuf_append_vprintfstrbuf_t-buf_ptr-const-char-format-va_list-va)
- * [strview_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...)](#strview_t-strbuf_append_prnfstrbuf_t-buf_ptr-const-char-format)
- * [strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)](#strview_t-strbuf_append_vprnfstrbuf_t-buf_ptr-const-char-format-va_list-va)
+- [strbuf.h](#strbufh)
+- [Contents](#contents)
+- [Function reference](#function-reference)
+	- [About](#about)
+- [Providing an allocator for strbuf\_create().](#providing-an-allocator-for-strbuf_create)
+	- [Explanation:](#explanation)
+- [Allocator example](#allocator-example)
+- [Buffer re-sizing](#buffer-re-sizing)
+- [Using static or stack allocated buffers](#using-static-or-stack-allocated-buffers)
+- [Assigning buffer contents using printf](#assigning-buffer-contents-using-printf)
+- [Assigning buffer contents using prnf](#assigning-buffer-contents-using-prnf)
+- [Function reference](#function-reference-1)
+	- [`strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator);`](#strbuf_t-strbuf_createsize_t-initial_capacity-strbuf_allocator_t-allocator)
+	- [`strbuf_t* strbuf_create(strview_t initial_content, strbuf_allocator_t* allocator);`](#strbuf_t-strbuf_createstrview_t-initial_content-strbuf_allocator_t-allocator)
+	- [`strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);`](#strbuf_t-strbuf_create_fixedvoid-addr-size_t-addr_size)
+	- [`void strbuf_destroy(strbuf_t** buf_ptr);`](#void-strbuf_destroystrbuf_t-buf_ptr)
+	- [`char* strbuf_to_cstr(strbuf_t** buf_ptr);`](#char-strbuf_to_cstrstrbuf_t-buf_ptr)
+	- [`strview_t strbuf_view(strbuf_t** buf_ptr);`](#strview_t-strbuf_viewstrbuf_t-buf_ptr)
+	- [`strview_t strbuf_shrink(strbuf_t** buf_ptr);`](#strview_t-strbuf_shrinkstrbuf_t-buf_ptr)
+	- [`strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size);`](#strview_t-strbuf_growstrbuf_t-buf_ptr-int-min_size)
+	- [`strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str);`](#strview_t-strbuf_assignstrbuf_t-buf_ptr-strview_t-str)
+	- [`strview_t strbuf_cat(strbuf_t** buf_ptr, ...);`](#strview_t-strbuf_catstrbuf_t-buf_ptr-)
+	- [`strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);`](#strview_t-strbuf_vcatstrbuf_t-buf_ptr-int-n_args-va_list-va)
+	- [`strview_t strbuf_append(strbuf_t** buf_ptr, str);`](#strview_t-strbuf_appendstrbuf_t-buf_ptr-str)
+	- [`strview_t strbuf_append_char(strbuf_t** buf_ptr, char c);`](#strview_t-strbuf_append_charstrbuf_t-buf_ptr-char-c)
+	- [`strview_t strbuf_prepend(strbuf_t** buf_ptr, str);`](#strview_t-strbuf_prependstrbuf_t-buf_ptr-str)
+	- [`strview_t strbuf_strip(strbuf_t** buf_ptr, stripchars);`](#strview_t-strbuf_stripstrbuf_t-buf_ptr-stripchars)
+	- [`strview_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str);`](#strview_t-strbuf_insert_at_indexstrbuf_t-buf_ptr-int-index-str)
+	- [`strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, src);`](#strview_t-strbuf_insert_beforestrbuf_t-buf_ptr-strview_t-dst-src)
+	- [`strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, src);`](#strview_t-strbuf_insert_afterstrbuf_t-buf_ptr-strview_t-dst-src)
+	- [`strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);`](#strview_t-strbuf_printfstrbuf_t-buf_ptr-const-char-format-)
+	- [`strview_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);`](#strview_t-strbuf_vprintfstrbuf_t-buf_ptr-const-char-format-va_list-va)
+		- [These functions are available if you define STRBUF\_PROVIDE\_PRINTF, ideally by adding -DSTRBUF\_PROVIDE\_PRINTF to your compiler options](#these-functions-are-available-if-you-define-strbuf_provide_printf-ideally-by-adding--dstrbuf_provide_printf-to-your-compiler-options)
+	- [`strview_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...);`](#strview_t-strbuf_prnfstrbuf_t-buf_ptr-const-char-format-)
+	- [`strview_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);`](#strview_t-strbuf_vprnfstrbuf_t-buf_ptr-const-char-format-va_list-va)
+		- [These functions are available if you define STRBUF\_PROVIDE\_PRNF, ideally by adding -DSTRBUF\_PROVIDE\_PRNF to your compiler options](#these-functions-are-available-if-you-define-strbuf_provide_prnf-ideally-by-adding--dstrbuf_provide_prnf-to-your-compiler-options)
+	- [`strview_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...);`](#strview_t-strbuf_append_prnfstrbuf_t-buf_ptr-const-char-format-)
+	- [`strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);`](#strview_t-strbuf_append_vprnfstrbuf_t-buf_ptr-const-char-format-va_list-va)
+		- [These functions are available if you define STRBUF\_PROVIDE\_PRNF, ideally by adding -DSTRBUF\_PROVIDE\_PRNF to your compiler options](#these-functions-are-available-if-you-define-strbuf_provide_prnf-ideally-by-adding--dstrbuf_provide_prnf-to-your-compiler-options-1)
+	- [`strview_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...);`](#strview_t-strbuf_append_printfstrbuf_t-buf_ptr-const-char-format-)
+	- [`strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);`](#strview_t-strbuf_append_vprintfstrbuf_t-buf_ptr-const-char-format-va_list-va)
+		- [These functions are available if you define STRBUF\_PROVIDE\_PRINTF, ideally by adding -DSTRBUF\_PROVIDE\_PRINTF to your compiler options](#these-functions-are-available-if-you-define-strbuf_provide_printf-ideally-by-adding--dstrbuf_provide_printf-to-your-compiler-options-1)
+	- [`strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count]);`](#strview_t-strbuf_terminate_viewsstrbuf_t-buf_ptr-int-count-strview_t-srccount)
 
 
 ## About
@@ -111,9 +130,12 @@ This also available in [/examples/custom_allocator](/examples/custom_allocator/h
 	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size)
 	{
 		(void)this_allocator;
-		void* result;
-		result = realloc(ptr_to_free, size);
-		assert(size==0 || result);	// You need to catch a failed allocation here.
+		void* result = NULL;
+		if(size == 0)
+			free(ptr_to_free);
+		else
+			result = realloc(ptr_to_free, size);
+		assert(size==0 || result);	//catch a failed allocation here
 		return result;
 	}
 
