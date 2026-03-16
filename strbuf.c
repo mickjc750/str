@@ -569,6 +569,8 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 	int size_needed = 0;
 	char *dst;
 	strview_t view;
+	strbuf_t *old_buf;
+	ptrdiff_t offset = 0;;
 
 	failed = !(buf_ptr && *buf_ptr);
 
@@ -588,7 +590,18 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 	if(!failed)
 	{
 		if(buf_is_dynamic(*buf_ptr) && ((*buf_ptr)->capacity < size_needed))
+		{
+			old_buf = *buf_ptr;
 			change_buf_capacity(buf_ptr, size_needed);
+			offset = (uint8_t*)*buf_ptr - (uint8_t*)old_buf;
+		};
+		i = 0;
+		while(i != count)	// move any valid views to the new buffer
+		{
+			if(strview_is_valid(src[i]))
+				src[i].data += offset;
+			i++;
+		};
 
 		failed = ((*buf_ptr)->capacity < size_needed);
 		if(failed)
