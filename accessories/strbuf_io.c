@@ -103,7 +103,10 @@ strview_t strbuf_append_file(strbuf_t **dst, const char* file_name)
 	if(eof)
 		retval = strbuf_shrink(dst);
 	else
-		retval = strbuf_assign(dst, cstr(""));
+	{
+		strbuf_assign(dst, cstr(""));
+		retval = STRVIEW_INVALID;
+	};
 
 	return retval;
 }
