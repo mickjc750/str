@@ -10,6 +10,10 @@
 // Local defines
 //********************************************************************************************************
 
+//	When appending a file to a buffer, start with a buffer of at least this size
+//	This must be >0 
+	#define MIN_STARTING_SIZE	4096
+
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
@@ -72,6 +76,9 @@ strview_t strbuf_append_file(strbuf_t **dst, const char* file_name)
 	strview_t retval = STRVIEW_INVALID;
 
 	failed = (dst == NULL || *dst == NULL);
+
+	if(!failed)
+		failed = !strview_is_valid(strbuf_grow(dst, MIN_STARTING_SIZE));
 
 	if(!failed)
 	{
