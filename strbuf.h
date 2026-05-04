@@ -124,11 +124,11 @@
  * strbuf_t* my_buf = strbuf_create(cstr("Hello"),NULL);
  * @endcode
  **********************************************************************************/ 
-	#define strbuf_create(init, alloc) _Generic((init),\
+	#define strbuf_create(init) _Generic((init),\
 		size_t:			strbuf_create_empty,\
 		int:			strbuf_create_empty,\
 		strview_t:		strbuf_create_init\
-		)(init, alloc)
+		)(init)
 
 /**
  * @struct strbuf_t

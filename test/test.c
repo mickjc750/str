@@ -34,6 +34,9 @@
 // Private variables
 //********************************************************************************************************
 
+	#define STATIC_BUFFER_SIZE	500
+	static char static_buf[STATIC_BUFFER_SIZE];
+
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
@@ -185,7 +188,7 @@ TEST test_strbuf_create_init(void)
 {
 	#define TEST_STRING	"The quick brown fox jumped over the lazy dog"
 	strbuf_t* buf;
-	buf = strbuf_create(cstr(TEST_STRING), NULL);
+	buf = strbuf_create(cstr(TEST_STRING));
 
 	ASSERT(buf);
 	ASSERT(buf->cstr);
@@ -213,7 +216,9 @@ TEST test_strbuf_strcat(void)
 	ASSERT(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC"));
 
 	//Appending -AFTER to existing buffer
+	printf("%i %s\n", __LINE__, buf->cstr);
 	strbuf_cat(&buf, strbuf_view(&buf), cstr("-AFTER"));
+	printf("%i %s\n", __LINE__, buf->cstr);
 	ASSERT(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	//Prepending BEFORE- to existing buffer
@@ -1371,7 +1376,6 @@ TEST test_strbuf_terminate_views(void)
 	strbuf_t* dbuf = strbuf_create(0);
 	strview_t view[3];
 	strview_t result;
-	strview_t src;
 
 //	in		AAA
 //	out		AAA.
