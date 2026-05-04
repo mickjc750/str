@@ -14,14 +14,6 @@
 		#include "prnf.h"
 	#endif
 
-	#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
-		#include <stdlib.h>
-	#endif
-
-	#ifdef STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
-		#include <assert.h>
-	#endif
-
 	#ifdef STRBUF_CAPACITY_GROW_STEP
 		#warning "Depreciated build option STRBUF_CAPACITY_GROW_STEP.\
  Buffer size now increases by 1/2^(STRBUF_CAPACITY_GROW_RATIO), which defaults to 1/2^1 or a 50% increase."
@@ -38,11 +30,17 @@
 //	#include <stdio.h>
 //	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
 
+//	Todo: provide these to a single header stb style
+	#include <stdlib.h>
+	#define strbuf_alloc(sz)		malloc(sz)
+	#define strbuf_realloc(ptr,sz)	realloc(pre,sz)
+	#define strbuf_free(ptr)		free(ptr)
+
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
 
-	static strbuf_t* create_buf(int initial_capacity, strbuf_allocator_t allocator);
+	static strbuf_t* create_buf(int initial_capacity);
 	static strview_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
 	static void insert_strview_into_buf(strbuf_t** buf_ptr, int index, strview_t str);
 	static void destroy_buf(strbuf_t** buf_ptr);
@@ -52,7 +50,6 @@
 	static int  round_up_capacity(int current_capacity, int capacity_needed);
 	static strview_t strview_of_buf(strbuf_t* buf);
 	static bool buf_contains_str(strbuf_t* buf, strview_t str);
-	static bool buf_is_dynamic(strbuf_t* buf);
 	static void empty_buf(strbuf_t* buf);
 	static bool add_will_overflow_int(int a, int b);
 	static bool view_contains_char(strview_t view, char c);
@@ -61,87 +58,27 @@
 	static void char_handler_for_prnf(void* dst, char c);
 #endif
 
-#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
-	static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
-#endif
-
 //********************************************************************************************************
 // Public functions
 //********************************************************************************************************
 
-#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
-static void* allocfunc_stdlib(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size)
-{
-	(void)this_allocator;
-	void* result = NULL;
-	if(size == 0)
-		free(ptr_to_free);
-	else
-		result = realloc(ptr_to_free, size);
-	#ifdef STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
-		assert(size==0 || result);
-	#endif
-	return result;
-}
-	strbuf_allocator_t strbuf_default_allocator = (strbuf_allocator_t){.allocator=allocfunc_stdlib, .app_data=NULL};
-#else
-	#pragma weak strbuf_default_allocator
-	strbuf_allocator_t strbuf_default_allocator = (strbuf_allocator_t){.allocator=NULL, .app_data=NULL};
-#endif
-
-strbuf_t* strbuf_create_empty(size_t initial_capacity, strbuf_allocator_t* allocator)
+strbuf_t* strbuf_create_empty(size_t initial_capacity)
 {
 	strbuf_t* result;
 	
-	if(!allocator)
-		allocator = &strbuf_default_allocator;
-
-	if(allocator->allocator && initial_capacity <= INT_MAX)
-		result = create_buf((int)initial_capacity, *allocator);
+	if(initial_capacity <= INT_MAX)
+		result = create_buf((int)initial_capacity);
 	else
 		result = NULL;
 	return result;
 }
 
-strbuf_t* strbuf_create_init(strview_t initial_content, strbuf_allocator_t* allocator)
+strbuf_t* strbuf_create_init(strview_t initial_content)
 {
 	strbuf_t* result;
 	
-	if(!allocator)
-		allocator = &strbuf_default_allocator;
-
-	if(allocator->allocator)
-	{
-		result = create_buf(initial_content.size, *allocator);
-		insert_strview_into_buf(&result, 0, initial_content);
-	}
-	else
-		result = NULL;
-	return result;
-}
-
-strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size)
-{
-	strbuf_t* result = NULL;
-	intptr_t alignment_mask;
-	size_t capacity;
-
-	if(addr_size > sizeof(strbuf_t) && addr)
-	{
-		capacity = addr_size - sizeof(strbuf_t) - 1;
-		//check alignment
-		alignment_mask = sizeof(void*)-1;
-		alignment_mask &= (intptr_t)addr;
-		if(alignment_mask == 0)
-		{
-			result = addr;
-			result->allocator.app_data = NULL;
-			result->allocator.allocator = NULL;
-			result->capacity =  capacity <= INT_MAX ? capacity:INT_MAX;
-			result->size = 0;
-			empty_buf(result);
-		};
-	};
+	result = create_buf(initial_content.size);
+	insert_strview_into_buf(&result, 0, initial_content);
 
 	return result;
 }
@@ -224,7 +161,7 @@ strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list 
 		if(!failed)
 		{
 			size += append_size;
-			if(buf_is_dynamic(buf) && size > buf->capacity)
+			if(size > buf->capacity)
 				change_buf_capacity(&buf, round_up_capacity(buf->size, size));
 
 			failed = size > buf->capacity;
@@ -339,8 +276,7 @@ strview_t strbuf_shrink(strbuf_t** buf_ptr)
 	strview_t str = STRVIEW_INVALID;
 	if(buf_ptr && *buf_ptr)
 	{
-		if(buf_is_dynamic(*buf_ptr))
-			change_buf_capacity(buf_ptr, (*buf_ptr)->size);
+		change_buf_capacity(buf_ptr, (*buf_ptr)->size);
 		str = strview_of_buf(*buf_ptr);
 	};
 	return str;
@@ -352,12 +288,9 @@ strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size)
 	strview_t str = STRVIEW_INVALID;
 	if(buf_ptr && *buf_ptr)
 	{
-		if(buf_is_dynamic(*buf_ptr))
-		{
-			if(min_size > (*buf_ptr)->capacity)
-				change_buf_capacity(buf_ptr, min_size);
-			str = strview_of_buf(*buf_ptr);
-		};
+		if(min_size > (*buf_ptr)->capacity)
+			change_buf_capacity(buf_ptr, min_size);
+		str = strview_of_buf(*buf_ptr);
 	};
 	return str;
 }
@@ -366,7 +299,7 @@ void strbuf_destroy(strbuf_t** buf_ptr)
 {
 	if(buf_ptr)
 	{
-		if(*buf_ptr && buf_is_dynamic(*buf_ptr))
+		if(*buf_ptr)
 			destroy_buf(buf_ptr);
 		*buf_ptr = NULL;
 	};	
@@ -376,19 +309,14 @@ char* strbuf_to_cstr(strbuf_t** buf_ptr)
 {
 	int len;
 	char* str = NULL;
-	strbuf_allocator_t allocator;
+
 	if(buf_ptr && *buf_ptr)
 	{
 		len = (*buf_ptr)->size;
-		if(buf_is_dynamic(*buf_ptr))
-		{
-			allocator = (*buf_ptr)->allocator;
-			str = (void*)(*buf_ptr);
-			memmove(str, (*buf_ptr)->cstr, len);
-			str = allocator.allocator(&allocator, str, len+1);
-		}
-		else
-			str = (*buf_ptr)->cstr;
+		str = (void*)(*buf_ptr);
+		memmove(str, (*buf_ptr)->cstr, len);
+		str = strbuf_realloc(str, len+1);
+
 		str[len] = 0;
 		*buf_ptr = NULL;
 	};
@@ -405,7 +333,7 @@ strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str)
 		failed = !strview_is_valid(str);
 		if(!failed)
 		{
-			if(str.size > buf->capacity && buf_is_dynamic(buf))
+			if(str.size > buf->capacity)
 				change_buf_capacity(&buf, round_up_capacity(buf->size, str.size));
 			
 			failed = str.size > buf->capacity;
@@ -434,32 +362,6 @@ strview_t strbuf_append_strview(strbuf_t** buf_ptr, strview_t str)
 strview_t strbuf_append_cstr(strbuf_t** buf_ptr, const char* str)
 {
 	return strbuf_append_strview(buf_ptr, cstr(str));
-}
-
-strview_t strbuf_append_using(strbuf_t** buf_ptr, int (*strbuf_fetcher)(void* dst, int dst_size, void* fetcher_vars), void* fetch_vars)
-{
-	strbuf_t* buf;
-	int available_space;
-	int bytes_appended;
-	bool fetch_fault = true;
-
-	if(buf_ptr && *buf_ptr)
-	{
-		buf = *buf_ptr;
-		available_space = buf->capacity - buf->size;
-		bytes_appended = strbuf_fetcher(&buf->cstr[buf->size], available_space, fetch_vars);
-		fetch_fault = bytes_appended < 0 || bytes_appended > available_space;
-		if(fetch_fault)
-			empty_buf(buf);
-		else
-		{
-			buf->size += bytes_appended;
-			buf->cstr[buf->size] = 0;
-		};
-		*buf_ptr = buf;
-	};
-
-	return fetch_fault ? STRVIEW_INVALID : strview_of_buf(*buf_ptr);
 }
 
 strview_t strbuf_prepend_strview(strbuf_t** buf_ptr, strview_t str)
@@ -589,7 +491,7 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 //	resize the buffer if possible, and check that the buffer is big enough
 	if(!failed)
 	{
-		if(buf_is_dynamic(*buf_ptr) && ((*buf_ptr)->capacity < size_needed))
+		if((*buf_ptr)->capacity < size_needed)
 		{
 			old_buf = *buf_ptr;
 			change_buf_capacity(buf_ptr, size_needed);
@@ -653,15 +555,14 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 // Private functions
 //********************************************************************************************************
 
-static strbuf_t* create_buf(int initial_capacity, strbuf_allocator_t allocator)
+static strbuf_t* create_buf(int initial_capacity)
 {
 	strbuf_t* buf = NULL;
 
 	if(initial_capacity <= INT_MAX)
 	{
-		buf = allocator.allocator(&allocator, NULL, sizeof(strbuf_t)+initial_capacity+1);
+		buf = strbuf_alloc(sizeof(strbuf_t)+initial_capacity+1);
 		buf->capacity = initial_capacity;
-		buf->allocator = allocator;
 		empty_buf(buf);
 	};
 
@@ -701,17 +602,17 @@ static strview_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 
 	if(!failed)
 	{
-		if(tmp_buf_needed && buf_is_dynamic(dst_buf))
-			build_buf = create_buf(size_needed, dst_buf->allocator);
+		if(tmp_buf_needed)
+			build_buf = create_buf(size_needed);
 		else
 		{
-			if(buf_is_dynamic(dst_buf) && dst_buf->capacity < size_needed)
+			if(dst_buf->capacity < size_needed)
 				change_buf_capacity(&dst_buf, round_up_capacity(dst_buf->size, size_needed));
 			build_buf = dst_buf;
 			empty_buf(build_buf);
 		};
 
-		if(buf_is_dynamic(build_buf) || !tmp_buf_needed)
+		if(!tmp_buf_needed)
 		{
 			if(build_buf->capacity >= size_needed)
 			{
@@ -721,7 +622,7 @@ static strview_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
 			};
 		};
 
-		if(tmp_buf_needed && buf_is_dynamic(build_buf))
+		if(tmp_buf_needed)
 		{
 			assign_strview_to_buf(&dst_buf, strview_of_buf(build_buf));
 			destroy_buf(&build_buf);
@@ -758,7 +659,7 @@ static void insert_strview_into_buf(strbuf_t** buf_ptr, int index, strview_t str
 
 	if(!failed)
 	{
-		if(buf_is_dynamic(buf) && buf->capacity < buf->size + str.size)
+		if(buf->capacity < buf->size + str.size)
 			change_buf_capacity(&buf, round_up_capacity(buf->size, (buf->size + str.size)));
 
 		if(src_in_dst && buf != *buf_ptr)
@@ -800,8 +701,7 @@ static void insert_strview_into_buf(strbuf_t** buf_ptr, int index, strview_t str
 static void destroy_buf(strbuf_t** buf_ptr)
 {
 	strbuf_t* buf = *buf_ptr;
-	if(buf_is_dynamic(buf))
-		buf->allocator.allocator(&buf->allocator, buf, 0);
+	strbuf_free(buf);
 	*buf_ptr = NULL;
 }
 
@@ -809,17 +709,15 @@ static void change_buf_capacity(strbuf_t** buf_ptr, int new_capacity)
 {
 	strbuf_t* buf = *buf_ptr;
 
-	if(buf_is_dynamic(buf))
-	{
-		if(new_capacity < buf->size)
-			new_capacity = buf->size;
+	if(new_capacity < buf->size)
+		new_capacity = buf->size;
 
-		if(new_capacity != buf->capacity)
-		{
-			buf = buf->allocator.allocator(&buf->allocator, buf, sizeof(strbuf_t)+new_capacity+1);
-			buf->capacity = new_capacity;
-		};
+	if(new_capacity != buf->capacity)
+	{
+		buf = strbuf_realloc(buf, sizeof(strbuf_t)+new_capacity+1);
+		buf->capacity = new_capacity;
 	};
+
 	*buf_ptr = buf;
 }
 
@@ -836,7 +734,7 @@ static void append_char_to_buf(strbuf_t** buf_ptr, char c)
 
 	if(!failed)
 	{
-		if(buf_is_dynamic(buf) && buf->size+1 > buf->capacity)
+		if(buf->size+1 > buf->capacity)
 			change_buf_capacity(&buf, round_up_capacity(buf->size, buf->size + 1));
 		failed = buf->capacity < buf->size+1;
 	};
@@ -875,11 +773,6 @@ static int round_up_capacity(int current_capacity, int capacity_needed)
 static bool buf_contains_str(strbuf_t* buf, strview_t str)
 {
 	return &buf->cstr[0] <= str.data && str.data < &buf->cstr[buf->size];
-}
-
-static bool buf_is_dynamic(strbuf_t* buf)
-{
-	return !!(buf->allocator.allocator);
 }
 
 static void empty_buf(strbuf_t* buf)
