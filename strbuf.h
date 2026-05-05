@@ -572,5 +572,796 @@
  **********************************************************************************/
 	strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);
 #endif
+#endif
 
+
+
+
+//*************************************************************************************************
+#ifdef STRBUF_IMPLEMENTATION
+//*************************************************************************************************
+
+	#include <stdint.h>
+	#include <ctype.h>
+	#include <limits.h>
+
+	#ifdef STRBUF_PROVIDE_PRINTF
+		#include <stdio.h>
+	#endif
+
+	#ifdef STRBUF_PROVIDE_PRNF
+		#include "prnf.h"
+	#endif
+
+	#ifdef STRBUF_CAPACITY_GROW_STEP
+		#warning "Depreciated build option STRBUF_CAPACITY_GROW_STEP.\
+ Buffer size now increases by 1/2^(STRBUF_CAPACITY_GROW_RATIO), which defaults to 1/2^1 or a 50% increase."
+	#endif
+
+	#ifndef STRBUF_CAPACITY_GROW_RATIO
+		#define STRBUF_CAPACITY_GROW_RATIO 1
+	#endif
+
+//********************************************************************************************************
+// Local defines
+//********************************************************************************************************
+
+//	#include <stdio.h>
+//	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
+
+//********************************************************************************************************
+// Private prototypes
+//********************************************************************************************************
+
+	static strbuf_t* create_buf(int initial_capacity);
+	static strview_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
+	static void insert_strview_into_buf(strbuf_t** buf_ptr, int index, strview_t str);
+	static void destroy_buf(strbuf_t** buf_ptr);
+	static void change_buf_capacity(strbuf_t** buf_ptr, int new_capacity);
+	static void assign_strview_to_buf(strbuf_t** buf_ptr, strview_t str);
+	static void append_char_to_buf(strbuf_t** strbuf, char c);
+	static int  round_up_capacity(int current_capacity, int capacity_needed);
+	static strview_t strview_of_buf(strbuf_t* buf);
+	static bool buf_contains_str(strbuf_t* buf, strview_t str);
+	static void empty_buf(strbuf_t* buf);
+	static bool add_will_overflow_int(int a, int b);
+	static bool view_contains_char(strview_t view, char c);
+
+#ifdef STRBUF_PROVIDE_PRNF
+	static void char_handler_for_prnf(void* dst, char c);
+#endif
+
+//********************************************************************************************************
+// Public functions
+//********************************************************************************************************
+
+strbuf_t* strbuf_create_empty(size_t initial_capacity)
+{
+	strbuf_t* result;
+	
+	if(initial_capacity <= INT_MAX)
+		result = create_buf((int)initial_capacity);
+	else
+		result = NULL;
+	return result;
+}
+
+strbuf_t* strbuf_create_init(strview_t initial_content)
+{
+	strbuf_t* result;
+	
+	result = create_buf(initial_content.size);
+	insert_strview_into_buf(&result, 0, initial_content);
+
+	return result;
+}
+
+// concatenate a number of str's this can include the buffer itself, strbuf.str for appending
+strview_t _strbuf_cat(strbuf_t** buf_ptr, int n_args, ...)
+{
+	va_list va;
+	va_start(va, n_args);
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+		str = buffer_vcat(buf_ptr, n_args, va);
+	va_end(va);
+	return str;
+}
+
+strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+		str = buffer_vcat(buf_ptr, n_args, va);
+	return str;
+}
+
+#ifdef STRBUF_PROVIDE_PRINTF
+strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_vprintf(buf_ptr, format, va);
+		va_end(va);
+	};
+	return str;
+}
+
+strview_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		empty_buf(*buf_ptr);
+		str = strbuf_append_vprintf(buf_ptr, format, va);
+	};
+	return str;
+}
+
+strview_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_append_vprintf(buf_ptr, format, va);
+		va_end(va);
+	};
+	return str;
+}
+
+	
+strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	int size;
+	int append_size;
+	bool failed;
+	strbuf_t* buf;
+	strview_t str = STRVIEW_INVALID;
+	va_list vb;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_copy(vb, va);
+		buf = *buf_ptr;
+		size = buf->size;
+		append_size = vsnprintf(NULL, 0, format, va);
+
+		failed = add_will_overflow_int(size, append_size);
+		if(!failed)
+		{
+			size += append_size;
+			if(size > buf->capacity)
+				change_buf_capacity(&buf, round_up_capacity(buf->size, size));
+
+			failed = size > buf->capacity;
+		};
+
+		if(!failed)
+			buf->size += vsnprintf(&buf->cstr[buf->size], buf->capacity - buf->size + 1, format, vb);
+		else
+			empty_buf(buf);
+
+		str = strbuf_view(&buf);
+		*buf_ptr = buf;
+		va_end(vb);
+	};
+	return str;
+}
+#endif
+
+#ifdef STRBUF_PROVIDE_PRNF
+strview_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_vprnf(buf_ptr, format, va);
+		va_end(va);;
+	};
+	return str;
+}
+
+strview_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	strbuf_t* buf;
+	strview_t str = STRVIEW_INVALID;
+	int char_count;
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+		empty_buf(buf);
+
+		char_count = vfptrprnf(char_handler_for_prnf, &buf,  format, va);
+
+		if(char_count > buf->size)
+			empty_buf(buf);
+
+		str = strbuf_view(&buf);
+		*buf_ptr = buf;
+	};
+	return str;
+}
+
+strview_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_append_vprnf(buf_ptr, format, va);
+		va_end(va);;
+	};
+	return str;
+}
+
+strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	strbuf_t* buf;
+	strview_t str = STRVIEW_INVALID;
+	int char_count;
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+
+		char_count = buf->size;
+		char_count += vfptrprnf(char_handler_for_prnf, &buf,  format, va);
+
+		if(char_count > buf->size || char_count < 0)
+			empty_buf(buf);
+
+		str = strbuf_view(&buf);
+		*buf_ptr = buf;
+	};
+	return str;
+}
+
+#endif
+
+strview_t strbuf_view(strbuf_t** buf_ptr)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+		str = strview_of_buf(*buf_ptr);
+	return str;
+}
+
+strview_t strbuf_append_char(strbuf_t** buf_ptr, char c)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		append_char_to_buf(buf_ptr, c);
+		str = strview_of_buf(*buf_ptr);
+	};
+	return str;
+}
+
+// reduce allocation size to the minimum possible
+strview_t strbuf_shrink(strbuf_t** buf_ptr)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		change_buf_capacity(buf_ptr, (*buf_ptr)->size);
+		str = strview_of_buf(*buf_ptr);
+	};
+	return str;
+}
+
+// increase allocation size to support a capacity of at least min_size
+strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		if(min_size > (*buf_ptr)->capacity)
+			change_buf_capacity(buf_ptr, min_size);
+		str = strview_of_buf(*buf_ptr);
+	};
+	return str;
+}
+
+void strbuf_destroy(strbuf_t** buf_ptr)
+{
+	if(buf_ptr)
+	{
+		if(*buf_ptr)
+			destroy_buf(buf_ptr);
+		*buf_ptr = NULL;
+	};	
+}
+
+char* strbuf_to_cstr(strbuf_t** buf_ptr)
+{
+	int len;
+	char* str = NULL;
+
+	if(buf_ptr && *buf_ptr)
+	{
+		len = (*buf_ptr)->size;
+		str = (void*)(*buf_ptr);
+		memmove(str, (*buf_ptr)->cstr, len);
+		str = strbuf_realloc(str, len+1);
+
+		str[len] = 0;
+		*buf_ptr = NULL;
+	};
+	return str;
+}
+
+strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str)
+{
+	strbuf_t* buf = NULL;
+	bool failed;
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+		failed = !strview_is_valid(str);
+		if(!failed)
+		{
+			if(str.size > buf->capacity)
+				change_buf_capacity(&buf, round_up_capacity(buf->size, str.size));
+			
+			failed = str.size > buf->capacity;
+		};
+		if(!failed)
+		{
+			memmove(buf->cstr, str.data, (size_t)str.size);
+			buf->size = str.size;
+			buf->cstr[buf->size] = 0;
+		}
+		else
+			empty_buf(buf);
+		*buf_ptr = buf;
+	};
+
+	return strview_of_buf(buf);
+}
+
+strview_t strbuf_append_strview(strbuf_t** buf_ptr, strview_t str)
+{
+	if(buf_ptr && *buf_ptr)
+		insert_strview_into_buf(buf_ptr, (*buf_ptr)->size, str);
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_append_cstr(strbuf_t** buf_ptr, const char* str)
+{
+	return strbuf_append_strview(buf_ptr, cstr(str));
+}
+
+strview_t strbuf_prepend_strview(strbuf_t** buf_ptr, strview_t str)
+{
+	if(buf_ptr && *buf_ptr)
+		insert_strview_into_buf(buf_ptr, 0, str);
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_prepend_cstr(strbuf_t** buf_ptr, const char* str)
+{
+	return strbuf_prepend_strview(buf_ptr, cstr(str));
+}
+
+strview_t strbuf_insert_at_index_strview(strbuf_t** buf_ptr, int index, strview_t str)
+{
+	if(buf_ptr && *buf_ptr)
+		insert_strview_into_buf(buf_ptr, index, str);
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_insert_at_index_cstr(strbuf_t** buf_ptr, int index, const char* str)
+{
+	return strbuf_insert_at_index_strview(buf_ptr, index, cstr(str));
+}
+
+strview_t strbuf_insert_before_strview(strbuf_t** buf_ptr, strview_t dst, strview_t src)
+{
+	strbuf_t* buf;
+
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+		if(buf->cstr <= dst.data && dst.data <= &buf->cstr[buf->size])
+			insert_strview_into_buf(&buf, dst.data - buf->cstr, src);
+		*buf_ptr = buf;
+	};
+
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_insert_before_cstr(strbuf_t** buf_ptr, strview_t dst, const char* src)
+{
+	return strbuf_insert_before_strview(buf_ptr, dst, cstr(src));
+}
+
+strview_t strbuf_insert_after_strview(strbuf_t** buf_ptr, strview_t dst, strview_t src)
+{
+	strbuf_t* buf;
+	const char* dst_ptr;
+
+	if(buf_ptr && *buf_ptr && strview_is_valid(dst))
+	{
+		buf = *buf_ptr;
+		dst_ptr = &dst.data[dst.size];
+
+		if(buf->cstr <= dst_ptr && dst_ptr <= &buf->cstr[buf->size])
+			insert_strview_into_buf(&buf, dst_ptr - buf->cstr, src);
+		*buf_ptr = buf;
+	};
+
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_insert_after_cstr(strbuf_t** buf_ptr, strview_t dst, const char* src)
+{
+	return strbuf_insert_after_strview(buf_ptr, dst, cstr(src));
+}
+
+strview_t strbuf_strip_strview(strbuf_t** buf_ptr, strview_t stripchars)
+{
+	strbuf_t* buf;
+	char* ptr;
+	int count;
+
+	if(buf_ptr && *buf_ptr && strview_is_valid(stripchars))
+	{
+		buf = *buf_ptr;
+		count = buf->size;
+		ptr = buf->cstr;
+		while(count)
+		{
+			if(view_contains_char(stripchars, *ptr))
+			{
+				memmove(ptr, ptr+1, count);
+				buf->size--;
+			}
+			else
+				ptr++;
+			count--;
+		};
+		*buf_ptr = buf;
+	};
+
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_strip_cstr(strbuf_t** buf_ptr, const char* stripchars)
+{
+	return strbuf_strip_strview(buf_ptr, cstr(stripchars));
+}
+
+strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count])
+{
+	bool failed;
+	int i = 0;
+	int size_needed = 0;
+	char *dst;
+	strview_t view;
+	strbuf_t *old_buf;
+	ptrdiff_t offset = 0;;
+
+	failed = !(buf_ptr && *buf_ptr);
+
+//	determine size needed, and check that all valid views are within the buffer
+	if(!failed)
+	{
+		i = 0;
+		while(i != count && !failed)
+		{
+			size_needed += strview_is_valid(src[i]) ? src[i].size + 1 : 0;
+			failed |= !(buf_contains_str(*buf_ptr, src[i]) || !strview_is_valid(src[i]));
+			i++;
+		};
+	};
+
+//	resize the buffer if possible, and check that the buffer is big enough
+	if(!failed)
+	{
+		if((*buf_ptr)->capacity < size_needed)
+		{
+			old_buf = *buf_ptr;
+			change_buf_capacity(buf_ptr, size_needed);
+			offset = (uint8_t*)*buf_ptr - (uint8_t*)old_buf;
+		};
+		i = 0;
+		while(i != count)	// move any valid views to the new buffer
+		{
+			if(strview_is_valid(src[i]))
+				src[i].data += offset;
+			i++;
+		};
+
+		failed = ((*buf_ptr)->capacity < size_needed);
+		if(failed)
+			empty_buf((*buf_ptr));
+	};
+
+	if(!failed)
+	{
+		i = 0;
+		dst = (*buf_ptr)->cstr;
+		while(i != count)
+		{
+			if(strview_is_valid(src[i]))
+			{
+				if(dst < src[i].data)
+				{
+					memmove(dst, src[i].data, src[i].size); //<-- ASAN FAULT
+					src[i].data = dst;
+				};
+				dst += src[i].size + 1;
+			};
+			i++;
+		};
+
+		while(i--)
+		{
+			if(strview_is_valid(src[i]))
+			{
+				dst -= src[i].size + 1;
+				if(dst > src[i].data)
+				{
+					memmove(dst, src[i].data, src[i].size);
+					src[i].data = dst;
+				};
+				((char*)(src[i].data))[src[i].size] = 0;
+				src[i].size++;
+			};
+		};
+
+		view = strview_of_buf(*buf_ptr);
+		view.size = size_needed;
+		strbuf_assign(buf_ptr, view);
+	};
+
+	return failed ? STRVIEW_INVALID : view;
+}
+
+//********************************************************************************************************
+// Private functions
+//********************************************************************************************************
+
+static strbuf_t* create_buf(int initial_capacity)
+{
+	strbuf_t* buf = NULL;
+
+	if(initial_capacity <= INT_MAX)
+	{
+		buf = strbuf_alloc(sizeof(strbuf_t)+initial_capacity+1);
+		buf->capacity = initial_capacity;
+		empty_buf(buf);
+	};
+
+	return buf;
+}
+
+static strview_t strview_of_buf(strbuf_t* buf)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf)
+	{
+		str.data = buf->cstr;
+		str.size = buf->size;
+	};
+	return str;
+}
+
+static strview_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
+{
+	strview_t 	str;
+	int 	size_needed = 0;
+	int 	i = 0;
+	bool 	failed = false;
+	strbuf_t* dst_buf = *buf_ptr;
+	strbuf_t* build_buf;
+	va_list vb;
+	va_copy(vb, va);
+
+	while(i++ != n_args)
+	{
+		str = va_arg(va, strview_t);
+		failed |= add_will_overflow_int(size_needed, str.size);
+		size_needed += str.size;
+	};
+	
+	if(!failed)
+	{
+		build_buf = create_buf(size_needed);
+		i = 0;
+		while(i++ != n_args)
+			insert_strview_into_buf(&build_buf, build_buf->size, va_arg(vb, strview_t));
+
+		assign_strview_to_buf(&dst_buf, strview_of_buf(build_buf));
+		destroy_buf(&build_buf);
+	}
+	else
+		empty_buf(dst_buf);
+
+	*buf_ptr = dst_buf;
+
+	va_end(vb);
+	return strview_of_buf(dst_buf);
+}
+
+static void insert_strview_into_buf(strbuf_t** buf_ptr, int index, strview_t str)
+{
+	strbuf_t* buf = *buf_ptr;
+	bool src_in_dst = buf_contains_str(buf, str);
+	size_t src_offset = str.data - buf->cstr;
+	strview_t strview_part_left_behind = STRVIEW_INVALID;
+	strview_t strview_part_shifted;
+	char* move_src;
+	char* move_dst;
+	bool failed;
+
+	if(index > buf->size)
+		index = buf->size;
+	if(index < 0)
+		index += buf->size;
+	if(index < 0)
+		index = 0;
+
+	failed = add_will_overflow_int(buf->size, str.size);
+
+	if(!failed)
+	{
+		if(buf->capacity < buf->size + str.size)
+			change_buf_capacity(&buf, round_up_capacity(buf->size, (buf->size + str.size)));
+
+		if(src_in_dst && buf != *buf_ptr)
+			str.data = buf->cstr + src_offset;
+
+		failed = buf->capacity < buf->size + str.size;
+	};
+
+	if(!failed)
+	{
+		strview_part_shifted = str;
+		move_src = &buf->cstr[index];
+		move_dst = &buf->cstr[index+str.size];
+		if(str.size)
+		{
+			memmove(move_dst, move_src, buf->size-index);
+			if(src_in_dst)
+			{
+				if(move_src > str.data)
+					strview_part_left_behind = strview_split_index(&strview_part_shifted, move_src - str.data);
+				strview_part_shifted.data += move_dst-move_src;
+			};
+		};
+
+		buf->size += str.size;
+		if(strview_part_left_behind.size)
+			memcpy(move_src, strview_part_left_behind.data, strview_part_left_behind.size);
+		move_src += strview_part_left_behind.size;
+		if(strview_part_shifted.size)
+			memcpy(move_src, strview_part_shifted.data, strview_part_shifted.size);
+		buf->cstr[buf->size] = 0;
+	}
+	else
+		empty_buf(buf);
+
+	*buf_ptr = buf;
+}
+
+static void destroy_buf(strbuf_t** buf_ptr)
+{
+	strbuf_t* buf = *buf_ptr;
+	strbuf_free(buf);
+	*buf_ptr = NULL;
+}
+
+static void change_buf_capacity(strbuf_t** buf_ptr, int new_capacity)
+{
+	strbuf_t* buf = *buf_ptr;
+
+	if(new_capacity < buf->size)
+		new_capacity = buf->size;
+
+	if(new_capacity != buf->capacity)
+	{
+		buf = strbuf_realloc(buf, sizeof(strbuf_t)+new_capacity+1);
+		buf->capacity = new_capacity;
+	};
+
+	*buf_ptr = buf;
+}
+
+static void assign_strview_to_buf(strbuf_t** buf_ptr, strview_t str)
+{
+	empty_buf(*buf_ptr);
+	insert_strview_into_buf(buf_ptr, 0, str);
+}
+
+static void append_char_to_buf(strbuf_t** buf_ptr, char c)
+{
+	strbuf_t* buf = *buf_ptr;
+	bool failed = add_will_overflow_int(buf->size, 1);
+
+	if(!failed)
+	{
+		if(buf->size+1 > buf->capacity)
+			change_buf_capacity(&buf, round_up_capacity(buf->size, buf->size + 1));
+		failed = buf->capacity < buf->size+1;
+	};
+
+	if(!failed)
+	{
+		buf->cstr[buf->size] = c;
+		buf->size++;
+		buf->cstr[buf->size] = 0;
+	}
+	else
+		empty_buf(buf);
+
+	*buf_ptr = buf;
+}
+
+static int round_up_capacity(int current_capacity, int capacity_needed)
+{
+	int grow_size;
+	int new_capacity = current_capacity;
+
+	while(new_capacity < capacity_needed)
+	{
+		grow_size = new_capacity >> STRBUF_CAPACITY_GROW_RATIO;
+		if(!grow_size)
+			grow_size = 1;
+		if(!add_will_overflow_int(new_capacity, grow_size))
+			new_capacity += grow_size;
+		else
+			new_capacity = INT_MAX;
+	};
+
+	return new_capacity;
+}
+
+static bool buf_contains_str(strbuf_t* buf, strview_t str)
+{
+	return &buf->cstr[0] <= str.data && str.data < &buf->cstr[buf->size];
+}
+
+static void empty_buf(strbuf_t* buf)
+{
+	buf->size = 0;
+	buf->cstr[0] = 0;
+}
+
+static bool add_will_overflow_int(int a, int b)
+{
+	int c = a;
+	c += b;
+	return ((a < 0) == (b < 0) && (a < 0) != (c < 0));
+}
+
+static bool view_contains_char(strview_t view, char c)
+{
+	bool retval = false;
+
+	if(strview_is_valid(view))
+	{
+		while(!retval && view.size)
+		{
+			retval |= (*view.data == c);
+			view.data++;
+			view.size--;
+		};
+	};
+
+	return retval;
+}
+
+#ifdef STRBUF_PROVIDE_PRNF
+static void char_handler_for_prnf(void* dst, char c)
+{
+	append_char_to_buf((strbuf_t**)dst, c);
+}
+#endif
 #endif

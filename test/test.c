@@ -216,9 +216,7 @@ TEST test_strbuf_strcat(void)
 	ASSERT(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC"));
 
 	//Appending -AFTER to existing buffer
-	printf("%i %s\n", __LINE__, buf->cstr);
 	strbuf_cat(&buf, strbuf_view(&buf), cstr("-AFTER"));
-	printf("%i %s\n", __LINE__, buf->cstr);
 	ASSERT(!strcmp(buf->cstr, "AAAAAAAAAABBBBBBBBBBCCCCCCCCCC-AFTER"));
 
 	//Prepending BEFORE- to existing buffer
