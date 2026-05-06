@@ -71,9 +71,6 @@
 
 	#define AES_BLOCK_SIZE	16
 
-	#define ENCRYPT	true
-	#define DECRYPT false
-
 //	Matching signatures for enc256cbc/dec256cbc allow us to unify the encrypt/decrypt callers with a function pointer
 	typedef int (*encdec_fptr_t)(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16]);
 
@@ -114,7 +111,7 @@ static strview_t crypt(encdec_fptr_t fptr, strbuf_t** buf_ptr, uint8_t key[32], 
 	{
 		buf = *buf_ptr;
 		strbuf_grow(&buf, cypher_size(buf->size));
-		buf->size = fptr((uint8_t*)buf->cstr, buf->size, key, ivec, ctx_ptr);
+		buf->size = fptr((uint8_t*)buf->cstr, buf->size, key, ivec);
 		buf->cstr[buf->size] = 0;
 		*buf_ptr = buf;	
 	};
