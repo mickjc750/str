@@ -10,10 +10,13 @@
 	#define _STRBUF_CRYPT_H_
 
 	#include <stdint.h>
-#ifndef STRBUF_IMPLEMENTATION
-	#include "strbuf.h"
-#endif
 
+#ifdef STRBUF_IMPLEMENTATION
+	#undef STRBUF_IMPLEMENTATION
+	#include "strbuf.h"
+	#define STRBUF_IMPLEMENTATION
+#endif
+	
 //********************************************************************************************************
 // Public prototypes
 //********************************************************************************************************
