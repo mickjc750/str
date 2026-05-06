@@ -75,14 +75,14 @@
 	#define DECRYPT false
 
 //	Matching signatures for enc256cbc/dec256cbc allow us to unify the encrypt/decrypt callers with a function pointer
-	typedef int (*encdec_fptr_t)(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16], aes256_ctx_t* ctx);
+	typedef int (*encdec_fptr_t)(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16]);
 
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
 
-	static int enc256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16], aes256_ctx_t* ctx);
-	static int dec256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16], aes256_ctx_t* ctx);
+	static int enc256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16]);
+	static int dec256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16]);
 	static int cypher_size(int content_size);
 	static strview_t crypt(encdec_fptr_t fptr, strbuf_t** buf_ptr, uint8_t key[32], uint8_t ivec[16]);
 
@@ -114,10 +114,7 @@ static strview_t crypt(encdec_fptr_t fptr, strbuf_t** buf_ptr, uint8_t key[32], 
 	{
 		buf = *buf_ptr;
 		strbuf_grow(&buf, cypher_size(buf->size));
-		ctx_ptr = strbuf_alloc(sizeof(*ctx_ptr));
 		buf->size = fptr((uint8_t*)buf->cstr, buf->size, key, ivec, ctx_ptr);
-		strbuf_free(ctx_ptr);
-		ctx_ptr = NULL;
 		buf->cstr[buf->size] = 0;
 		*buf_ptr = buf;	
 	};
@@ -128,11 +125,12 @@ static strview_t crypt(encdec_fptr_t fptr, strbuf_t** buf_ptr, uint8_t key[32], 
 // encrypt buf, using 256bit key and 128bit init vector.
 // buf must be a minimum of 16 bytes larger than len, as up to 16 bytes of padding may occur.
 // returns the size of the encoded output in bytes
-static int enc256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16], aes256_ctx_t* ctx)
+static int enc256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16])
 {
 	int block_count = len/AES_BLOCK_SIZE + 1;
 	int out_len = block_count * AES_BLOCK_SIZE;
 	int pad_len = out_len - len;
+	aes256_ctx_t *ctx_ptr = strbuf_alloc(sizeof(aes256_ctx_t));
 	aes256_init(key, ctx);
 
 	//pad last block
@@ -145,13 +143,15 @@ static int enc256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16], a
 			memxor(&buf[AES_BLOCK_SIZE], buf, AES_BLOCK_SIZE);
 		buf += AES_BLOCK_SIZE;
 	};
+
+	strbuf_free(ctx_ptr);
 	return out_len;
 }
 
 // decrypt buf, using 256bit key and 128bit init vector.
 // len must be a multiple of 16
 // returns the size of the decoded output in bytes
-static int dec256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16], aes256_ctx_t* ctx)
+static int dec256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16])
 {
 	int block_count = len/AES_BLOCK_SIZE;
 	int out_len;
@@ -160,6 +160,7 @@ static int dec256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16], a
 	uint8_t buf2[AES_BLOCK_SIZE];
 	uint8_t (*this_xor)[AES_BLOCK_SIZE] = &buf1;
 	uint8_t (*next_xor)[AES_BLOCK_SIZE] = &buf2;
+	aes256_ctx_t *ctx_ptr = strbuf_alloc(sizeof(aes256_ctx_t));
 
 	aes256_init(key, ctx);
 	memcpy(this_xor, ivec, AES_BLOCK_SIZE);
@@ -175,6 +176,7 @@ static int dec256cbc(uint8_t *buf, int len, uint8_t key[32], uint8_t ivec[16], a
 	pad_len = buf[-1];
 	out_len = len - pad_len;
 
+	strbuf_free(ctx_ptr);
 	return out_len;
 }
 
