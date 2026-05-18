@@ -3,10 +3,8 @@
  * @brief A buffer API complementing strview.h
  * @author Michael Clift
  * 
- * * Provides functions for allocating buffers on the heap, stack, or static memory.
+ * * Provides functions for allocating dynamic buffers.
  * * Provides functions for building and modifying string data.
- * * Able to use custom allocators provided at runtime.
- * * Dynamic allocation is not mandatory.
  * * Maintains null termination, so buffer contents may be accessed as a regular C string.
  * * Able to assign or append formatted text from printf() or prnf()
  * 
@@ -33,7 +31,6 @@
  * 	printf("The buffer contains %s\n", my_buf->cstr);
  * 
  * Functions which modify a buffers contents return a view of the resulting buffer contents.
- * If an insert or append operation fails due to insufficient capacity, the buffer will be emptied.
  * 
  * 
  * ## Build options
@@ -109,7 +106,7 @@
  * strbuf_cat(&my_buf, cstr("Hello"), cstr(" World"));
  * @endcode
  **********************************************************************************/ 
- 	#define strbuf_cat(buf_ptr, ...) _strbuf_cat(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
+ 	#define strbuf_cat(buf_ptr, ...) strbuf_cat_n(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 
 
 /**
@@ -121,7 +118,7 @@
  * @note Example:
  * @code{.c}
  * strbuf_t* my_buf = strbuf_create(0);
- * strbuf_t* my_buf = strbuf_create(cstr("Hello"),NULL);
+ * strbuf_t* my_buf = strbuf_create(cstr("Hello"));
  * @endcode
  **********************************************************************************/ 
 	#define strbuf_create(init) _Generic((init),\
@@ -257,7 +254,7 @@
  * @return A pointer to the newly created buffer.
  * @note Example:
  * @code{.c}
- * strbuf_t* my_buf = strbuf_create_init(0);
+ * strbuf_t* my_buf = strbuf_create_init(cstr("Hello"));
  * @endcode
   **********************************************************************************/
 	strbuf_t* strbuf_create_init(strview_t initial_content);
@@ -271,10 +268,10 @@
  * @note This function should be used via the macro strbuf_cat(strbuf_t** buf_ptr, ...) which counts the argument list for you to provide n_args.
  * @note Arguments may be views within the destination.
  **********************************************************************************/
-	strview_t _strbuf_cat(strbuf_t** buf_ptr, int n_args, ...);
+	strview_t strbuf_cat_n(strbuf_t** buf_ptr, int n_args, ...);
 
 /**	
- * 	@brief	The non-variadic version of _strbuf_cat
+ * 	@brief	The non-variadic version of strbuf_cat_n
  **********************************************************************************/
 	strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
 
@@ -286,7 +283,7 @@
  * @return A view of the resulting buffer contents.
  * @note Example:
  * @code{.c}
- * strbuf_t* my_buf = strbuf_create(0,NULL);
+ * strbuf_t* my_buf = strbuf_create(0);
  * strbuf_append_char(&my_buf, 'X');
  * @endcode
   **********************************************************************************/
@@ -315,7 +312,7 @@
 	strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size);
 
 /**
- * @brief Free memory allcoated to hold the buffer and its contents.
+ * @brief Free memory allocated to hold the buffer and its contents.
  * @param buf_ptr The address of a pointer to the buffer. This pointer will be NULL after the operation.
  **********************************************************************************/
 	void strbuf_destroy(strbuf_t** buf_ptr);
@@ -593,17 +590,17 @@
 	#endif
 
 	#ifdef STRBUF_CAPACITY_GROW_STEP
-		#warning "Depreciated build option STRBUF_CAPACITY_GROW_STEP.\
+		#warning "Deprecated build option STRBUF_CAPACITY_GROW_STEP.\
  Buffer size now increases by 1/2^(STRBUF_CAPACITY_GROW_RATIO), which defaults to 1/2^1 or a 50% increase."
 	#endif
 
 	#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
-		#warning "Depreciated build option STRBUF_DEFAULT_ALLOCATOR_STDLIB.\
+		#warning "Deprecated build option STRBUF_DEFAULT_ALLOCATOR_STDLIB.\
  An allocator must be provided prior to including strbuf.h with STRBUF_IMPLEMENTATION defined."
 	#endif
 
 	#ifdef STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
-		#warning "Depreciated build option STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB.\
+		#warning "Deprecated build option STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB.\
  If you wish to handle allocator failure, you must do so in the applications provided allocator."
 	#endif
 
@@ -666,7 +663,7 @@ strbuf_t* strbuf_create_init(strview_t initial_content)
 }
 
 // concatenate a number of str's this can include the buffer itself, strbuf.str for appending
-strview_t _strbuf_cat(strbuf_t** buf_ptr, int n_args, ...)
+strview_t strbuf_cat_n(strbuf_t** buf_ptr, int n_args, ...)
 {
 	va_list va;
 	va_start(va, n_args);

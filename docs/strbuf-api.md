@@ -67,7 +67,7 @@
 		char cstr[];
 	} strbuf_t;
 
- Note that the size and capacity are of type int. This limits the buffer capacity to INT_MAX, which is 2GB for 32bit int's and 32kB for 16bit int's. 
+ Note that the size and capacity are of type int. This limits the buffer capacity to INT_MAX, which is approximately 2GB for 32bit int's and approximately 32kB for 16bit int's. 
 
 &nbsp; 
  This type is intended to be declared as a pointer __(strbuf_t*)__, if the buffer is relocated in memory this pointer needs to change, therefore __strbuf.h__ functions take the address of this pointer as an argument. While a pointer to a pointer may be confusing for some, in practice the source doesn't look too intimidating. Example:
@@ -131,11 +131,11 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 # Function reference
 
 &nbsp;
-## `strbuf_t* strbuf_create(size_t initial_capacity);`
+## `strbuf_t* strbuf_create_empty(size_t initial_capacity);`
  Creates and returns the address of an empty buffer.
 
 &nbsp;
-## `strbuf_t* strbuf_create(strview_t initial_content);`
+## `strbuf_t* strbuf_create_init(strview_t initial_content);`
  Creates and returns the address of a buffer initialized with initial_content.
 
 &nbsp;
@@ -183,9 +183,6 @@ Accepts:
  This is a macro, which concatenates one or more strview_t into a buffer, and returns the strview_t of the buffer. The returned strview_t is always valid providing buf_ptr and *buf_ptr are valid. Note that unlike strcat() this overwrites the previous buffer contents instead of appending to it. You may include the original buffer contents by passing a view of it as one of the arguments.
 
 &nbsp;
- After performing some argument counting wizardry, it calls **`_strbuf_cat(strbuf_t** buf_ptr, int n_args, ...)`**
-
-&nbsp;
 ##  `strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);`
  The non-variadic version of _strbuf_cat.
 
@@ -203,11 +200,11 @@ Accepts:
 
 &nbsp;
 ## `strview_t strbuf_strip(strbuf_t** buf_ptr, stripchars);`
- Strip buffer contents of characters in stripchars, which may either be a C string or s strview_t.
+ Strip buffer contents of characters in stripchars, which may either be a C string or strview_t.
 
 &nbsp;
 ## `strview_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str);`
- Insert into buffer at index. str may be a C string or a strview_t. The index accepts python-style negative values to index the end of the string backwards.
+ Insert into buffer at index. str may be a C string or a strview_t. Negative indices count backward from the end of the string.
 
 &nbsp;
 ## `strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, src);`
