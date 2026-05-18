@@ -598,6 +598,16 @@
  Buffer size now increases by 1/2^(STRBUF_CAPACITY_GROW_RATIO), which defaults to 1/2^1 or a 50% increase."
 	#endif
 
+	#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
+		#warning "Depreciated build option STRBUF_DEFAULT_ALLOCATOR_STDLIB.\
+ An allocator must be provided prior to including strbuf.h with STRBUF_IMPLEMENTATION defined."
+	#endif
+
+	#ifdef STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
+		#warning "Depreciated build option STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB.\
+ If you wish to handle allocator failure, you must do so in the applications provided allocator."
+	#endif
+
 	#ifndef STRBUF_CAPACITY_GROW_RATIO
 		#define STRBUF_CAPACITY_GROW_RATIO 1
 	#endif

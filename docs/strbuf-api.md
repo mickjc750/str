@@ -7,7 +7,6 @@
 2. [Providing an allocator](#providing-an-allocator-for-strbuf_create)
 3. [Allocator example](#allocator-example)
 4. [Buffer re-sizing](#buffer-re-sizing)
-5. [Using static or stack allocated buffers](#using-static-or-stack-allocated-buffers)
 
 # Function reference
 - [strbuf.h](#strbufh)
@@ -22,9 +21,8 @@
 - [Assigning buffer contents using printf](#assigning-buffer-contents-using-printf)
 - [Assigning buffer contents using prnf](#assigning-buffer-contents-using-prnf)
 - [Function reference](#function-reference-1)
-	- [`strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator);`](#strbuf_t-strbuf_createsize_t-initial_capacity-strbuf_allocator_t-allocator)
-	- [`strbuf_t* strbuf_create(strview_t initial_content, strbuf_allocator_t* allocator);`](#strbuf_t-strbuf_createstrview_t-initial_content-strbuf_allocator_t-allocator)
-	- [`strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);`](#strbuf_t-strbuf_create_fixedvoid-addr-size_t-addr_size)
+	- [`strbuf_t* strbuf_create(size_t initial_capacity);`](#strbuf_t-strbuf_createsize_t-initial_capacity)
+	- [`strbuf_t* strbuf_create(strview_t initial_content);`](#strbuf_t-strbuf_createstrview_t-initial_content-)
 	- [`void strbuf_destroy(strbuf_t** buf_ptr);`](#void-strbuf_destroystrbuf_t-buf_ptr)
 	- [`char* strbuf_to_cstr(strbuf_t** buf_ptr);`](#char-strbuf_to_cstrstrbuf_t-buf_ptr)
 	- [`strview_t strbuf_view(strbuf_t** buf_ptr);`](#strview_t-strbuf_viewstrbuf_t-buf_ptr)
@@ -58,8 +56,6 @@
 ## About
  strbuf.h provides functions for allocating, building and storing strings.
  Unlike the strview_t type, a strbuf_t owns the string data, and contains all the information needed to modify it, resize it, or free it.
- 
- While dynamic memory allocation is very useful, it is not mandatory (with one exception regarding strbuf_cat()). 
 
  All strbuf functions maintain a null terminator at the end of the content, and the content may be accessed as a regular c string using mybuffer->cstr.
 
@@ -69,7 +65,6 @@
 	{
 		int size;
 		int capacity;
-		strbuf_allocator_t allocator;
 		char cstr[];
 	} strbuf_t;
 
@@ -79,7 +74,7 @@
  This type is intended to be declared as a pointer __(strbuf_t*)__, if the buffer is relocated in memory this pointer needs to change, therefore __strbuf.h__ functions take the address of this pointer as an argument. While a pointer to a pointer may be confusing for some, in practice the source doesn't look too intimidating. Example:
 
 	strbuf_t*	mybuffer;
-	mybuffer = strbuf_create(50, NULL);
+	mybuffer = strbuf_create(50);
 	strbuf_assign(&mybuffer, cstr("Hello"));
 
 
@@ -91,72 +86,24 @@ As mybuffer is a pointer, members of the strbuf_t may be accessed using the arro
 
 &nbsp;
 # Providing an allocator for strbuf_create().
-
- **strbuf_create()** *may* be passed an allocator. If you just want strbuf_create() to use stdlib's malloc and free, then simply add -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB to your compiler options, and pass a NULL to the allocator parameter of strbuf_create(). If you want to check that stdlib's allocation/resize actually succeeded, you can also add -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB which uses regular assert() to check this.
- If you don't want to use stdlib's malloc and free, and also don't want to pass your custom allocator to every occurrence of strbuf_create(), then you can provide a default allocator named **strbuf_default_allocator** (see the examples/ provided)
-
- The following __strbuf_allocator_t__ type is defined by __strbuf.h__
-
-	typedef struct strbuf_allocator_t
-	{
-		void* app_data;
-		void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
-	} strbuf_allocator_t;
-
-## Explanation:
-	void* app_data;
- The address of the strbuf_allocator_t is passed to the allocator. If the allocator requires access to some implementation specific data to work (such as in the case of a temporary allocator), then *app_data may provide the address of this.
-
-&nbsp;
-
-	void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
-
-A pointer to the allocator function.
-
-&nbsp;
-The parameters to this function are:
-
-	struct strbuf_allocator_t* this_allocator <-- A pointer to the strbuf_allocator_t which may be used to access ->app_data.
-	void* ptr_to_free                      <-- Memory address to free OR reallocate.
-	size_t size                            <-- Size of allocation, or new size of the reallocation, or 0 if memory is to be freed.
+ This is done by providing the functions or macros strbuf_alloc(), strbuf_free(), and strbuf_realloc(), with signatures matching stdlib's malloc() free() realloc(). strbuf_realloc() is never passed a size of 0.
 
 &nbsp;
 # Allocator example
-Even though stdlib's realloc can be used as the default allocator in the case where the user doesn't wish to provide one, it is the simplest one to use for an example.
 
-&nbsp;
-This also available in [/examples/custom_allocator](/examples/custom_allocator/heap-buf.c)
+	#include <stdlib.h>
+	#define strbuf_alloc(sz)			malloc(sz)
+	#define strbuf_realloc(ptr, sz)		realloc(ptr, sz)
+	#define strbuf_free(ptr)			free(ptr)
 
-	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size)
-	{
-		(void)this_allocator;
-		void* result = NULL;
-		if(size == 0)
-			free(ptr_to_free);
-		else
-			result = realloc(ptr_to_free, size);
-		assert(size==0 || result);	//catch a failed allocation here
-		return result;
-	}
-
+	#define STRBUF_IMPLEMENTATION
+	#include "strbuf.h"
 
 &nbsp;
 # Buffer re-sizing
-The initial capacity of the buffer will be exactly as provided to strbuf_create(). If an operation needs to extend the buffer, the size will be rounded up by STRBUF_CAPACITY_GROW_STEP. The default value of this is 16, but this can be changed by defining it in a compiler flag ie. -DSTRBUF_CAPACITY_GROW_STEP=32
+The initial capacity of the buffer will be exactly as provided to strbuf_create(). If an operation needs to extend the buffer, the size will be increased by a ratio determined by 1/2^(STRBUF_CAPACITY_GROW_RATIO). If not defined STRBUF_CAPACITY_GROW_RATIO defaults to 1 which corresponds to an increase of 1/2^1 (or 50%). 
 
 The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which case it will be reduced to the minimum possible.
-
-&nbsp;
-# Using static or stack allocated buffers
-
-A function **strbuf_create_fixed()** is provided for initializing a __strbuf_t*__ from a given memory space and size. In this case the capacity of the buffer will never change. If an operation is attempted on the buffer which requires more space than available, this will result in an empty buffer. The capacity will be slightly less than the buffer size, as the memory must also hold a __strbuf_t__, and due to this the memory provided must also be suitably aligned with **__attribute__((aligned))**. If the memory is not aligned, or is of insufficient space to hold even __strbuf_t__, then a NULL will be returned.
-
-Examples of using stack and static buffers are available in __/examples__
-
-With the exception of strbuf_cat(), all buffer operations can source data from the destination itself. The following example which you might expect to fail, works fine, without any need to create a temporary buffer: 
-
-	strbuf_assign(&mybuf, cstr("Fred"));
-	strbuf_insert_at_index(&mybuf, 2, strbuf_view(&mybuf));	// Results in "FrFreded"
 
 &nbsp;
 # Assigning buffer contents using printf
@@ -176,38 +123,16 @@ With the exception of strbuf_cat(), all buffer operations can source data from t
  
  **strbuf.h** will then define __strview_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...);__
 
+ prnf.h is not included in this repository. The application must provide the prnf implementation in a similar fashion to strbuf.h(stb single header style).
+
 &nbsp;
 &nbsp;
 # Function reference
 
 &nbsp;
-## `strbuf_t* strbuf_create(size_t initial_capacity, strbuf_allocator_t* allocator);`
-## `strbuf_t* strbuf_create(strview_t initial_content, strbuf_allocator_t* allocator);`
+## `strbuf_t* strbuf_create(size_t initial_capacity);`
+## `strbuf_t* strbuf_create(strview_t initial_content);`
  A generic macro, which creates and returns the address of an empty buffer of initial_capacity, or a buffer initialized with initial_content.
-
- allocator may be NULL to use malloc/free (requires STRBUF_DEFAULT_ALLOCATOR_STDLIB) or a default allocator registered with strbuf_register_default_allocator()
-
-&nbsp;
-## `strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);`
- Create a new buffer with a fixed capacity from the given memory address. The address must be suitably aligned for a void*. This can be done in GCC by adding __ attribute __ ((aligned)) to the buffers declaration.
-
-&nbsp;
- addr_size is the size of the memory available **(not the desired capacity)** and must be > sizeof(strbuf_t)+1.
-
-&nbsp;
- The resulting buffer capacity will be the given memory size -sizeof(strbuf_t)-1, and can be checked with buf->capacity. If the function fails due to bad alignment or insufficient size, a NULL will be returned.
-
-Example use:
-
-	#define STATIC_BUFFER_SIZE	200
-
-	strbuf_t* buf;
-	static char static_buf[STATIC_BUFFER_SIZE] __attribute__ ((aligned));
-	buf = strbuf_create_fixed(static_buf, STATIC_BUFFER_SIZE);
-
-	strbuf_cat(&buf, cstr("Hello"));	// Use buffer
-
-	strbuf_destroy(&buf);	// In this case doesn't free anything, affect is the same as buf=NULL;
 
 &nbsp;
 ## `void strbuf_destroy(strbuf_t** buf_ptr);`
@@ -245,13 +170,10 @@ Example use:
 
 &nbsp;
 ##	`strview_t strbuf_cat(strbuf_t** buf_ptr, ...);`
- This is a macro, which concatenates one or more strview_t into a buffer, and returns the strview_t of the buffer. The returned strview_t is always valid. Note that unlike strcat() this overwrites the previous buffer contents instead of appending to it. You may include the original buffer contents by passing a view of it as one of the arguments, providing the buffer is dynamic.
+ This is a macro, which concatenates one or more strview_t into a buffer, and returns the strview_t of the buffer. The returned strview_t is always valid. Note that unlike strcat() this overwrites the previous buffer contents instead of appending to it. You may include the original buffer contents by passing a view of it as one of the arguments.
 
 &nbsp;
  After performing some argument counting wizardry, it calls **`_strbuf_cat(strbuf_t** buf_ptr, int n_args, ...)`**
-
-&nbsp;
- If the allocator is dynamic, input arguments may be from the output buffer itself. In this case a temporary buffer is allocated to build the output.
 
 &nbsp;
 ##  `strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);`
@@ -290,7 +212,7 @@ Example use:
 ## `strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);`
 ## `strview_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);`
 ### These functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler options
- These provide the variadic and non-variadic versions of printf, which output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit. If the buffer is non-dynamic, and the output string does not fit, the buffer will be emptied.
+ These provide the variadic and non-variadic versions of printf, which output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit.
 
 &nbsp;
 &nbsp;
@@ -311,7 +233,7 @@ Example use:
 ## `strview_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...);`
 ## `strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);`
 ### These functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler options
- These provide the variadic and non-variadic versions of printf, which append their output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit. If the buffer is non-dynamic, and the output string does not fit, the buffer will be emptied.
+ These provide the variadic and non-variadic versions of printf, which append their output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit.
 
 &nbsp;
 ## `strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count]);`
