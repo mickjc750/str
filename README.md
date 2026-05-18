@@ -31,11 +31,10 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 
 &nbsp;
 # Features
- * Supports static or stack allocated buffers, for applications unable (or programmers unwilling) to use dynamic memory allocation.
- * Supports custom allocators, for applications which use temporary allocators for speed. Or can default to malloc/free for simplicity.
+ * Supports custom allocators, configurable at build time.
  * A rich set of of string splitting/trim/search functions.
  * A number parser which checks for errors, including range errors, or invalid input.
- * A test suite which uses https://github.com/silentbicycle/greatest, currently passing all 43 tests, 528 assertions.
+ * A test suite which uses https://github.com/silentbicycle/greatest.
 
  For an example of how useful this approach to string handling is, see the URI parser in [/examples/parse_uri/parse-uri.c](/examples/parse-uri/parse-uri.c)
 
@@ -45,7 +44,8 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 
 &nbsp;
 # Usage
- Copy the source files __strview.h__/__strview.c__ and optionally __strbuf.h__/__strbuf.c__ , __strnum.h__/__strnum.c__ into your project.
+ Copy the source files __strview.h__/__strview.c__ and optionally __strbuf.h__ , __strnum.h__/__strnum.c__ into your project.
+ For strbuf.h, configure an allocator in a C file, then include strbuf.h with STRBUF_IMPLEMENTATION defined.
  Add any desired options (described below) to your compiler flags (eg. -DSTRBUF_PROVIDE_PRINTF).
  strnum.c requires linking against the maths library for interpreting float values. So either add -lm to your linker options, or -DSTRNUM_NOFLOAT to your compiler options if you don't need float conversion.
  A list and explanation of options is included at the top of each header file for convenient copy & pasting.
@@ -63,7 +63,7 @@ To understand this approach to string handling, and the purpose of each, it help
 
 &nbsp;
 ## strbuf_t
-**strbuf_t** DOES own the string, and contains the information needed to resize it, change its contents, or free it. Dynamic memory allocation is not mandatory. The memory space can be as simple as a static buffer provided by the application. For a dynamic buffer, the application may either provide its own allocator, or for simplicity, strbuf can default to using malloc/free.
+**strbuf_t** DOES own the string, and contains the information needed to resize it or change its contents.
 
 &nbsp;
 # Use cases and good practices.
@@ -101,7 +101,7 @@ To understand this approach to string handling, and the purpose of each, it help
 
 	int myfunc(strview_t filename)
 	{
-		strbuf_t* mybuf= strbuf_create(filename, NULL);
+		strbuf_t* mybuf= strbuf_create(filename);
 		int fn = open(mybuf->cstr, O_RDWR);
 		strbuf_destroy(&mybuf);
 		return fn;
@@ -132,8 +132,6 @@ It should be noted, that __strview.h__ and __strnum.h__ do not depend on __strbu
 
 &nbsp;
 ## Advantages over SDS
-* STR also supports static or stack allocated buffers.
-* STR supports more than one type of allocator at runtime.
 * STR provides number parsing, with error and range checking.
 
 SDS functions are of the form:
