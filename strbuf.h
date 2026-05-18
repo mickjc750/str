@@ -38,7 +38,7 @@
  * 
  * ## Build options
  *  -DSTRBUF_PROVIDE_PRINTF
- * 	Provides functions which use vprintf() internally to assign or append formatted text to a buffer.
+ * 	Provides functions which use vsnprintf() internally to assign or append formatted text to a buffer.
  * 
  *  -DSTRBUF_PROVIDE_PRNF
  *  Similar to printf, -but uses an alternative text formatter https://github.com/mickjc750/prnf
@@ -106,7 +106,7 @@
  * @note Example:
  * @code{.c}
  * strbuf_t* my_buf = strbuf_create(0);
- * strbuf_cat(&mybuf, cstr("Hello"), cstr(" World"));
+ * strbuf_cat(&my_buf, cstr("Hello"), cstr(" World"));
  * @endcode
  **********************************************************************************/ 
  	#define strbuf_cat(buf_ptr, ...) _strbuf_cat(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
@@ -244,10 +244,9 @@
  * @brief Create a new empty buffer.
  * @param initial_capacity The initial capacity of the buffer. This must be <= INT_MAX. It may  be 0.
  * @return A pointer to the newly created buffer.
- * @note Using the default allocator (malloc/free) requires building with -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
  * @note Example:
  * @code{.c}
- * strbuf_t* my_buf = strbuf_create_empty(0,NULL);
+ * strbuf_t* my_buf = strbuf_create_empty(0);
  * @endcode
   **********************************************************************************/
 	strbuf_t* strbuf_create_empty(size_t initial_capacity);
@@ -300,7 +299,7 @@
 	strview_t strbuf_view(strbuf_t** buf_ptr);
 
 /**
- * @brief Reduce buffer capacity to the minimum size required to hold it's contents.
+ * @brief Reduce buffer capacity to the minimum size required to hold its contents.
  * @param buf_ptr The address of a pointer to the buffer.
  * @return A view of the buffer contents.
  **********************************************************************************/
@@ -316,7 +315,7 @@
 	strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size);
 
 /**
- * @brief Free memory allcoated to hold the buffer and it's contents.
+ * @brief Free memory allcoated to hold the buffer and its contents.
  * @param buf_ptr The address of a pointer to the buffer. This pointer will be NULL after the operation.
  **********************************************************************************/
 	void strbuf_destroy(strbuf_t** buf_ptr);

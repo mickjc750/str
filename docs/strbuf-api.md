@@ -17,7 +17,6 @@
 	- [Explanation:](#explanation)
 - [Allocator example](#allocator-example)
 - [Buffer re-sizing](#buffer-re-sizing)
-- [Using static or stack allocated buffers](#using-static-or-stack-allocated-buffers)
 - [Assigning buffer contents using printf](#assigning-buffer-contents-using-printf)
 - [Assigning buffer contents using prnf](#assigning-buffer-contents-using-prnf)
 - [Function reference](#function-reference-1)
@@ -99,6 +98,8 @@ As mybuffer is a pointer, members of the strbuf_t may be accessed using the arro
 	#define STRBUF_IMPLEMENTATION
 	#include "strbuf.h"
 
+	**Note** strbuf.h will NOT test the result of strbuf_alloc() or strbuf_realloc() for NULL. If you wish to check for allocator failure this must be done inside the applications provided strbuf_alloc() and strbuf_realloc().
+
 &nbsp;
 # Buffer re-sizing
 The initial capacity of the buffer will be exactly as provided to strbuf_create(). If an operation needs to extend the buffer, the size will be increased by a ratio determined by 1/2^(STRBUF_CAPACITY_GROW_RATIO). If not defined STRBUF_CAPACITY_GROW_RATIO defaults to 1 which corresponds to an increase of 1/2^1 (or 50%). 
@@ -131,8 +132,19 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 
 &nbsp;
 ## `strbuf_t* strbuf_create(size_t initial_capacity);`
+ Creates and returns the address of an empty buffer.
+
+&nbsp;
 ## `strbuf_t* strbuf_create(strview_t initial_content);`
- A generic macro, which creates and returns the address of an empty buffer of initial_capacity, or a buffer initialized with initial_content.
+ Creates and returns the address of a buffer initialized with initial_content.
+
+&nbsp;
+## `strbuf_create(init)`
+Macro.
+
+Accepts:
+- int / size_t → create empty buffer
+- strview_t → create initialized buffer
 
 &nbsp;
 ## `void strbuf_destroy(strbuf_t** buf_ptr);`
@@ -143,7 +155,6 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
  Remove metadata from strbuf and reallocate as a naked 0 terminated c string. buf_ptr is nulled.
  Used for applications where an interface expects a regular heap allocated c string.
  Care should be taken to free the returned string with the same allocator that was used to create the buffer.
- If used on a static buffer, the ->cstr member is returned and *buf_ptr is still nulled.
  To instead copy the buffer contents to a pre-existing memory space, use strview_to_cstr().
 
 &nbsp;
@@ -157,8 +168,7 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 &nbsp;
 ## `strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size);`
  Grow the capacity of the buffer to be at minimum the size specified.
- If the operation fails, due to the buffer being static, an invalid strview_t is returned.
- Otherwise a strview_t of the existing buffer *contents* (which may be smaller or greater than min_size) is returned.
+ A strview_t of the existing buffer contents is returned.
 
 &nbsp;
 ## `strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str);`
@@ -170,7 +180,7 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 
 &nbsp;
 ##	`strview_t strbuf_cat(strbuf_t** buf_ptr, ...);`
- This is a macro, which concatenates one or more strview_t into a buffer, and returns the strview_t of the buffer. The returned strview_t is always valid. Note that unlike strcat() this overwrites the previous buffer contents instead of appending to it. You may include the original buffer contents by passing a view of it as one of the arguments.
+ This is a macro, which concatenates one or more strview_t into a buffer, and returns the strview_t of the buffer. The returned strview_t is always valid providing buf_ptr and *buf_ptr are valid. Note that unlike strcat() this overwrites the previous buffer contents instead of appending to it. You may include the original buffer contents by passing a view of it as one of the arguments.
 
 &nbsp;
  After performing some argument counting wizardry, it calls **`_strbuf_cat(strbuf_t** buf_ptr, int n_args, ...)`**
