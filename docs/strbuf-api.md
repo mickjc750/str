@@ -3,53 +3,21 @@
 &nbsp; 
 &nbsp; 
 # Contents
-1. [About](#about)
-2. [Providing an allocator](#providing-an-allocator-for-strbuf_create)
-3. [Allocator example](#allocator-example)
-4. [Buffer re-sizing](#buffer-re-sizing)
 
-# Function reference
-- [strbuf.h](#strbufh)
-- [Contents](#contents)
-- [Function reference](#function-reference)
-	- [About](#about)
-- [Providing an allocator for strbuf\_create().](#providing-an-allocator-for-strbuf_create)
-	- [Explanation:](#explanation)
-- [Allocator example](#allocator-example)
-- [Buffer re-sizing](#buffer-re-sizing)
-- [Assigning buffer contents using printf](#assigning-buffer-contents-using-printf)
-- [Assigning buffer contents using prnf](#assigning-buffer-contents-using-prnf)
-- [Function reference](#function-reference-1)
-	- [`strbuf_t* strbuf_create(size_t initial_capacity);`](#strbuf_t-strbuf_createsize_t-initial_capacity)
-	- [`strbuf_t* strbuf_create(strview_t initial_content);`](#strbuf_t-strbuf_createstrview_t-initial_content-)
-	- [`void strbuf_destroy(strbuf_t** buf_ptr);`](#void-strbuf_destroystrbuf_t-buf_ptr)
-	- [`char* strbuf_to_cstr(strbuf_t** buf_ptr);`](#char-strbuf_to_cstrstrbuf_t-buf_ptr)
-	- [`strview_t strbuf_view(strbuf_t** buf_ptr);`](#strview_t-strbuf_viewstrbuf_t-buf_ptr)
-	- [`strview_t strbuf_shrink(strbuf_t** buf_ptr);`](#strview_t-strbuf_shrinkstrbuf_t-buf_ptr)
-	- [`strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size);`](#strview_t-strbuf_growstrbuf_t-buf_ptr-int-min_size)
-	- [`strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str);`](#strview_t-strbuf_assignstrbuf_t-buf_ptr-strview_t-str)
-	- [`strview_t strbuf_cat(strbuf_t** buf_ptr, ...);`](#strview_t-strbuf_catstrbuf_t-buf_ptr-)
-	- [`strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);`](#strview_t-strbuf_vcatstrbuf_t-buf_ptr-int-n_args-va_list-va)
-	- [`strview_t strbuf_append(strbuf_t** buf_ptr, str);`](#strview_t-strbuf_appendstrbuf_t-buf_ptr-str)
-	- [`strview_t strbuf_append_char(strbuf_t** buf_ptr, char c);`](#strview_t-strbuf_append_charstrbuf_t-buf_ptr-char-c)
-	- [`strview_t strbuf_prepend(strbuf_t** buf_ptr, str);`](#strview_t-strbuf_prependstrbuf_t-buf_ptr-str)
-	- [`strview_t strbuf_strip(strbuf_t** buf_ptr, stripchars);`](#strview_t-strbuf_stripstrbuf_t-buf_ptr-stripchars)
-	- [`strview_t strbuf_insert_at_index(strbuf_t** buf_ptr, int index, str);`](#strview_t-strbuf_insert_at_indexstrbuf_t-buf_ptr-int-index-str)
-	- [`strview_t strbuf_insert_before(strbuf_t** buf_ptr, strview_t dst, src);`](#strview_t-strbuf_insert_beforestrbuf_t-buf_ptr-strview_t-dst-src)
-	- [`strview_t strbuf_insert_after(strbuf_t** buf_ptr, strview_t dst, src);`](#strview_t-strbuf_insert_afterstrbuf_t-buf_ptr-strview_t-dst-src)
-	- [`strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);`](#strview_t-strbuf_printfstrbuf_t-buf_ptr-const-char-format-)
-	- [`strview_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);`](#strview_t-strbuf_vprintfstrbuf_t-buf_ptr-const-char-format-va_list-va)
-		- [These functions are available if you define STRBUF\_PROVIDE\_PRINTF, ideally by adding -DSTRBUF\_PROVIDE\_PRINTF to your compiler options](#these-functions-are-available-if-you-define-strbuf_provide_printf-ideally-by-adding--dstrbuf_provide_printf-to-your-compiler-options)
-	- [`strview_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...);`](#strview_t-strbuf_prnfstrbuf_t-buf_ptr-const-char-format-)
-	- [`strview_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);`](#strview_t-strbuf_vprnfstrbuf_t-buf_ptr-const-char-format-va_list-va)
-		- [These functions are available if you define STRBUF\_PROVIDE\_PRNF, ideally by adding -DSTRBUF\_PROVIDE\_PRNF to your compiler options](#these-functions-are-available-if-you-define-strbuf_provide_prnf-ideally-by-adding--dstrbuf_provide_prnf-to-your-compiler-options)
-	- [`strview_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...);`](#strview_t-strbuf_append_prnfstrbuf_t-buf_ptr-const-char-format-)
-	- [`strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);`](#strview_t-strbuf_append_vprnfstrbuf_t-buf_ptr-const-char-format-va_list-va)
-		- [These functions are available if you define STRBUF\_PROVIDE\_PRNF, ideally by adding -DSTRBUF\_PROVIDE\_PRNF to your compiler options](#these-functions-are-available-if-you-define-strbuf_provide_prnf-ideally-by-adding--dstrbuf_provide_prnf-to-your-compiler-options-1)
-	- [`strview_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...);`](#strview_t-strbuf_append_printfstrbuf_t-buf_ptr-const-char-format-)
-	- [`strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);`](#strview_t-strbuf_append_vprintfstrbuf_t-buf_ptr-const-char-format-va_list-va)
-		- [These functions are available if you define STRBUF\_PROVIDE\_PRINTF, ideally by adding -DSTRBUF\_PROVIDE\_PRINTF to your compiler options](#these-functions-are-available-if-you-define-strbuf_provide_printf-ideally-by-adding--dstrbuf_provide_printf-to-your-compiler-options-1)
-	- [`strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count]);`](#strview_t-strbuf_terminate_viewsstrbuf_t-buf_ptr-int-count-strview_t-srccount)
+1. [Overview](#about)
+2. [Allocator setup](#providing-an-allocator-for-strbuf_create)
+3. [Allocator example](#allocator-example)
+4. [Buffer growth behaviour](#buffer-re-sizing)
+5. [Optional formatting support](#assigning-buffer-contents-using-printf)
+   - [printf support](#assigning-buffer-contents-using-printf)
+   - [prnf support](#assigning-buffer-contents-using-prnf)
+6. [Function reference](#function-reference)
+   - [Creation and destruction](#creation-and-destruction)
+   - [Buffer inspection and ownership](#buffer-inspection-and-ownership)
+   - [Content assignment and concatenation](#content-assignment-and-concatenation)
+   - [Insertion and modification](#insertion-and-modification)
+   - [Formatted output](#formatted-output)
+   - [Advanced utilities](#advanced-utilities)
 
 
 ## About
@@ -131,6 +99,9 @@ The buffer capacity is never shrunk, unless strbuf_shrink() is called. In which 
 # Function reference
 
 &nbsp;
+## Creation and destruction
+
+&nbsp;
 ## `strbuf_t* strbuf_create_empty(size_t initial_capacity);`
  Creates and returns the address of an empty buffer.
 
@@ -149,6 +120,9 @@ Accepts:
 &nbsp;
 ## `void strbuf_destroy(strbuf_t** buf_ptr);`
  Free memory allocated to hold the buffer and its contents. buf_ptr is nulled.
+
+&nbsp;
+## Buffer inspection and ownership
 
 &nbsp;
 ## `char* strbuf_to_cstr(strbuf_t** buf_ptr);`
@@ -171,6 +145,9 @@ Accepts:
  A strview_t of the existing buffer contents is returned.
 
 &nbsp;
+## Content assignment and concatenation
+
+&nbsp;
 ## `strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str);`
  Assign strview_t to buffer. strview_t may be owned by the output buffer itself.
  This allows a buffers contents to be cropped or trimmed using the strview.h functions.
@@ -185,6 +162,9 @@ Accepts:
 &nbsp;
 ##  `strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);`
  The non-variadic version of _strbuf_cat.
+
+&nbsp;
+## Insertion and modification
 
 &nbsp;
 ## `strview_t strbuf_append(strbuf_t** buf_ptr, str);`
@@ -216,6 +196,9 @@ Accepts:
 
 &nbsp;
 &nbsp;
+## Formatted output
+
+&nbsp;
 ## `strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...);`
 ## `strview_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);`
 ### These functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler options
@@ -241,6 +224,9 @@ Accepts:
 ## `strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va);`
 ### These functions are available if you define STRBUF_PROVIDE_PRINTF, ideally by adding -DSTRBUF_PROVIDE_PRINTF to your compiler options
  These provide the variadic and non-variadic versions of printf, which append their output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit.
+
+&nbsp;
+## Advanced utilities
 
 &nbsp;
 ## `strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count]);`
