@@ -477,6 +477,28 @@
  **********************************************************************************/
 	strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count]);
 
+/**
+ * @brief Append to a buffer, attempting to fill the remaining space using read_fptr().
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param read_fptr A pointer to a function that will be called to read data into the buffer, the function should return the number of bytes read, or -1.
+ * @param ctx The context to be passed to read_fptr.
+ * @return The return value of read_fptr()
+ * @note read_fptr() will always be called even if remaining space in the buffer is 0.
+ * @note Does not increase the buffers capacity. Use strbuf_grow() to suitably size the buffer first.
+   **********************************************************************************/
+	int strbuf_stream_in(strbuf_t **buf_ptr, int (*read_fptr)(void *ctx, char *buf, int count), void *ctx);
+
+/**
+ * @brief Attempt to write the contents of the buffer using write_fptr() and remove the number of bytes written.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param write_fptr A pointer to a function that will be called to write data from the buffer, the function should return the number of bytes written, or -1.
+ * @param ctx The context to be passed to write_fptr.
+ * @return The return value of write_fptr()
+ * @note write_fptr() will always be called even if the buffer is empty.
+ * @note if write_fptr() only accepts part of the data, the remaining data will be moved in memory.
+   **********************************************************************************/
+	int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(const void *ctx, const char *buf, int count), void *ctx);
+
 #ifdef STRBUF_PROVIDE_PRINTF
 /**
  * @brief printf formatted text to a buffer.
@@ -1128,6 +1150,54 @@ strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[co
 	};
 
 	return failed ? STRVIEW_INVALID : view;
+}
+
+int strbuf_stream_in(strbuf_t **buf_ptr, int (*read_fptr)(void *ctx, char *buf, int count), void *ctx)
+{
+	int retval;
+	strbuf_t *buf;
+
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;	// (no need to assign this back, as the buffer is not resized)
+
+		retval = read_fptr(ctx, &buf->cstr[buf->size], buf->capacity - buf->size);
+		if(retval > 0)
+		{
+			buf->size += retval;
+			buf->cstr[buf->size] = 0;
+		};
+	}
+	else
+		retval = read_fptr(ctx, NULL, 0);
+
+	return retval;
+}
+
+int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(const void *ctx, const char *buf, int count), void *ctx)
+{
+	int retval;
+	strbuf_t *buf;
+	strview_t buf_view;
+
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+
+		retval = write_fptr(ctx, buf->cstr, buf->size);
+		if(retval > 0)
+		{
+			buf_view = strbuf_view(&buf);
+			buf_view = strview_sub(buf_view, retval, INT_MAX);
+			strbuf_assign(&buf, buf_view);
+		};
+
+		*buf_ptr = buf;
+	}
+	else
+		retval = write_fptr(ctx, NULL, 0);
+
+	return retval;
 }
 
 //********************************************************************************************************

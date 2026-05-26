@@ -18,52 +18,21 @@
 // Private prototypes
 //********************************************************************************************************
 
+	static int shim_read_fd(void *ctx, char *buf, int count);
+	static int shim_write_fd(void *ctx, const char *buf, int count);
+
 //********************************************************************************************************
 // Public functions
 //********************************************************************************************************
 
 int strbuf_append_read(strbuf_t** buf_ptr, int fd)
 {
-	int retval = 0;
-	strbuf_t *buf;
-
-	if(buf_ptr && *buf_ptr)
-	{
-		buf = *buf_ptr;
-
-		retval = read(fd, &buf->cstr[buf->size], buf->capacity - buf->size);
-		if(retval > 0)
-		{
-			buf->size += retval;
-			buf->cstr[buf->size] = 0;
-		};
-	};
-
-	return retval;
+	return strbuf_stream_in((int*)&fd, shim_read_fd, &fd);
 }
 
 int strbuf_write(int fd, strbuf_t** buf_ptr)
 {
-	int retval = 0;
-	strbuf_t *buf;
-	strview_t buf_view;
-
-	if(buf_ptr && *buf_ptr)
-	{
-		buf = *buf_ptr;
-
-		retval = write(fd, buf->cstr, buf->size);
-		if(retval > 0)
-		{
-			buf_view = strbuf_view(&buf);
-			buf_view = strview_sub(buf_view, retval, INT_MAX);
-			strbuf_assign(&buf, buf_view);
-		};
-
-		*buf_ptr = buf;
-	};
-
-	return retval;
+	return strbuf_stream_out((int*)&fd, shim_write_fd, &fd);
 }
 
 strview_t strbuf_append_file(strbuf_t **dst, const char* file_name)
@@ -122,3 +91,14 @@ strview_t strbuf_append_file(strbuf_t **dst, const char* file_name)
 // Private functions
 //********************************************************************************************************
 
+static int shim_read_fd(void *ctx, char *buf, int count)
+{
+	int fd = *(int*)ctx;
+	return read(fd, buf, count);
+}
+
+static int shim_write_fd(void *ctx, const char *buf, int count)
+{
+	int fd = *(int*)ctx;
+	return write(fd, buf, count);
+}
