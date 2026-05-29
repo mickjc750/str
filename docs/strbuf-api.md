@@ -17,12 +17,15 @@
    - [Content assignment and concatenation](#content-assignment-and-concatenation)
    - [Insertion and modification](#insertion-and-modification)
    - [Formatted output](#formatted-output)
+   - [Streaming I/O](#streaming-io)
    - [Advanced utilities](#advanced-utilities)
 
 
 ## About
  strbuf.h provides functions for allocating, building and storing strings.
  Unlike the strview_t type, a strbuf_t owns the string data, and contains all the information needed to modify it, resize it, or free it.
+
+ It also provides simple streaming input and output helpers using user supplied callback functions.
 
  All strbuf functions maintain a null terminator at the end of the content, and the content may be accessed as a regular c string using mybuffer->cstr.
 
@@ -226,6 +229,63 @@ Accepts:
  These provide the variadic and non-variadic versions of printf, which append their output to a strbuf_t. They use vsnprintf() from stdio.h to first measure the length of the output string, then resize the buffer to suit.
 
 &nbsp;
+
+&nbsp;
+## Streaming I/O
+
+&nbsp;
+## `int strbuf_stream_in(strbuf_t **buf_ptr, int (*read_fptr)(void *ctx, char *buf, int count), void *ctx);`
+
+Attempt to append data to the buffer using a user supplied read callback.
+
+The callback is called with:
+
+- `ctx` - user supplied context pointer
+- `buf` - destination memory within the buffer
+- `count` - number of bytes available
+
+The callback should return:
+
+- Number of bytes read
+- `0` if no data is currently available
+- `-1` on error
+
+Notes:
+
+- The callback is always called, even if there is no remaining space.
+- The buffer capacity is not automatically increased.
+- Use `strbuf_grow()` beforehand if additional capacity may be required.
+- If `buf_ptr` or `*buf_ptr` is NULL, the callback is invoked with `buf == NULL` and `count == 0`.
+
+&nbsp;
+## `int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(void *ctx, const char *buf, int count), void *ctx);`
+
+Attempt to write buffer contents using a user supplied write callback.
+
+The callback is called with:
+
+- `ctx` - user supplied context pointer
+- `buf` - pointer to buffer contents
+- `count` - number of bytes available
+
+The callback should return:
+
+- Number of bytes written
+- `0` if unable to accept data
+- `-1` on error
+
+After a successful write:
+
+- The written bytes are removed from the beginning of the buffer.
+- Any remaining bytes are shifted toward the start of the buffer.
+
+Notes:
+
+- The callback is always called, even if the buffer is empty.
+- Partial writes are supported.
+- If `buf_ptr` or `*buf_ptr` is NULL, the callback is invoked with `buf == NULL` and `count == 0`.
+
+
 ## Advanced utilities
 
 &nbsp;
