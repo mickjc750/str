@@ -25,6 +25,22 @@
 
 	GREATEST_MAIN_DEFS();
 
+	// context for the stream read callback
+	typedef struct stream_read_ctx_t
+	{
+		int retval;
+		char *dst;
+		int count;
+	} stream_read_ctx_t;
+
+	// context for the stream write callback
+	typedef struct stream_write_ctx_t
+	{
+		int retval;
+		const char *dst;
+		int count;
+	} stream_write_ctx_t;
+
 //********************************************************************************************************
 // Public variables
 //********************************************************************************************************
@@ -40,6 +56,8 @@
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
+
+	static int stream_read_cb(void *ctx, char *buf, int count);
 
 	SUITE(suite_strbuf);
 	TEST test_strbuf_create(void);
@@ -58,6 +76,8 @@
 	TEST test_strbuf_insert_after(void);
 	TEST test_strbuf_to_cstr(void);
 	TEST test_strbuf_terminate_views(void);
+	TEST test_strbuf_stream_in(void);
+	TEST test_strbuf_stream_out(void);
 
 	SUITE(suite_strview);
 	TEST test_strview_sub(void);
@@ -110,6 +130,22 @@ int main(int argc, const char* argv[])
 // Private functions
 //********************************************************************************************************
 
+static int stream_read_cb(void *ctx, char *buf, int count)
+{
+	stream_read_ctx_t *c = (stream_read_ctx_t *)ctx;
+	c->count = count;
+	c->dst = buf;
+	return c->retval;
+}
+
+static int stream_write_cb(void *ctx, const char *buf, int count)
+{
+	stream_write_ctx_t *c = (stream_write_ctx_t *)ctx;
+	c->count = count;
+	c->dst = buf;
+	return c->retval;
+}
+
 SUITE(suite_strbuf)
 {
 	RUN_TEST(test_strbuf_create);
@@ -128,6 +164,8 @@ SUITE(suite_strbuf)
 	RUN_TEST(test_strbuf_insert_after);
 	RUN_TEST(test_strbuf_to_cstr);
 	RUN_TEST(test_strbuf_terminate_views);
+	RUN_TEST(test_strbuf_stream_in);
+	RUN_TEST(test_strbuf_stream_out);
 }
 
 SUITE(suite_strview)
@@ -1583,6 +1621,101 @@ TEST test_strbuf_terminate_views(void)
 	ASSERT(!strview_is_valid(result));
 
 	strbuf_destroy(&dbuf);
+	PASS();
+}
+
+TEST test_strbuf_stream_in(void)
+{
+	stream_read_ctx_t ctx;
+	strbuf_t* dbuf = strbuf_create(0);
+	int size_free;
+	int retval;
+
+	// Test filling 5 bytes of an empty buffer
+	strbuf_assign(&dbuf, cstr("12345678901234567890"));
+	strbuf_assign(&dbuf, cstr(""));
+	size_free = dbuf->capacity - dbuf->size;
+	ctx.retval = 5;
+	retval = strbuf_stream_in(&dbuf, stream_read_cb, &ctx);
+	ASSERT(ctx.count == size_free);	// callback is passed correct count
+	ASSERT(ctx.dst == dbuf->cstr);	// callback is passed correct buf
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT(retval = dbuf->capacity - dbuf->size - 5); // 5 bytes of the buffer space were consumed
+	ASSERT(dbuf->cstr[dbuf->size] == 0);	// buffer 0 termination is maintained
+
+	// Test trying to fill a buffer which is already full, also checks negative return values
+	strbuf_shrink(&dbuf);	// make the buffer full by shrinking it
+	ASSERT((dbuf->capacity - dbuf->size) == 0);	// confirm strbuf_shrink worked
+	ctx.retval = -123;
+	retval = strbuf_stream_in(&dbuf, stream_read_cb, &ctx);
+	ASSERT(ctx.count == 0);			// callback is passed correct count
+	ASSERT(ctx.dst == &dbuf->cstr[dbuf->size]);	// callback is passed correct buf
+	ASSERT(retval == -123);			// callbacks return value is returned
+	ASSERT((dbuf->capacity - dbuf->size) == 0); // buffer remains full
+	ASSERT(dbuf->cstr[dbuf->size] == 0);	// buffer 0 termination is maintained
+
+	// Test trying to fill an invalid buffer
+	ctx.retval = -234;
+	retval = strbuf_stream_in(NULL, stream_read_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
+
+	strbuf_destroy(&dbuf);
+	ctx.retval = -345;
+	retval = strbuf_stream_in(&dbuf, stream_read_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
+
+	PASS();
+}
+
+TEST test_strbuf_stream_out(void)
+{
+	stream_write_ctx_t ctx;
+	strbuf_t* dbuf = strbuf_create(0);
+	int retval;
+
+	// Test writing 5 bytes of a buffer
+	strbuf_assign(&dbuf, cstr("12345678901234567890"));
+	ctx.retval = 5;
+	retval = strbuf_stream_out(&dbuf, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 20);		// callback is passed correct count
+	ASSERT(ctx.dst == dbuf->cstr);	// callback is passed correct buf
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT_STR_EQ("678901234567890", dbuf->cstr); // 5 bytes were removed from buffer
+
+	// Test callback returns negative value
+	strbuf_assign(&dbuf, cstr("12345678901234567890"));
+	ctx.retval = -111;
+	retval = strbuf_stream_out(&dbuf, stream_write_cb, &ctx);
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT_STR_EQ("12345678901234567890", dbuf->cstr); // nothing is removed from buffer
+
+	// Test writing entire buffer
+	strbuf_assign(&dbuf, cstr("12345678901234567890"));
+	ctx.retval = 20;
+	retval = strbuf_stream_out(&dbuf, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 20);		// callback is passed correct count
+	ASSERT(ctx.dst == dbuf->cstr);	// callback is passed correct buf
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT(dbuf->size == 0);		// buffer was emptied
+
+	// Test trying to write an invalid buffer
+	ctx.retval = -222;
+	retval = strbuf_stream_out(NULL, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
+
+	strbuf_destroy(&dbuf);
+	ctx.retval = -333;
+	retval = strbuf_stream_out(&dbuf, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
+
 	PASS();
 }
 

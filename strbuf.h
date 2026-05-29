@@ -497,7 +497,7 @@
  * @note write_fptr() will always be called even if the buffer is empty.
  * @note if write_fptr() only accepts part of the data, the remaining data will be moved in memory.
    **********************************************************************************/
-	int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(const void *ctx, const char *buf, int count), void *ctx);
+	int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(void *ctx, const char *buf, int count), void *ctx);
 
 #ifdef STRBUF_PROVIDE_PRINTF
 /**
@@ -1174,7 +1174,7 @@ int strbuf_stream_in(strbuf_t **buf_ptr, int (*read_fptr)(void *ctx, char *buf, 
 	return retval;
 }
 
-int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(const void *ctx, const char *buf, int count), void *ctx)
+int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(void *ctx, const char *buf, int count), void *ctx)
 {
 	int retval;
 	strbuf_t *buf;
