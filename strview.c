@@ -382,7 +382,7 @@ int strview_stream_out(strview_t *strview_ptr, int (*write_fptr)(void *ctx, cons
 {
 	int retval;
 
-	if(strview_is_valid(*strview_ptr))
+	if(strview_ptr && strview_is_valid(*strview_ptr))
 	{
 		retval = write_fptr(ctx, strview_ptr->data, strview_ptr->size);
 		if(retval > 0)

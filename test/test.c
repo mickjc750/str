@@ -111,6 +111,8 @@
 	TEST test_strview_dequote(void);
 	TEST test_strview_contains(void);
 	TEST test_strview_contains_nocase(void);
+	TEST test_strview_stream_out(void);
+
 	TEST test_strnum_value(void);
 
 //********************************************************************************************************
@@ -202,6 +204,7 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_dequote);
 	RUN_TEST(test_strview_contains);
 	RUN_TEST(test_strview_contains_nocase);
+	RUN_TEST(test_strview_stream_out);
 }
 
 TEST test_strbuf_create(void)
@@ -1007,6 +1010,48 @@ TEST test_strview_split_index(void)
 	ASSERT(strview_is_valid(str1));
 	ASSERT(strview_is_valid(str2));
 	ASSERT(!memcmp(str2.data, "123", str2.size));
+
+	PASS();
+}
+
+TEST test_strview_stream_out(void)
+{
+	int retval;
+	stream_write_ctx_t ctx;
+	strview_t v;
+	const char *teststr = "12345678901234567890";
+
+	// Test writing 5 bytes of a view
+	v = cstr(teststr);
+	ctx.retval = 5;
+	retval = strview_stream_out(&v, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 20);		// callback is passed correct count
+	ASSERT(ctx.dst == teststr);		// callback is passed correct src
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT(strview_is_match(v, "678901234567890")); // 5 bytes were removed from view
+
+	// Test callback returns negative value
+	v = cstr(teststr);
+	ctx.retval = -1;
+	retval = strview_stream_out(&v, stream_write_cb, &ctx);
+	ASSERT(retval == -1);			// callbacks return value is returned
+	ASSERT(strview_is_match(v, "12345678901234567890")); // 5 bytes were removed from view
+
+	// Test writing entire view
+	v = cstr(teststr);
+	ctx.retval = 20;
+	retval = strview_stream_out(&v, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 20);		// callback is passed correct count
+	ASSERT(ctx.dst == teststr);		// callback is passed correct src
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT(v.size == 0); 			// all bytes were removed from view
+
+	// Test trying to write an invalid view
+	ctx.retval = -222;
+	retval = strview_stream_out(NULL, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
 
 	PASS();
 }
