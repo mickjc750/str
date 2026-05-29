@@ -689,6 +689,15 @@
  * *********************************************************************************/
 	strview_t strview_dequote(strview_t src);
 
+/**
+ * @brief Attempt to write the contents of a view using write_fptr() and remove the number of bytes written.
+ * @param strview_ptr The address of a pointer to the view.
+ * @param write_fptr A pointer to a function that will be called to write data from the view, the function should return the number of bytes written, or -1.
+ * @param ctx The context to be passed to write_fptr.
+ * @return The return value of write_fptr()
+ * @note write_fptr() will always be called even if the view is empty or invalid.
+ * **********************************************************************************/
+	int strview_stream_out(strview_t *strview_ptr, int (*write_fptr)(void *ctx, const char *buf, int count), void *ctx);
 
 #endif
 

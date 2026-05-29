@@ -378,6 +378,22 @@ strview_t strview_split_right(strview_t* strview_ptr, strview_t pos)
 	return result;
 }
 
+int strview_stream_out(strview_t *strview_ptr, int (*write_fptr)(void *ctx, const char *buf, int count), void *ctx)
+{
+	int retval;
+
+	if(strview_is_valid(*strview_ptr))
+	{
+		retval = write_fptr(ctx, strview_ptr->data, strview_ptr->size);
+		if(retval > 0)
+			*strview_ptr = strview_sub(*strview_ptr, retval, INT_MAX);
+	}
+	else
+		retval = write_fptr(ctx, NULL, 0);
+
+	return retval;
+}
+
 //********************************************************************************************************
 // Private functions
 //********************************************************************************************************

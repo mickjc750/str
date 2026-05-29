@@ -494,7 +494,7 @@
  * @param write_fptr A pointer to a function that will be called to write data from the buffer, the function should return the number of bytes written, or -1.
  * @param ctx The context to be passed to write_fptr.
  * @return The return value of write_fptr()
- * @note write_fptr() will always be called even if the buffer is empty.
+ * @note write_fptr() will always be called even if the buffer is empty or invalid (NULL)
  * @note if write_fptr() only accepts part of the data, the remaining data will be moved in memory.
    **********************************************************************************/
 	int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(void *ctx, const char *buf, int count), void *ctx);
