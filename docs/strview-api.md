@@ -30,6 +30,8 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
 * [strview_t cstr(const char* c_str);](#strviewt-cstrconst-char-cstr)
 * [char* strview_to_cstr(char* dst, size_t dst_size, strview_t str);](#char-strviewtocstrchar-dst-sizet-dstsize-strviewt-str)
 * [bool strview_is_valid(strview_t str);](#bool-strviewisvalidstrviewt-str)
+* [bool strview_contains(strview_t haystack, strview_t needle);](#contains)
+* [bool strview_contains_nocase(strview_t haystack, strview_t needle);](#contains)
 * [void strview_swap(strview_t* a, strview_t* b);](#void-strviewswapstrviewt-a-strviewt-b)
 
 &nbsp;
@@ -114,8 +116,29 @@ Note that it is valid to have a strview_t of length 0. In this case *data should
  Return true if the strview_t is valid.
 
 &nbsp;
+## `bool strview_contains(strview_t haystack, strview_t needle);`
+ Return true if needle occurs anywhere within haystack.
+
+&nbsp;
+## `bool strview_contains_nocase(strview_t haystack, strview_t needle);`
+ Same as strview_contains(), ignoring case.
+
+&nbsp;
 ##	`void strview_swap(strview_t* a, strview_t* b);`
  Swap strings a and b.
+
+&nbsp;
+## `strview_t strview_dequote(strview_t src);`
+ Remove matching quotation characters from both ends of a string view.
+ Multiple levels of matching quotes are removed.
+
+Examples:
+
+    ""Fred""  -> Fred
+    "'Fred'" -> 'Fred'
+    '"Fred"' -> "Fred"
+
+
 
 &nbsp;
 &nbsp;
@@ -283,3 +306,34 @@ In this case *eol may be NULL.
 Any type of line ending can be handled by providing variable eol.
 This variable stores the state of the eol discriminator, regarding if a future CR or LF needs to be ignored.
 its initial value should be 0. See the test suite for usage of this.
+
+
+&nbsp;
+&nbsp;
+# Streaming
+
+&nbsp;
+## `int strview_stream_out(strview_t *strview_ptr, int (*write_fptr)(void *ctx, const char *buf, int count), void *ctx);`
+
+Attempt to write the contents of a string view using a user supplied callback.
+
+The callback is called with:
+
+- `ctx` - user supplied context pointer
+- `buf` - pointer to the view contents
+- `count` - number of bytes available
+
+The callback should return:
+
+- Number of bytes written
+- `0` if unable to accept data
+- `-1` on error
+
+After a successful write, the written bytes are removed (popped) from the beginning of the view.
+
+Notes:
+
+- The callback is always called, even if the view is empty or invalid.
+- Partial writes are supported.
+- If the view is invalid, the callback is invoked with `buf == NULL` and `count == 0`.
+

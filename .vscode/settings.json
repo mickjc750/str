@@ -1,6 +1,10 @@
 {
-    "files.associations": {
-        "string.h": "c",
-        "stdint.h": "c"
-    }
+    "editor.inlineSuggest.enabled": false,
+    "editor.quickSuggestions": {
+        "comments": "on",
+        "strings": "on",
+        "other": "on"
+    },
+    "editor.suggestOnTriggerCharacters": true,
+    "editor.parameterHints.enabled": true
 }

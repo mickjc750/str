@@ -25,6 +25,22 @@
 
 	GREATEST_MAIN_DEFS();
 
+	// context for the stream read callback
+	typedef struct stream_read_ctx_t
+	{
+		int retval;
+		char *dst;
+		int count;
+	} stream_read_ctx_t;
+
+	// context for the stream write callback
+	typedef struct stream_write_ctx_t
+	{
+		int retval;
+		const char *dst;
+		int count;
+	} stream_write_ctx_t;
+
 //********************************************************************************************************
 // Public variables
 //********************************************************************************************************
@@ -34,19 +50,17 @@
 // Private variables
 //********************************************************************************************************
 
-	#define STATIC_BUFFER_SIZE	200
-	static char static_buf[STATIC_BUFFER_SIZE] __attribute__ ((aligned));
+	#define STATIC_BUFFER_SIZE	500
+	static char static_buf[STATIC_BUFFER_SIZE];
 
 //********************************************************************************************************
 // Private prototypes
 //********************************************************************************************************
 
-	static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
+	static int stream_read_cb(void *ctx, char *buf, int count);
 
 	SUITE(suite_strbuf);
-	TEST test_strbuf_create_using_malloc(void);
-	TEST test_strbuf_create_using_allocator(void);
-	TEST test_strbuf_create_static(void);
+	TEST test_strbuf_create(void);
 	TEST test_strbuf_create_init(void);
 	TEST test_strbuf_strcat(void);
 	TEST test_strbuf_shrink(void);
@@ -62,6 +76,8 @@
 	TEST test_strbuf_insert_after(void);
 	TEST test_strbuf_to_cstr(void);
 	TEST test_strbuf_terminate_views(void);
+	TEST test_strbuf_stream_in(void);
+	TEST test_strbuf_stream_out(void);
 
 	SUITE(suite_strview);
 	TEST test_strview_sub(void);
@@ -95,6 +111,8 @@
 	TEST test_strview_dequote(void);
 	TEST test_strview_contains(void);
 	TEST test_strview_contains_nocase(void);
+	TEST test_strview_stream_out(void);
+
 	TEST test_strnum_value(void);
 
 //********************************************************************************************************
@@ -114,21 +132,26 @@ int main(int argc, const char* argv[])
 // Private functions
 //********************************************************************************************************
 
-static void* allocator(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size)
+static int stream_read_cb(void *ctx, char *buf, int count)
 {
-	(void)this_allocator;
-	void* result;
-	result = realloc(ptr_to_free, size);
-	assert(size==0 || result);	// You need to catch a failed allocation here.
-	return result;
+	stream_read_ctx_t *c = (stream_read_ctx_t *)ctx;
+	c->count = count;
+	c->dst = buf;
+	return c->retval;
+}
+
+static int stream_write_cb(void *ctx, const char *buf, int count)
+{
+	stream_write_ctx_t *c = (stream_write_ctx_t *)ctx;
+	c->count = count;
+	c->dst = buf;
+	return c->retval;
 }
 
 SUITE(suite_strbuf)
 {
-	RUN_TEST(test_strbuf_create_using_malloc);
+	RUN_TEST(test_strbuf_create);
 	RUN_TEST(test_strbuf_create_init);
-	RUN_TEST(test_strbuf_create_using_allocator);
-	RUN_TEST(test_strbuf_create_static);
 	RUN_TEST(test_strbuf_strcat);
 	RUN_TEST(test_strbuf_shrink);
 	RUN_TEST(test_strbuf_printf);
@@ -143,6 +166,8 @@ SUITE(suite_strbuf)
 	RUN_TEST(test_strbuf_insert_after);
 	RUN_TEST(test_strbuf_to_cstr);
 	RUN_TEST(test_strbuf_terminate_views);
+	RUN_TEST(test_strbuf_stream_in);
+	RUN_TEST(test_strbuf_stream_out);
 }
 
 SUITE(suite_strview)
@@ -179,13 +204,14 @@ SUITE(suite_strview)
 	RUN_TEST(test_strview_dequote);
 	RUN_TEST(test_strview_contains);
 	RUN_TEST(test_strview_contains_nocase);
+	RUN_TEST(test_strview_stream_out);
 }
 
-TEST test_strbuf_create_using_malloc(void)
+TEST test_strbuf_create(void)
 {
 	#define INITIAL_BUF_CAPACITY 16
 	strbuf_t* buf;
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, NULL);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY);
 
 	ASSERT(buf);
 	ASSERT(buf->cstr);
@@ -203,7 +229,7 @@ TEST test_strbuf_create_init(void)
 {
 	#define TEST_STRING	"The quick brown fox jumped over the lazy dog"
 	strbuf_t* buf;
-	buf = strbuf_create(cstr(TEST_STRING), NULL);
+	buf = strbuf_create(cstr(TEST_STRING));
 
 	ASSERT(buf);
 	ASSERT(buf->cstr);
@@ -216,50 +242,12 @@ TEST test_strbuf_create_init(void)
 	#undef TEST_STRING
 }
 
-TEST test_strbuf_create_using_allocator(void)
-{
-	#define INITIAL_BUF_CAPACITY 16
-	strbuf_allocator_t strbuf_allocator = {.allocator = allocator};
-	strbuf_t* buf;
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, &strbuf_allocator);
-
-	ASSERT(buf);
-	ASSERT(buf->cstr);
-	ASSERT(buf->size == 0);
-	ASSERT(buf->capacity == INITIAL_BUF_CAPACITY);
-	ASSERT(buf->cstr[0] == 0);
-	strbuf_destroy(&buf);
-	ASSERT(!buf);
-
-	PASS();
-	#undef INITIAL_BUF_CAPACITY
-}
-
-TEST test_strbuf_create_static(void)
-{
-	strbuf_t* buf;
-
-	ASSERT(!strbuf_create_fixed(static_buf+3, STATIC_BUFFER_SIZE));	//must fail due to badly aligned address
-	ASSERT(!strbuf_create_fixed(static_buf, sizeof(strbuf_t)));		//must fail due to insufficient space
-
-	buf = strbuf_create_fixed(static_buf, STATIC_BUFFER_SIZE);
-	ASSERT(buf);
-	ASSERT(buf->cstr);
-	ASSERT(buf->size == 0);
-	ASSERT(buf->capacity == STATIC_BUFFER_SIZE - sizeof(strbuf_t)-1);
-	ASSERT(buf->cstr[0] == 0);
-	strbuf_destroy(&buf);
-	ASSERT(!buf);
-
-	PASS();
-}
-
 TEST test_strbuf_strcat(void)
 {
 	#define INITIAL_BUF_CAPACITY 16
 	strbuf_t* buf;
 	strview_t str1;
-	buf = strbuf_create(INITIAL_BUF_CAPACITY, NULL);
+	buf = strbuf_create(INITIAL_BUF_CAPACITY);
 	ASSERT(buf);
 
 	//Concatenating "AAAAAAAAAA", "BBBBBBBBBB", "CCCCCCCCCC"
@@ -282,34 +270,6 @@ TEST test_strbuf_strcat(void)
 	str1 = strbuf_cat(&buf, str1);
 	ASSERT(str1.size == 0);
 	ASSERT(str1.data);
-
-	strbuf_destroy(&buf);
-	ASSERT(!buf);
-
-	//Now perform some operations on a static buffer
-	buf = strbuf_create_fixed(static_buf, STATIC_BUFFER_SIZE);
-	ASSERT(buf);
-	ASSERT(buf->capacity == STATIC_BUFFER_SIZE - sizeof(strbuf_t) - 1);
-
-	// Concatenating DDDDDDDDDD EEEEEEEEEE FFFFFFFFFF
-	strbuf_cat(&buf, cstr("DDDDDDDDDD"), cstr("EEEEEEEEEE"), cstr("FFFFFFFFFF"));
-	ASSERT(buf->capacity == STATIC_BUFFER_SIZE - sizeof(strbuf_t) - 1);	//capacity should not change
-	ASSERT(buf->size == 30);
-	ASSERT(!strcmp(buf->cstr, "DDDDDDDDDDEEEEEEEEEEFFFFFFFFFF"));
-
-	// Trying to pass data from the destination buffer into strbuf_cat() without a dynamic buffer (should fail and return empty buffer
-	str1 = strbuf_view(&buf);
-	str1 = strview_sub(str1, 5, 10);
-	strbuf_cat(&buf, cstr("never "), str1, cstr(" seen"));
-	ASSERT(buf->size == 0);
-
-	// Trying append too much data to the buffer (should fail and return empty buffer
-	strbuf_assign(&buf, cstr(""));
-	//this much should fit
-	strbuf_append(&buf, cstr("BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH  "));
-	//this much should empty the buffer
-	strbuf_append(&buf, cstr("BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH  "));
-	ASSERT(buf->size == 0);
 
 	strbuf_destroy(&buf);
 	ASSERT(!buf);
@@ -765,7 +725,7 @@ TEST test_strview_is_valid(void)
 TEST test_strview_append_char(void)
 {
 	strview_t str1;
-	strbuf_t* buf = strbuf_create(0, NULL);
+	strbuf_t* buf = strbuf_create(0);
 	const char* chrptr = "THE QUICK BROWN FOX JUMPES OVER THE LAZY DOG. CONGRATULATIONS, YOUR TYPEWRITER WORKS!";
 	ASSERT(buf);
 	while(*chrptr)
@@ -782,24 +742,13 @@ TEST test_strview_append_char(void)
 
 TEST test_strbuf_shrink(void)
 {
-	strbuf_t* buf = strbuf_create(200, NULL);
+	strbuf_t* buf = strbuf_create(200);
 
 	strbuf_assign(&buf, cstr("hello-test"));
 	strbuf_shrink(&buf);
 	ASSERT(buf->size == 10);
 	ASSERT(!memcmp("hello-test", buf->cstr, 10));
 	ASSERT(buf->capacity == 10);
-
-	strbuf_destroy(&buf);
-	ASSERT(!buf);
-
-	buf = strbuf_create_fixed(static_buf, STATIC_BUFFER_SIZE);
-	ASSERT(buf->capacity == STATIC_BUFFER_SIZE - sizeof(strbuf_t) - 1);
-	strbuf_assign(&buf, cstr("hello-test"));
-	strbuf_shrink(&buf);
-	ASSERT(buf->size == 10);
-	ASSERT(!memcmp("hello-test", buf->cstr, 10));
-	ASSERT(buf->capacity == STATIC_BUFFER_SIZE - sizeof(strbuf_t) - 1);	//strbuf_shrink should not change a static buffers capacity
 
 	strbuf_destroy(&buf);
 	ASSERT(!buf);
@@ -1065,12 +1014,54 @@ TEST test_strview_split_index(void)
 	PASS();
 }
 
+TEST test_strview_stream_out(void)
+{
+	int retval;
+	stream_write_ctx_t ctx;
+	strview_t v;
+	const char *teststr = "12345678901234567890";
+
+	// Test writing 5 bytes of a view
+	v = cstr(teststr);
+	ctx.retval = 5;
+	retval = strview_stream_out(&v, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 20);		// callback is passed correct count
+	ASSERT(ctx.dst == teststr);		// callback is passed correct src
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT(strview_is_match(v, "678901234567890")); // 5 bytes were removed from view
+
+	// Test callback returns negative value
+	v = cstr(teststr);
+	ctx.retval = -1;
+	retval = strview_stream_out(&v, stream_write_cb, &ctx);
+	ASSERT(retval == -1);			// callbacks return value is returned
+	ASSERT(strview_is_match(v, "12345678901234567890")); // 5 bytes were removed from view
+
+	// Test writing entire view
+	v = cstr(teststr);
+	ctx.retval = 20;
+	retval = strview_stream_out(&v, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 20);		// callback is passed correct count
+	ASSERT(ctx.dst == teststr);		// callback is passed correct src
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT(v.size == 0); 			// all bytes were removed from view
+
+	// Test trying to write an invalid view
+	ctx.retval = -222;
+	retval = strview_stream_out(NULL, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
+
+	PASS();
+}
+
 TEST test_strbuf_printf(void)
 {
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	str1 = strbuf_printf(&buf, "Hello from printf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
 
 	ASSERT(!memcmp(str1.data, "Hello from printf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
@@ -1086,7 +1077,7 @@ TEST test_strbuf_append_printf(void)
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	strbuf_assign(&buf, cstr("Hello"));
 	str1 = strbuf_append_printf(&buf, " Appending one more number %i", 748921);
 	ASSERT(!memcmp(str1.data, "Hello Appending one more number 748921", str1.size));
@@ -1102,7 +1093,7 @@ TEST test_strbuf_prnf(void)
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	str1 = strbuf_prnf(&buf, "Hello from prnf! have some numbers... %i %i %i %i %i %i %i", 6246456, 3466765, 435234, 4598756, 94572, 69, 42597);
 
 	ASSERT(!memcmp(str1.data, "Hello from prnf! have some numbers... 6246456 3466765 435234 4598756 94572 69 42597", str1.size));
@@ -1118,7 +1109,7 @@ TEST test_strbuf_append_prnf(void)
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	ASSERT(buf);
 
 	strbuf_assign(&buf, cstr("Hello"));
@@ -1159,7 +1150,7 @@ TEST test_strbuf_assign(void)
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	ASSERT(buf);
 
 	// Testing strbuf_assign() source outside of the destination
@@ -1183,7 +1174,7 @@ TEST test_strbuf_append(void)
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	ASSERT(buf);
 
 	// Testing strbuf_append(), with source from the destination
@@ -1210,7 +1201,7 @@ TEST test_strbuf_prepend(void)
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	ASSERT(buf);
 
 	// Testing strbuf_prepend(), with source from the destination
@@ -1237,7 +1228,7 @@ TEST test_strbuf_insert_at_index(void)
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	ASSERT(buf);
 
 	// Testing strbuf_insert_at_index(), with source from the destination
@@ -1305,7 +1296,7 @@ LF line followed by an empty LFCR line\n\
 \n\r\
 This text has no line ending";
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	ASSERT(buf);
 
 	str2 = cstr(sometext);
@@ -1373,7 +1364,7 @@ TEST test_strbuf_insert_before(void)
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	ASSERT(buf);
 
 	strbuf_assign(&buf, cstr("Hello"));
@@ -1411,7 +1402,7 @@ TEST test_strbuf_insert_after(void)
 	strbuf_t* buf;
 	strview_t str1;
 
-	buf = strbuf_create(0, NULL);
+	buf = strbuf_create(0);
 	ASSERT(buf);
 
 	strbuf_assign(&buf, cstr("Hello"));
@@ -1446,22 +1437,16 @@ TEST test_strbuf_insert_after(void)
 
 TEST test_strbuf_to_cstr(void)
 {
-	strbuf_t* dbuf = strbuf_create(0, NULL);
-	strbuf_t* sbuf = strbuf_create_fixed(static_buf, STATIC_BUFFER_SIZE);
+	strbuf_t* dbuf = strbuf_create(0);
+
 	char* dstr;
-	char* sstr;
 
 	strbuf_assign(&dbuf, cstr("Some test string in a dynamic buffer, hello test."));
-	strbuf_assign(&sbuf, cstr("Some test string in a static buffer, hello test."));
-
 	dstr = strbuf_to_cstr(&dbuf);
-	sstr = strbuf_to_cstr(&sbuf);
 
 	ASSERT(dbuf == NULL);
-	ASSERT(sbuf == NULL);
 
 	ASSERT(!strcmp(dstr, "Some test string in a dynamic buffer, hello test."));
-	ASSERT(!strcmp(sstr, "Some test string in a static buffer, hello test."));
 
 	free(dstr);	// this should not segfault or leak memory.
 	PASS();
@@ -1469,11 +1454,9 @@ TEST test_strbuf_to_cstr(void)
 
 TEST test_strbuf_terminate_views(void)
 {
-	strbuf_t* dbuf = strbuf_create(0, NULL);
-	strbuf_t* sbuf = strbuf_create_fixed(static_buf, 8+sizeof(strbuf_t));
+	strbuf_t* dbuf = strbuf_create(0);
 	strview_t view[3];
 	strview_t result;
-	strview_t src;
 
 //	in		AAA
 //	out		AAA.
@@ -1669,24 +1652,6 @@ TEST test_strbuf_terminate_views(void)
 	ASSERT(result.data == dbuf->cstr);
 	ASSERT(result.size == dbuf->size);
 
-//	Try an operation on a static buffer that just fits
-	src = cstr("***********************************************************************************************");
-	src.size = sbuf->capacity-1;
-	strbuf_assign(&sbuf, src);
-	view[0] = strbuf_view(&sbuf);
-	result = strbuf_terminate_views(&sbuf, 1, view);
-	ASSERT(strview_is_valid(result));
-	ASSERT(strview_is_match(cstr(view[0].data), src));
-
-//	Try an operation on a static buffer that does not fit
-	src = cstr("***********************************************************************************************");
-	src.size = sbuf->capacity;
-	strbuf_assign(&sbuf, src);
-	view[0] = strbuf_view(&sbuf);
-	result = strbuf_terminate_views(&sbuf, 1, view);
-	ASSERT(!strview_is_valid(result));
-	ASSERT(sbuf->size == 0);
-
 //	Array of 0 views should empty the buffer and return a valid view of the empty buffer
 	strbuf_assign(&dbuf, cstr("anything"));
 	result = strbuf_terminate_views(&dbuf, 0, view);
@@ -1701,6 +1666,101 @@ TEST test_strbuf_terminate_views(void)
 	ASSERT(!strview_is_valid(result));
 
 	strbuf_destroy(&dbuf);
+	PASS();
+}
+
+TEST test_strbuf_stream_in(void)
+{
+	stream_read_ctx_t ctx;
+	strbuf_t* dbuf = strbuf_create(0);
+	int size_free;
+	int retval;
+
+	// Test filling 5 bytes of an empty buffer
+	strbuf_assign(&dbuf, cstr("12345678901234567890"));
+	strbuf_assign(&dbuf, cstr(""));
+	size_free = dbuf->capacity - dbuf->size;
+	ctx.retval = 5;
+	retval = strbuf_stream_in(&dbuf, stream_read_cb, &ctx);
+	ASSERT(ctx.count == size_free);	// callback is passed correct count
+	ASSERT(ctx.dst == dbuf->cstr);	// callback is passed correct buf
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT(retval = dbuf->capacity - dbuf->size - 5); // 5 bytes of the buffer space were consumed
+	ASSERT(dbuf->cstr[dbuf->size] == 0);	// buffer 0 termination is maintained
+
+	// Test trying to fill a buffer which is already full, also checks negative return values
+	strbuf_shrink(&dbuf);	// make the buffer full by shrinking it
+	ASSERT((dbuf->capacity - dbuf->size) == 0);	// confirm strbuf_shrink worked
+	ctx.retval = -123;
+	retval = strbuf_stream_in(&dbuf, stream_read_cb, &ctx);
+	ASSERT(ctx.count == 0);			// callback is passed correct count
+	ASSERT(ctx.dst == &dbuf->cstr[dbuf->size]);	// callback is passed correct buf
+	ASSERT(retval == -123);			// callbacks return value is returned
+	ASSERT((dbuf->capacity - dbuf->size) == 0); // buffer remains full
+	ASSERT(dbuf->cstr[dbuf->size] == 0);	// buffer 0 termination is maintained
+
+	// Test trying to fill an invalid buffer
+	ctx.retval = -234;
+	retval = strbuf_stream_in(NULL, stream_read_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
+
+	strbuf_destroy(&dbuf);
+	ctx.retval = -345;
+	retval = strbuf_stream_in(&dbuf, stream_read_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
+
+	PASS();
+}
+
+TEST test_strbuf_stream_out(void)
+{
+	stream_write_ctx_t ctx;
+	strbuf_t* dbuf = strbuf_create(0);
+	int retval;
+
+	// Test writing 5 bytes of a buffer
+	strbuf_assign(&dbuf, cstr("12345678901234567890"));
+	ctx.retval = 5;
+	retval = strbuf_stream_out(&dbuf, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 20);		// callback is passed correct count
+	ASSERT(ctx.dst == dbuf->cstr);	// callback is passed correct buf
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT_STR_EQ("678901234567890", dbuf->cstr); // 5 bytes were removed from buffer
+
+	// Test callback returns negative value
+	strbuf_assign(&dbuf, cstr("12345678901234567890"));
+	ctx.retval = -111;
+	retval = strbuf_stream_out(&dbuf, stream_write_cb, &ctx);
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT_STR_EQ("12345678901234567890", dbuf->cstr); // nothing is removed from buffer
+
+	// Test writing entire buffer
+	strbuf_assign(&dbuf, cstr("12345678901234567890"));
+	ctx.retval = 20;
+	retval = strbuf_stream_out(&dbuf, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 20);		// callback is passed correct count
+	ASSERT(ctx.dst == dbuf->cstr);	// callback is passed correct buf
+	ASSERT(retval == ctx.retval);	// callbacks return value is returned
+	ASSERT(dbuf->size == 0);		// buffer was emptied
+
+	// Test trying to write an invalid buffer
+	ctx.retval = -222;
+	retval = strbuf_stream_out(NULL, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
+
+	strbuf_destroy(&dbuf);
+	ctx.retval = -333;
+	retval = strbuf_stream_out(&dbuf, stream_write_cb, &ctx);
+	ASSERT(ctx.count == 0);
+	ASSERT(ctx.dst == NULL);
+	ASSERT(retval == ctx.retval);
+
 	PASS();
 }
 
@@ -1836,7 +1896,7 @@ TEST test_strview_contains_nocase(void)
 
 TEST test_strnum_value(void)
 {
-	strbuf_t* buf = strbuf_create(0,NULL);
+	strbuf_t* buf = strbuf_create(0);
 	int err;
 	strview_t v;
 	unsigned char		iuchar;

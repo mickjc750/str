@@ -66,6 +66,10 @@ int main(int argc, const char* argv[])
 
 	while(true)
 	{
+		printf("\n\
+This program tests the lexbracket_init() and lexbracket_is_inside() functions.\n\
+These functions are use by delimiter splitters in strview.c to ignore delimiters that are inside brackets or quotes.\n\
+The user can input a string of bracket pairs and a text, and the program will output which characters in the text are inside brackets/quotes and which are outside.\n");
 		printf("Enter brackets string ie. {}()[]''\"\"\n");
 		getline(&brackets, &brackets_size, stdin);
 		brackets[strlen(brackets)-1] = 0;

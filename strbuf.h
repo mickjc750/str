@@ -3,10 +3,8 @@
  * @brief A buffer API complementing strview.h
  * @author Michael Clift
  * 
- * * Provides functions for allocating buffers on the heap, stack, or static memory.
+ * * Provides functions for allocating dynamic buffers.
  * * Provides functions for building and modifying string data.
- * * Able to use custom allocators provided at runtime.
- * * Dynamic allocation is not mandatory.
  * * Maintains null termination, so buffer contents may be accessed as a regular C string.
  * * Able to assign or append formatted text from printf() or prnf()
  * 
@@ -16,7 +14,6 @@
  * 	{
  * 		int size;
  * 		int capacity;
- * 		strbuf_allocator_t allocator;
  * 		char cstr[];
  * 	} strbuf_t;
  *
@@ -24,7 +21,7 @@
  * If the buffer is relocated this pointer needs to change, therefore __strbuf.h__ functions take the address of this pointer as an argument. Example:
  * 
  * 	strbuf_t*	my_buf;
- * 	my_buf = strbuf_create(50, NULL);
+ * 	my_buf = strbuf_create(50);
  * 	strbuf_assign(&my_buf, cstr("Hello"));
  * 
  * All strbuf.h functions maintain a null terminator at the end of the content.
@@ -34,24 +31,15 @@
  * 	printf("The buffer contains %s\n", my_buf->cstr);
  * 
  * Functions which modify a buffers contents return a view of the resulting buffer contents.
- * If an insert or append operation fails due to insufficient capacity, the buffer will be emptied.
  * 
  * 
  * ## Build options
  *  -DSTRBUF_PROVIDE_PRINTF
- * 	Provides functions which use vprintf() internally to assign or append formatted text to a buffer.
+ * 	Provides functions which use vsnprintf() internally to assign or append formatted text to a buffer.
  * 
- * -DSTRBUF_PROVIDE_PRNF
- * Similar to printf, -but uses an alternative text formatter https://github.com/mickjc750/prnf
+ *  -DSTRBUF_PROVIDE_PRNF
+ *  Similar to printf, -but uses an alternative text formatter https://github.com/mickjc750/prnf
  * 
- * -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
- * If you wish to use dynamic memory allocation, but can't be bothered providing an allocator.
- * 
- * -DSTRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
- * assert() that the malloc or realloc of the default allocator actually succeeded.
- * 
- * -DSTRBUF_CAPACITY_GROW_STEP=[size]
- * Defaults to 16. This is the minimum size by which the buffer will be expanded when needed.
  * 
  */
 
@@ -68,52 +56,6 @@
 //********************************************************************************************************
 // Public defines
 //********************************************************************************************************
-
-/**
- * @def strbuf_space_t(cap)
- * @hideinitializer
- * @brief (macro) Used to instantiate static buffers within functions. A structure large enough to hold a strbuf_t of given capacity. 
- * @param cap The capacity of the buffer.
- * @note The structure requires initialisation using STRBUF_STATIC_INIT(cap).
- * @note The address of the structure may be cast and assigned to a strbuf_t*
- * @note For a buffer on the stack, instead use STRBUF_FIXED_CAP(cap).
- * @note Example:
- * @code{.c}
- * #define BUF_CAP 50
- * static strbuf_space_t(BUF_CAP) buf_space = STRBUF_STATIC_INIT(BUF_CAP);
- * strbuf_t* buf = (strbuf_t*)&buf_space;
- * @endcode
-  **********************************************************************************/ 
-	#define strbuf_space_t(cap)		struct {strbuf_t buf; char bdy[(cap)+1];}
-
-/**
- * @def STRBUF_STATIC_INIT(cap)
- * @hideinitializer
- * @brief (macro) An initializer for the type strbuf_space_t
- * @param cap The capacity of the buffer, this must match the value passed to the strbuf_space_t() macro.
- * @note Example:
- * @code{.c}
- * #define BUF_CAP 50
- * static strbuf_space_t(BUF_CAP) buf_space = STRBUF_STATIC_INIT(BUF_CAP);
- * strbuf_t* my_buf = (strbuf_t*)&buf_space;
- * @endcode
-  **********************************************************************************/ 
-	#define STRBUF_STATIC_INIT(cap)		{.buf.capacity=(cap), .buf.size=0, .buf.allocator.allocator=NULL, .buf.allocator.app_data=NULL, .bdy[0]=0}
-
-/**
- * @def STRBUF_FIXED_CAP(cap)
- * @hideinitializer
- * @brief (macro) Instantiate and provide the address of an initialized strbuf_t with a fixed capacity.
- * @param cap The capacity of the buffer.
- * @note When used within a function, the capacity may be determined at runtime by providing an integer variable for cap, and the buffer will be on the stack.
- * @note When used outside of any function, the capacity must be a literal value, and the buffer will have static storage.
- * @note Example:
- * @code{.c}
- * #define BUF_CAP 50
- * strbuf_t* my_buf = STRBUF_FIXED(BUF_CAP);
- * @endcode
-   **********************************************************************************/ 
-	#define STRBUF_FIXED_CAP(cap)	((strbuf_t*)&((strbuf_space_t(cap)){.buf.capacity=(cap), .buf.size=0, .buf.allocator.allocator=NULL, .buf.allocator.app_data=NULL, .bdy[0]=0}))
 
 /// @cond DEV
 //	This is used for counting the number of arguments to the strbuf_cat() macro below.
@@ -157,65 +99,33 @@
  * @param buf_ptr The address of a pointer to the buffer.
  * @param ... One or more strview_t to be concatenated.
  * @return A view of the resulting buffer contents.
- * @note If the destination buffer is dynamic, then ... arguments may be views within the destination.
- * @note If a buffer of fixed capacity is unable to store the output, it will be emptied.
+ * @note Arguments may be views within the destination.
  * @note Example:
  * @code{.c}
- * strbuf_t* my_buf = strbuf_create(0,NULL);
- * strbuf_cat(&mybuf, cstr("Hello"), cstr(" World"));
+ * strbuf_t* my_buf = strbuf_create(0);
+ * strbuf_cat(&my_buf, cstr("Hello"), cstr(" World"));
  * @endcode
  **********************************************************************************/ 
- 	#define strbuf_cat(buf_ptr, ...) _strbuf_cat(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
+ 	#define strbuf_cat(buf_ptr, ...) strbuf_cat_n(buf_ptr, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 
 
 /**
- * @def strbuf_create(init, strbuf_allocator_t* allocator)
+ * @def strbuf_create(init)
  * @brief (macro) Create a new buffer.
  * @param init A size_t for an empty buffer, or strview_t of initial content.
- * @param allocator A pointer to a strbuf_allocator_t which provides the allocator to use, or NULL to use the default allocator.
  * @return A pointer to the newly created buffer.
- * @note If the destination buffer is dynamic, then ... arguments may be views within the destination.
- * @note If a buffer of fixed capacity is unable to store the output, it will be emptied.
+ * @note Arguments may be views within the destination.
  * @note Example:
  * @code{.c}
- * strbuf_t* my_buf = strbuf_create(0,NULL);
- * strbuf_t* my_buf = strbuf_create(cstr("Hello"),NULL);
+ * strbuf_t* my_buf = strbuf_create(0);
+ * strbuf_t* my_buf = strbuf_create(cstr("Hello"));
  * @endcode
  **********************************************************************************/ 
-	#define strbuf_create(init, alloc) _Generic((init),\
+	#define strbuf_create(init) _Generic((init),\
 		size_t:			strbuf_create_empty,\
 		int:			strbuf_create_empty,\
 		strview_t:		strbuf_create_init\
-		)(init, alloc)
-
-
-/**
- * @struct strbuf_allocator_t
- * @brief Structure for providing the buffer with an allocator.
- * @note Example allocator using realloc:
- * @code{.c}
- * static void* my_alloc_func(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size, const char* caller_filename, int caller_line)
- * {
- * 	(void)this_allocator; (void)caller_filename; (void)caller_line;
- * 	void* result;
- * 	result = realloc(ptr_to_free, size);
- * 	assert(size==0 || result);	// You need to catch a failed allocation here.
- * 	return result;
- * }
- * 	strbuf_allocator_t my_alloc = {.allocator = my_alloc_func};
- * @endcode
- */
-	typedef struct strbuf_allocator_t
-	{
-		void* app_data; ///< A pointer to some implementation specific data which may be required by the allocator.
-		/**
-		 * @brief Function pointer to the allocator
-		 * @param this_allocator A pointer to the instance of this structure.
-		 * @param ptr_to_free Memory address to free or relocate, or NULL for new allocations.
-		 * @param size Size of the new or re-sized allocation, or 0 if freeing memory.
-		 */
-		void* (*allocator)(struct strbuf_allocator_t* this_allocator, void* ptr_to_free, size_t size);
-	} strbuf_allocator_t;
+		)(init)
 
 /**
  * @struct strbuf_t
@@ -227,7 +137,6 @@
 	{
 		int size;						///< Size of the buffers contents.
 		int capacity;					///< Current capacity of the buffer.
-		strbuf_allocator_t allocator;	///< Allocator in use, if available.
 		char cstr[];					///< Beginning of the buffers contents.
 	} strbuf_t;
 
@@ -239,7 +148,6 @@
  * @param str A C string or a view of the data to be appended.
  * @return A view of the buffer contents.
  * @note The source view may be of data within the destination buffer.
- * @note If the destination is of fixed capacity, and insufficient, the buffer will be emptied.
  **********************************************************************************/
 	#define strbuf_append(buf_ptr, str) _Generic((str),\
 		const char*:	strbuf_append_cstr,\
@@ -255,7 +163,6 @@
  * @param str A view or a C string of the data to be prepended.
  * @return A view of the buffer contents.
  * @note The source view may be of data within the destination buffer.
- * @note If the destination is of fixed capacity, and insufficient, the buffer will be emptied.
  **********************************************************************************/
 	#define strbuf_prepend(buf_ptr, str) _Generic((str),\
 		const char*:	strbuf_prepend_cstr,\
@@ -272,7 +179,6 @@
  * @param str A view or a C string of the data to be inserted.
  * @return A view of the buffer contents.
  * @note The source view may be of data within the destination buffer.
- * @note A negative index may be used to reference the end of the buffer backwards.
  **********************************************************************************/
 	#define strbuf_insert_at_index(buf_ptr, index, str) _Generic((str),\
 		const char*:	strbuf_insert_at_index_cstr,\
@@ -334,44 +240,24 @@
 /**
  * @brief Create a new empty buffer.
  * @param initial_capacity The initial capacity of the buffer. This must be <= INT_MAX. It may  be 0.
- * @param allocator A pointer to a strbuf_allocator_t which provides the allocator to use, or NULL to use the default allocator.
  * @return A pointer to the newly created buffer.
- * @note Using the default allocator (malloc/free) requires building with -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
  * @note Example:
  * @code{.c}
- * strbuf_t* my_buf = strbuf_create_empty(0,NULL);
+ * strbuf_t* my_buf = strbuf_create_empty(0);
  * @endcode
   **********************************************************************************/
-	strbuf_t* strbuf_create_empty(size_t initial_capacity, strbuf_allocator_t* allocator);
+	strbuf_t* strbuf_create_empty(size_t initial_capacity);
 
 /**
  * @brief Create a new buffer initialised by a strview_t
  * @param initial_content The initial content of the buffer.
- * @param allocator A pointer to a strbuf_allocator_t which provides the allocator to use, or NULL to use the default allocator.
  * @return A pointer to the newly created buffer.
- * @note Using the default allocator (malloc/free) requires building with -DSTRBUF_DEFAULT_ALLOCATOR_STDLIB
  * @note Example:
  * @code{.c}
- * strbuf_t* my_buf = strbuf_create_init(0,NULL);
+ * strbuf_t* my_buf = strbuf_create_init(cstr("Hello"));
  * @endcode
   **********************************************************************************/
-	strbuf_t* strbuf_create_init(strview_t initial_content, strbuf_allocator_t* allocator);
-
-/**
- * @brief Create a buffer with a fixed capacity from the memory address and size provided.
- * @param addr The address of the memory space to use.
- * @param addr_size The size of the memory space to use.
- * @return A pointer to the newly created buffer.
- * @note The capacity of the buffer will be less than the memory space provided, by sizeof(strbuf_t)+1.
- * @note The memory must be suitably aligned for a void* using __attribute__ ((aligned)), or by using macro strbuf_space_t().
- * @note The maximum capacity of a buffer is INT_MAX.
- * @note Example:
- * @code{.c}
- * char buf_space[100] __attribute__ ((aligned));
- * strbuf_t* my_buf = strbuf_create_fixed(buf_space, sizeof(buf_space));
- * @endcode
-  **********************************************************************************/
-	strbuf_t* strbuf_create_fixed(void* addr, size_t addr_size);
+	strbuf_t* strbuf_create_init(strview_t initial_content);
 
 /**
  * @brief Concatenate one or more string views (strview_t) and assign the result to the buffer.
@@ -380,13 +266,12 @@
  * @param ... One or more strview_t to be concatenated.
  * @return A view of the resulting buffer contents.
  * @note This function should be used via the macro strbuf_cat(strbuf_t** buf_ptr, ...) which counts the argument list for you to provide n_args.
- * @note If the destination buffer is dynamic, then ... arguments may be views within the destination.
- * @note If a buffer of fixed capacity is unable to store the output, it will be emptied.
+ * @note Arguments may be views within the destination.
  **********************************************************************************/
-	strview_t _strbuf_cat(strbuf_t** buf_ptr, int n_args, ...);
+	strview_t strbuf_cat_n(strbuf_t** buf_ptr, int n_args, ...);
 
 /**	
- * 	@brief	The non-variadic version of _strbuf_cat
+ * 	@brief	The non-variadic version of strbuf_cat_n
  **********************************************************************************/
 	strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
 
@@ -398,7 +283,7 @@
  * @return A view of the resulting buffer contents.
  * @note Example:
  * @code{.c}
- * strbuf_t* my_buf = strbuf_create(0,NULL);
+ * strbuf_t* my_buf = strbuf_create(0);
  * strbuf_append_char(&my_buf, 'X');
  * @endcode
   **********************************************************************************/
@@ -411,10 +296,9 @@
 	strview_t strbuf_view(strbuf_t** buf_ptr);
 
 /**
- * @brief Reduce buffer capacity to the minimum size required to hold it's contents.
+ * @brief Reduce buffer capacity to the minimum size required to hold its contents.
  * @param buf_ptr The address of a pointer to the buffer.
  * @return A view of the buffer contents.
- * @note This will have no effect on a buffer with fixed capacity.
  **********************************************************************************/
 	strview_t strbuf_shrink(strbuf_t** buf_ptr);
 
@@ -424,14 +308,12 @@
  * @param min_size The buffer capacity required.
  * @return A view of the buffer contents, or STRVIEW_INVALID if the operation fails.
  * @note This can only increase the buffers capacity, to reduce it use strbuf_shrink().
- * @note The operation will fail if attempted on a buffer with fixed capacity.
  **********************************************************************************/
 	strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size);
 
 /**
- * @brief Free memory allcoated to hold the buffer and it's contents.
+ * @brief Free memory allocated to hold the buffer and its contents.
  * @param buf_ptr The address of a pointer to the buffer. This pointer will be NULL after the operation.
- * @note Calling this with a buffer of fixed capacity is unnecessary, but harmless. It will only NULL the passed pointer.
  **********************************************************************************/
 	void strbuf_destroy(strbuf_t** buf_ptr);
 
@@ -441,7 +323,6 @@
  * @return A memory allocation containing a regular c string.
  * @note Used for applications where an interface expects a regular heap allocated c string.
  * @note Care should be taken to free the returned string with the same allocator that was used to create the buffer.
- * @note If used on a static buffer, the ->cstr member is returned and *buf_ptr is NULLed.
  * @note To instead copy the buffer contents to a pre-existing memory space, use strview_to_cstr().
  **********************************************************************************/
 	char* strbuf_to_cstr(strbuf_t** buf_ptr);
@@ -460,7 +341,6 @@
  * @return A view of the buffer contents.
  * @note The source view may be of data within the destination buffer.
  * @note If the source view is invalid, the buffer will be emptied.
- * @note If the destination is of fixed capacity, and insufficient, the buffer will be emptied.
  **********************************************************************************/
 	strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str);
 
@@ -482,23 +362,6 @@
  **********************************************************************************/
 	strview_t strbuf_append_cstr(strbuf_t** buf_ptr, const char* str);
 
-
-/**
- * @private
- *	The fetch function must have the following signature and behaviour:
- *	int fetch(void* dst, int dst_size, void* fetcher_vars);
- *	Where:
- *		dst is the address to write data
- *		dst_size is the maximum number of bytes to write, this will be passed the amount of free space in the buffer (which may be 0)
- *		fetch_vars points to application specific data needed by the fetch function (usually a struct)
- *		Return value must be the number of bytes fetched, which may be 0 to dst_size (inclusive).
- *
- *	If you wish to fetch more bytes than the available space in the buffer, use strbuf_grow() first
- *	If the return value of the fetch indicates bad behaviour (<0 or >dst_size) then the buffer is emptied and an invalid strview_t is returned.
- **********************************************************************************/
-	strview_t strbuf_append_using(strbuf_t** buf_ptr, int (*strbuf_fetcher)(void* dst, int dst_size, void* fetcher_vars), void* fetch_vars);
-
-
 /**
  * @brief Prepend to a buffer.
  * @param buf_ptr The address of a pointer to the buffer.
@@ -507,7 +370,6 @@
  * @note Use via macro strbuf_prepend())
  **********************************************************************************/
 	strview_t strbuf_prepend_strview(strbuf_t** buf_ptr, strview_t str);
-
 
 /**
  * @brief Prepend to a buffer.
@@ -611,10 +473,31 @@
  * @param views A pointer to an array of views.
  * @return A view of the buffer contents, or NULL if the operation failed.
  * @note The buffer contents will become a concatenation of each view followed by a 0 terminator.
- * @note If the buffer size is fixed, and insufficient to hold the result the buffer will be emptied.
  * @note Invalid views will be excluded from the output.
  **********************************************************************************/
 	strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count]);
+
+/**
+ * @brief Append to a buffer, attempting to fill the remaining space using read_fptr().
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param read_fptr A pointer to a function that will be called to read data into the buffer, the function should return the number of bytes read, or -1.
+ * @param ctx The context to be passed to read_fptr.
+ * @return The return value of read_fptr()
+ * @note read_fptr() will always be called even if remaining space in the buffer is 0.
+ * @note Does not increase the buffers capacity. Use strbuf_grow() to suitably size the buffer first.
+   **********************************************************************************/
+	int strbuf_stream_in(strbuf_t **buf_ptr, int (*read_fptr)(void *ctx, char *buf, int count), void *ctx);
+
+/**
+ * @brief Attempt to write the contents of the buffer using write_fptr() and remove the number of bytes written.
+ * @param buf_ptr The address of a pointer to the buffer.
+ * @param write_fptr A pointer to a function that will be called to write data from the buffer, the function should return the number of bytes written, or -1.
+ * @param ctx The context to be passed to write_fptr.
+ * @return The return value of write_fptr()
+ * @note write_fptr() will always be called even if the buffer is empty or invalid (NULL)
+ * @note if write_fptr() only accepts part of the data, the remaining data will be moved in memory.
+   **********************************************************************************/
+	int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(void *ctx, const char *buf, int count), void *ctx);
 
 #ifdef STRBUF_PROVIDE_PRINTF
 /**
@@ -707,5 +590,854 @@
  **********************************************************************************/
 	strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va);
 #endif
+#endif
 
+
+
+
+//*************************************************************************************************
+#ifdef STRBUF_IMPLEMENTATION
+//*************************************************************************************************
+
+	#include <stdint.h>
+	#include <ctype.h>
+	#include <limits.h>
+
+	#ifdef STRBUF_PROVIDE_PRINTF
+		#include <stdio.h>
+	#endif
+
+	#ifdef STRBUF_PROVIDE_PRNF
+		#include "prnf.h"
+	#endif
+
+	#ifdef STRBUF_CAPACITY_GROW_STEP
+		#warning "Deprecated build option STRBUF_CAPACITY_GROW_STEP.\
+ Buffer size now increases by 1/2^(STRBUF_CAPACITY_GROW_RATIO), which defaults to 1/2^1 or a 50% increase."
+	#endif
+
+	#ifdef STRBUF_DEFAULT_ALLOCATOR_STDLIB
+		#warning "Deprecated build option STRBUF_DEFAULT_ALLOCATOR_STDLIB.\
+ An allocator must be provided prior to including strbuf.h with STRBUF_IMPLEMENTATION defined."
+	#endif
+
+	#ifdef STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB
+		#warning "Deprecated build option STRBUF_ASSERT_DEFAULT_ALLOCATOR_STDLIB.\
+ If you wish to handle allocator failure, you must do so in the applications provided allocator."
+	#endif
+
+	#ifndef STRBUF_CAPACITY_GROW_RATIO
+		#define STRBUF_CAPACITY_GROW_RATIO 1
+	#endif
+
+//********************************************************************************************************
+// Local defines
+//********************************************************************************************************
+
+//	#include <stdio.h>
+//	#define DBG(_fmtarg, ...) printf("%s:%.4i - "_fmtarg"\n" , __FILE__, __LINE__ ,##__VA_ARGS__)
+
+//********************************************************************************************************
+// Private prototypes
+//********************************************************************************************************
+
+	static strbuf_t* create_buf(int initial_capacity);
+	static strview_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va);
+	static void insert_strview_into_buf(strbuf_t** buf_ptr, int index, strview_t str);
+	static void destroy_buf(strbuf_t** buf_ptr);
+	static void change_buf_capacity(strbuf_t** buf_ptr, int new_capacity);
+	static void assign_strview_to_buf(strbuf_t** buf_ptr, strview_t str);
+	static void append_char_to_buf(strbuf_t** strbuf, char c);
+	static int  round_up_capacity(int current_capacity, int capacity_needed);
+	static strview_t strview_of_buf(strbuf_t* buf);
+	static bool buf_contains_str(strbuf_t* buf, strview_t str);
+	static void empty_buf(strbuf_t* buf);
+	static bool add_will_overflow_int(int a, int b);
+	static bool view_contains_char(strview_t view, char c);
+
+#ifdef STRBUF_PROVIDE_PRNF
+	static void char_handler_for_prnf(void* dst, char c);
+#endif
+
+//********************************************************************************************************
+// Public functions
+//********************************************************************************************************
+
+strbuf_t* strbuf_create_empty(size_t initial_capacity)
+{
+	strbuf_t* result;
+	
+	if(initial_capacity <= INT_MAX)
+		result = create_buf((int)initial_capacity);
+	else
+		result = NULL;
+	return result;
+}
+
+strbuf_t* strbuf_create_init(strview_t initial_content)
+{
+	strbuf_t* result;
+	
+	result = create_buf(initial_content.size);
+	insert_strview_into_buf(&result, 0, initial_content);
+
+	return result;
+}
+
+// concatenate a number of str's this can include the buffer itself, strbuf.str for appending
+strview_t strbuf_cat_n(strbuf_t** buf_ptr, int n_args, ...)
+{
+	va_list va;
+	va_start(va, n_args);
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+		str = buffer_vcat(buf_ptr, n_args, va);
+	va_end(va);
+	return str;
+}
+
+strview_t strbuf_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+		str = buffer_vcat(buf_ptr, n_args, va);
+	return str;
+}
+
+#ifdef STRBUF_PROVIDE_PRINTF
+strview_t strbuf_printf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_vprintf(buf_ptr, format, va);
+		va_end(va);
+	};
+	return str;
+}
+
+strview_t strbuf_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		empty_buf(*buf_ptr);
+		str = strbuf_append_vprintf(buf_ptr, format, va);
+	};
+	return str;
+}
+
+strview_t strbuf_append_printf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_append_vprintf(buf_ptr, format, va);
+		va_end(va);
+	};
+	return str;
+}
+
+	
+strview_t strbuf_append_vprintf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	int size;
+	int append_size;
+	bool failed;
+	strbuf_t* buf;
+	strview_t str = STRVIEW_INVALID;
+	va_list vb;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_copy(vb, va);
+		buf = *buf_ptr;
+		size = buf->size;
+		append_size = vsnprintf(NULL, 0, format, va);
+
+		failed = add_will_overflow_int(size, append_size);
+		if(!failed)
+		{
+			size += append_size;
+			if(size > buf->capacity)
+				change_buf_capacity(&buf, round_up_capacity(buf->size, size));
+
+			failed = size > buf->capacity;
+		};
+
+		if(!failed)
+			buf->size += vsnprintf(&buf->cstr[buf->size], buf->capacity - buf->size + 1, format, vb);
+		else
+			empty_buf(buf);
+
+		str = strbuf_view(&buf);
+		*buf_ptr = buf;
+		va_end(vb);
+	};
+	return str;
+}
+#endif
+
+#ifdef STRBUF_PROVIDE_PRNF
+strview_t strbuf_prnf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_vprnf(buf_ptr, format, va);
+		va_end(va);;
+	};
+	return str;
+}
+
+strview_t strbuf_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	strbuf_t* buf;
+	strview_t str = STRVIEW_INVALID;
+	int char_count;
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+		empty_buf(buf);
+
+		char_count = vfptrprnf(char_handler_for_prnf, &buf,  format, va);
+
+		if(char_count > buf->size)
+			empty_buf(buf);
+
+		str = strbuf_view(&buf);
+		*buf_ptr = buf;
+	};
+	return str;
+}
+
+strview_t strbuf_append_prnf(strbuf_t** buf_ptr, const char* format, ...)
+{
+	va_list va;
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		va_start(va, format);
+		str = strbuf_append_vprnf(buf_ptr, format, va);
+		va_end(va);;
+	};
+	return str;
+}
+
+strview_t strbuf_append_vprnf(strbuf_t** buf_ptr, const char* format, va_list va)
+{
+	strbuf_t* buf;
+	strview_t str = STRVIEW_INVALID;
+	int char_count;
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+
+		char_count = buf->size;
+		char_count += vfptrprnf(char_handler_for_prnf, &buf,  format, va);
+
+		if(char_count > buf->size || char_count < 0)
+			empty_buf(buf);
+
+		str = strbuf_view(&buf);
+		*buf_ptr = buf;
+	};
+	return str;
+}
+
+#endif
+
+strview_t strbuf_view(strbuf_t** buf_ptr)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+		str = strview_of_buf(*buf_ptr);
+	return str;
+}
+
+strview_t strbuf_append_char(strbuf_t** buf_ptr, char c)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		append_char_to_buf(buf_ptr, c);
+		str = strview_of_buf(*buf_ptr);
+	};
+	return str;
+}
+
+// reduce allocation size to the minimum possible
+strview_t strbuf_shrink(strbuf_t** buf_ptr)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		change_buf_capacity(buf_ptr, (*buf_ptr)->size);
+		str = strview_of_buf(*buf_ptr);
+	};
+	return str;
+}
+
+// increase allocation size to support a capacity of at least min_size
+strview_t strbuf_grow(strbuf_t** buf_ptr, int min_size)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf_ptr && *buf_ptr)
+	{
+		if(min_size > (*buf_ptr)->capacity)
+			change_buf_capacity(buf_ptr, min_size);
+		str = strview_of_buf(*buf_ptr);
+	};
+	return str;
+}
+
+void strbuf_destroy(strbuf_t** buf_ptr)
+{
+	if(buf_ptr)
+	{
+		if(*buf_ptr)
+			destroy_buf(buf_ptr);
+		*buf_ptr = NULL;
+	};	
+}
+
+char* strbuf_to_cstr(strbuf_t** buf_ptr)
+{
+	int len;
+	char* str = NULL;
+
+	if(buf_ptr && *buf_ptr)
+	{
+		len = (*buf_ptr)->size;
+		str = (void*)(*buf_ptr);
+		memmove(str, (*buf_ptr)->cstr, len);
+		str = strbuf_realloc(str, len+1);
+
+		str[len] = 0;
+		*buf_ptr = NULL;
+	};
+	return str;
+}
+
+strview_t strbuf_assign(strbuf_t** buf_ptr, strview_t str)
+{
+	strbuf_t* buf = NULL;
+	bool failed;
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+		failed = !strview_is_valid(str);
+		if(!failed)
+		{
+			if(str.size > buf->capacity)
+				change_buf_capacity(&buf, round_up_capacity(buf->size, str.size));
+			
+			failed = str.size > buf->capacity;
+		};
+		if(!failed)
+		{
+			memmove(buf->cstr, str.data, (size_t)str.size);
+			buf->size = str.size;
+			buf->cstr[buf->size] = 0;
+		}
+		else
+			empty_buf(buf);
+		*buf_ptr = buf;
+	};
+
+	return strview_of_buf(buf);
+}
+
+strview_t strbuf_append_strview(strbuf_t** buf_ptr, strview_t str)
+{
+	if(buf_ptr && *buf_ptr)
+		insert_strview_into_buf(buf_ptr, (*buf_ptr)->size, str);
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_append_cstr(strbuf_t** buf_ptr, const char* str)
+{
+	return strbuf_append_strview(buf_ptr, cstr(str));
+}
+
+strview_t strbuf_prepend_strview(strbuf_t** buf_ptr, strview_t str)
+{
+	if(buf_ptr && *buf_ptr)
+		insert_strview_into_buf(buf_ptr, 0, str);
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_prepend_cstr(strbuf_t** buf_ptr, const char* str)
+{
+	return strbuf_prepend_strview(buf_ptr, cstr(str));
+}
+
+strview_t strbuf_insert_at_index_strview(strbuf_t** buf_ptr, int index, strview_t str)
+{
+	if(buf_ptr && *buf_ptr)
+		insert_strview_into_buf(buf_ptr, index, str);
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_insert_at_index_cstr(strbuf_t** buf_ptr, int index, const char* str)
+{
+	return strbuf_insert_at_index_strview(buf_ptr, index, cstr(str));
+}
+
+strview_t strbuf_insert_before_strview(strbuf_t** buf_ptr, strview_t dst, strview_t src)
+{
+	strbuf_t* buf;
+
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+		if(buf->cstr <= dst.data && dst.data <= &buf->cstr[buf->size])
+			insert_strview_into_buf(&buf, dst.data - buf->cstr, src);
+		*buf_ptr = buf;
+	};
+
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_insert_before_cstr(strbuf_t** buf_ptr, strview_t dst, const char* src)
+{
+	return strbuf_insert_before_strview(buf_ptr, dst, cstr(src));
+}
+
+strview_t strbuf_insert_after_strview(strbuf_t** buf_ptr, strview_t dst, strview_t src)
+{
+	strbuf_t* buf;
+	const char* dst_ptr;
+
+	if(buf_ptr && *buf_ptr && strview_is_valid(dst))
+	{
+		buf = *buf_ptr;
+		dst_ptr = &dst.data[dst.size];
+
+		if(buf->cstr <= dst_ptr && dst_ptr <= &buf->cstr[buf->size])
+			insert_strview_into_buf(&buf, dst_ptr - buf->cstr, src);
+		*buf_ptr = buf;
+	};
+
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_insert_after_cstr(strbuf_t** buf_ptr, strview_t dst, const char* src)
+{
+	return strbuf_insert_after_strview(buf_ptr, dst, cstr(src));
+}
+
+strview_t strbuf_strip_strview(strbuf_t** buf_ptr, strview_t stripchars)
+{
+	strbuf_t* buf;
+	char* ptr;
+	int count;
+
+	if(buf_ptr && *buf_ptr && strview_is_valid(stripchars))
+	{
+		buf = *buf_ptr;
+		count = buf->size;
+		ptr = buf->cstr;
+		while(count)
+		{
+			if(view_contains_char(stripchars, *ptr))
+			{
+				memmove(ptr, ptr+1, count);
+				buf->size--;
+			}
+			else
+				ptr++;
+			count--;
+		};
+		*buf_ptr = buf;
+	};
+
+	return buf_ptr ? strview_of_buf(*buf_ptr) : STRVIEW_INVALID;
+}
+
+strview_t strbuf_strip_cstr(strbuf_t** buf_ptr, const char* stripchars)
+{
+	return strbuf_strip_strview(buf_ptr, cstr(stripchars));
+}
+
+strview_t strbuf_terminate_views(strbuf_t** buf_ptr, int count, strview_t src[count])
+{
+	bool failed;
+	int i = 0;
+	int size_needed = 0;
+	char *dst;
+	strview_t view;
+	strbuf_t *old_buf;
+	ptrdiff_t offset = 0;;
+
+	failed = !(buf_ptr && *buf_ptr);
+
+//	determine size needed, and check that all valid views are within the buffer
+	if(!failed)
+	{
+		i = 0;
+		while(i != count && !failed)
+		{
+			size_needed += strview_is_valid(src[i]) ? src[i].size + 1 : 0;
+			failed |= !(buf_contains_str(*buf_ptr, src[i]) || !strview_is_valid(src[i]));
+			i++;
+		};
+	};
+
+//	resize the buffer if possible, and check that the buffer is big enough
+	if(!failed)
+	{
+		if((*buf_ptr)->capacity < size_needed)
+		{
+			old_buf = *buf_ptr;
+			change_buf_capacity(buf_ptr, size_needed);
+			offset = (uint8_t*)*buf_ptr - (uint8_t*)old_buf;
+		};
+		i = 0;
+		while(i != count)	// move any valid views to the new buffer
+		{
+			if(strview_is_valid(src[i]))
+				src[i].data += offset;
+			i++;
+		};
+
+		failed = ((*buf_ptr)->capacity < size_needed);
+		if(failed)
+			empty_buf((*buf_ptr));
+	};
+
+	if(!failed)
+	{
+		i = 0;
+		dst = (*buf_ptr)->cstr;
+		while(i != count)
+		{
+			if(strview_is_valid(src[i]))
+			{
+				if(dst < src[i].data)
+				{
+					memmove(dst, src[i].data, src[i].size); //<-- ASAN FAULT
+					src[i].data = dst;
+				};
+				dst += src[i].size + 1;
+			};
+			i++;
+		};
+
+		while(i--)
+		{
+			if(strview_is_valid(src[i]))
+			{
+				dst -= src[i].size + 1;
+				if(dst > src[i].data)
+				{
+					memmove(dst, src[i].data, src[i].size);
+					src[i].data = dst;
+				};
+				((char*)(src[i].data))[src[i].size] = 0;
+				src[i].size++;
+			};
+		};
+
+		view = strview_of_buf(*buf_ptr);
+		view.size = size_needed;
+		strbuf_assign(buf_ptr, view);
+	};
+
+	return failed ? STRVIEW_INVALID : view;
+}
+
+int strbuf_stream_in(strbuf_t **buf_ptr, int (*read_fptr)(void *ctx, char *buf, int count), void *ctx)
+{
+	int retval;
+	strbuf_t *buf;
+
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;	// (no need to assign this back, as the buffer is not resized)
+
+		retval = read_fptr(ctx, &buf->cstr[buf->size], buf->capacity - buf->size);
+		if(retval > 0)
+		{
+			buf->size += retval;
+			buf->cstr[buf->size] = 0;
+		};
+	}
+	else
+		retval = read_fptr(ctx, NULL, 0);
+
+	return retval;
+}
+
+int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(void *ctx, const char *buf, int count), void *ctx)
+{
+	int retval;
+	strbuf_t *buf;
+	strview_t buf_view;
+
+	if(buf_ptr && *buf_ptr)
+	{
+		buf = *buf_ptr;
+
+		retval = write_fptr(ctx, buf->cstr, buf->size);
+		if(retval > 0)
+		{
+			buf_view = strbuf_view(&buf);
+			buf_view = strview_sub(buf_view, retval, INT_MAX);
+			strbuf_assign(&buf, buf_view);
+		};
+
+		*buf_ptr = buf;
+	}
+	else
+		retval = write_fptr(ctx, NULL, 0);
+
+	return retval;
+}
+
+//********************************************************************************************************
+// Private functions
+//********************************************************************************************************
+
+static strbuf_t* create_buf(int initial_capacity)
+{
+	strbuf_t* buf = NULL;
+
+	if(initial_capacity <= INT_MAX)
+	{
+		buf = strbuf_alloc(sizeof(strbuf_t)+initial_capacity+1);
+		buf->capacity = initial_capacity;
+		empty_buf(buf);
+	};
+
+	return buf;
+}
+
+static strview_t strview_of_buf(strbuf_t* buf)
+{
+	strview_t str = STRVIEW_INVALID;
+	if(buf)
+	{
+		str.data = buf->cstr;
+		str.size = buf->size;
+	};
+	return str;
+}
+
+static strview_t buffer_vcat(strbuf_t** buf_ptr, int n_args, va_list va)
+{
+	strview_t 	str;
+	int 	size_needed = 0;
+	int 	i = 0;
+	bool 	failed = false;
+	strbuf_t* dst_buf = *buf_ptr;
+	strbuf_t* build_buf;
+	va_list vb;
+	va_copy(vb, va);
+
+	while(i++ != n_args)
+	{
+		str = va_arg(va, strview_t);
+		failed |= add_will_overflow_int(size_needed, str.size);
+		size_needed += str.size;
+	};
+	
+	if(!failed)
+	{
+		build_buf = create_buf(size_needed);
+		i = 0;
+		while(i++ != n_args)
+			insert_strview_into_buf(&build_buf, build_buf->size, va_arg(vb, strview_t));
+
+		assign_strview_to_buf(&dst_buf, strview_of_buf(build_buf));
+		destroy_buf(&build_buf);
+	}
+	else
+		empty_buf(dst_buf);
+
+	*buf_ptr = dst_buf;
+
+	va_end(vb);
+	return strview_of_buf(dst_buf);
+}
+
+static void insert_strview_into_buf(strbuf_t** buf_ptr, int index, strview_t str)
+{
+	strbuf_t* buf = *buf_ptr;
+	bool src_in_dst = buf_contains_str(buf, str);
+	size_t src_offset = str.data - buf->cstr;
+	strview_t strview_part_left_behind = STRVIEW_INVALID;
+	strview_t strview_part_shifted;
+	char* move_src;
+	char* move_dst;
+	bool failed;
+
+	if(index > buf->size)
+		index = buf->size;
+	if(index < 0)
+		index += buf->size;
+	if(index < 0)
+		index = 0;
+
+	failed = add_will_overflow_int(buf->size, str.size);
+
+	if(!failed)
+	{
+		if(buf->capacity < buf->size + str.size)
+			change_buf_capacity(&buf, round_up_capacity(buf->size, (buf->size + str.size)));
+
+		if(src_in_dst && buf != *buf_ptr)
+			str.data = buf->cstr + src_offset;
+
+		failed = buf->capacity < buf->size + str.size;
+	};
+
+	if(!failed)
+	{
+		strview_part_shifted = str;
+		move_src = &buf->cstr[index];
+		move_dst = &buf->cstr[index+str.size];
+		if(str.size)
+		{
+			memmove(move_dst, move_src, buf->size-index);
+			if(src_in_dst)
+			{
+				if(move_src > str.data)
+					strview_part_left_behind = strview_split_index(&strview_part_shifted, move_src - str.data);
+				strview_part_shifted.data += move_dst-move_src;
+			};
+		};
+
+		buf->size += str.size;
+		if(strview_part_left_behind.size)
+			memcpy(move_src, strview_part_left_behind.data, strview_part_left_behind.size);
+		move_src += strview_part_left_behind.size;
+		if(strview_part_shifted.size)
+			memcpy(move_src, strview_part_shifted.data, strview_part_shifted.size);
+		buf->cstr[buf->size] = 0;
+	}
+	else
+		empty_buf(buf);
+
+	*buf_ptr = buf;
+}
+
+static void destroy_buf(strbuf_t** buf_ptr)
+{
+	strbuf_t* buf = *buf_ptr;
+	strbuf_free(buf);
+	*buf_ptr = NULL;
+}
+
+static void change_buf_capacity(strbuf_t** buf_ptr, int new_capacity)
+{
+	strbuf_t* buf = *buf_ptr;
+
+	if(new_capacity < buf->size)
+		new_capacity = buf->size;
+
+	if(new_capacity != buf->capacity)
+	{
+		buf = strbuf_realloc(buf, sizeof(strbuf_t)+new_capacity+1);
+		buf->capacity = new_capacity;
+	};
+
+	*buf_ptr = buf;
+}
+
+static void assign_strview_to_buf(strbuf_t** buf_ptr, strview_t str)
+{
+	empty_buf(*buf_ptr);
+	insert_strview_into_buf(buf_ptr, 0, str);
+}
+
+static void append_char_to_buf(strbuf_t** buf_ptr, char c)
+{
+	strbuf_t* buf = *buf_ptr;
+	bool failed = add_will_overflow_int(buf->size, 1);
+
+	if(!failed)
+	{
+		if(buf->size+1 > buf->capacity)
+			change_buf_capacity(&buf, round_up_capacity(buf->size, buf->size + 1));
+		failed = buf->capacity < buf->size+1;
+	};
+
+	if(!failed)
+	{
+		buf->cstr[buf->size] = c;
+		buf->size++;
+		buf->cstr[buf->size] = 0;
+	}
+	else
+		empty_buf(buf);
+
+	*buf_ptr = buf;
+}
+
+static int round_up_capacity(int current_capacity, int capacity_needed)
+{
+	int grow_size;
+	int new_capacity = current_capacity;
+
+	while(new_capacity < capacity_needed)
+	{
+		grow_size = new_capacity >> STRBUF_CAPACITY_GROW_RATIO;
+		if(!grow_size)
+			grow_size = 1;
+		if(!add_will_overflow_int(new_capacity, grow_size))
+			new_capacity += grow_size;
+		else
+			new_capacity = INT_MAX;
+	};
+
+	return new_capacity;
+}
+
+static bool buf_contains_str(strbuf_t* buf, strview_t str)
+{
+	return &buf->cstr[0] <= str.data && str.data < &buf->cstr[buf->size];
+}
+
+static void empty_buf(strbuf_t* buf)
+{
+	buf->size = 0;
+	buf->cstr[0] = 0;
+}
+
+static bool add_will_overflow_int(int a, int b)
+{
+	int c = a;
+	c += b;
+	return ((a < 0) == (b < 0) && (a < 0) != (c < 0));
+}
+
+static bool view_contains_char(strview_t view, char c)
+{
+	bool retval = false;
+
+	if(strview_is_valid(view))
+	{
+		while(!retval && view.size)
+		{
+			retval |= (*view.data == c);
+			view.data++;
+			view.size--;
+		};
+	};
+
+	return retval;
+}
+
+#ifdef STRBUF_PROVIDE_PRNF
+static void char_handler_for_prnf(void* dst, char c)
+{
+	append_char_to_buf((strbuf_t**)dst, c);
+}
+#endif
 #endif
