@@ -22,6 +22,9 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 &nbsp;
 # Introduction
 
+
+> **Note:** The current main branch provides `strbuf.h` as a single-header stb-style library. The previous allocator-aware API remains available in the `alloc-aware` branch.
+
  This project aims to implement a convenient and intuitive approach to string handling, described in a talk by Luca Sas in the above mentioned YouTube video.
 
  The core ideas for strview.h are:
@@ -31,7 +34,9 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 
 &nbsp;
 # Features
- * Supports custom allocators, configurable at build time.
+ * strbuf.h is now provided as a single-header stb-style library.
+* An allocator is configured at build time using macros.
+* The previous allocator-aware runtime API remains available in the alloc-aware branch.
  * A rich set of of string splitting/trim/search functions.
  * A number parser which checks for errors, including range errors, or invalid input.
  * A test suite which uses https://github.com/silentbicycle/greatest.
@@ -45,9 +50,31 @@ C String handling library inspired by Luca Sas. https://www.youtube.com/watch?v=
 &nbsp;
 # Usage
  Copy the source files __strview.h__/__strview.c__ and optionally __strbuf.h__ , __strnum.h__/__strnum.c__ into your project.
- For strbuf.h, configure an allocator in a C file, then include strbuf.h with STRBUF_IMPLEMENTATION defined.
+
+ ## strbuf.h
+ strbuf.h now follows the popular stb-style single-header approach.
+
+ Provide allocator macros before including the implementation:
+
+ ```c
+ #define strbuf_alloc(sz)            malloc(sz)
+ #define strbuf_realloc(ptr, sz)     realloc(ptr, sz)
+ #define strbuf_free(ptr)            free(ptr)
+
+ #define STRBUF_IMPLEMENTATION
+ #include "strbuf.h"
+ ```
+
+ This design was chosen because most of my target platforms are embedded systems, where a single allocator is typically used application-wide. Requiring allocator callbacks on every buffer creation added complexity without providing much practical benefit for these environments.
+
+ ### Alloc-aware branch
+ The previous allocator-aware implementation has not been removed.
+ It remains available in the **alloc-aware** branch for applications that require multiple allocators or allocator selection at runtime.
+
  Add any desired options (described below) to your compiler flags (eg. -DSTRBUF_PROVIDE_PRINTF).
+
  strnum.c requires linking against the maths library for interpreting float values. So either add -lm to your linker options, or -DSTRNUM_NOFLOAT to your compiler options if you don't need float conversion.
+
  A list and explanation of options is included at the top of each header file for convenient copy & pasting.
 
 &nbsp;
