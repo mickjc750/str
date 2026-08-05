@@ -1206,15 +1206,9 @@ int strbuf_stream_out(strbuf_t **buf_ptr, int (*write_fptr)(void *ctx, const cha
 
 static strbuf_t* create_buf(int initial_capacity)
 {
-	strbuf_t* buf = NULL;
-
-	if(initial_capacity <= INT_MAX)
-	{
-		buf = strbuf_alloc(sizeof(strbuf_t)+initial_capacity+1);
-		buf->capacity = initial_capacity;
-		empty_buf(buf);
-	};
-
+	strbuf_t* buf = strbuf_alloc(sizeof(strbuf_t)+initial_capacity+1);
+	buf->capacity = initial_capacity;
+	empty_buf(buf);
 	return buf;
 }
 
