@@ -233,6 +233,20 @@
 		)(buf_ptr, stripchars)
 
 
+/**
+ * @def __cleanup(func);
+ * @brief (macro) Standard cleanup attributes macro from linux Kernal
+ * @param func The cleanup function, in this case strbuf_destroy
+ * @note Example to automatically destroy a strbuf_t when it goes out of scope:
+ * @code{.c}
+ * __cleanup(strbuf_destroy) strbuf_t* my_buf = strbuf_create_empty(0);
+ * @endcode
+ **********************************************************************************/
+	#ifndef __cleanup
+		#define __cleanup(func) __attribute__((__cleanup__(func)))
+	#endif
+
+
 //********************************************************************************************************
 // Public prototypes
 //********************************************************************************************************
