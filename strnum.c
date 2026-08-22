@@ -759,7 +759,7 @@ static int consume_decimal_digits(unsigned long long* dst, strview_t* str)
 	unsigned long long post_add;
 	unsigned long long next_weight;
 
-	if(str->size && isdigit(str->data[0]))
+	if(str->size && isdigit((unsigned char)str->data[0]))
 		err = 0;
 	else
 		err = EINVAL;
@@ -767,19 +767,19 @@ static int consume_decimal_digits(unsigned long long* dst, strview_t* str)
 	if(!err)
 	{
 		*str = strview_trim_start(*str, "0");
-		while(str->size && isdigit(str->data[0]) && res_ui < UI_LIMIT)
+		while(str->size && isdigit((unsigned char)str->data[0]) && res_ui < UI_LIMIT)
 		{
 			res_ui *= 10;
 			res_ui += strview_pop_first_char(str) & 0x0F;
 		};
 		res_ul = res_ui;
-		while(str->size && isdigit(str->data[0]) && res_ul < UL_LIMIT)
+		while(str->size && isdigit((unsigned char)str->data[0]) && res_ul < UL_LIMIT)
 		{
 			res_ul *= 10;
 			res_ul += strview_pop_first_char(str) & 0x0F;
 		};
 		res_ull = res_ul;
-		while(str->size && isdigit(str->data[0]) && !err)
+		while(str->size && isdigit((unsigned char)str->data[0]) && !err)
 		{
 			if(res_ull > ULLONG_MAX/10)	// if number is too big to multiply by 10, ERANGE
 				err = ERANGE;
@@ -812,7 +812,7 @@ static int consume_hex_digits(unsigned long long* dst, strview_t* str)
 	unsigned long long result = 0;
 	int err;
 
-	if(str->size && isxdigit(str->data[0]))
+	if(str->size && isxdigit((unsigned char)str->data[0]))
 	{
 		err = 0;
 		*str = strview_trim_start(*str, "0");
@@ -820,7 +820,7 @@ static int consume_hex_digits(unsigned long long* dst, strview_t* str)
 	else
 		err = EINVAL;
 
-	while(str->size && isxdigit(str->data[0]) && !err)
+	while(str->size && isxdigit((unsigned char)str->data[0]) && !err)
 	{
 		if(!upper_nibble_ull_is_zero(result))
 			err = ERANGE;
@@ -893,11 +893,11 @@ static bool isbdigit(char c)
 static strview_t split_digits(strview_t* src)
 {
 	strview_t result = STRVIEW_INVALID;
-	if(src && src->size && isdigit(src->data[0]))
+	if(src && src->size && isdigit((unsigned char)src->data[0]))
 	{
 		result.data = src->data;
 		result.size = 0;
-		while(src->size && isdigit(src->data[0]))
+		while(src->size && isdigit((unsigned char)src->data[0]))
 		{
 			strview_pop_first_char(src);
 			result.size++;
